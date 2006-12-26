@@ -1,0 +1,23 @@
+To compile:
+
+If you downloaded viking from CVS, you have to:
+$ autogen.sh
+
+Next, or if you downloaded a tarball, you have to:
+$ ./configure
+$ make
+
+If you whish to install viking, you have to (as root):
+# make install
+
+
+Viking needs documentation! Any volunteers?
+After I get some core features down I'll start on documentation. I promise.
+
+To export as GPSMapper, the track/waypoint name should be in the format of:
+
+Name RGN## 0x####
+
+or
+
+Name RGN## 0x##
