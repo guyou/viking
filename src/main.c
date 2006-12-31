@@ -25,6 +25,8 @@
 
 #include <string.h>
 
+#include "modules.h"
+
 #define MAX_WINDOWS 1024
 
 static guint window_count = 0;
@@ -89,6 +91,9 @@ int main( int argc, char *argv[] )
 
   a_mapcache_init ();
   a_background_init ();
+
+  /* Init modules/plugins */
+  modules_init();
 
   first_window = new_window();
 

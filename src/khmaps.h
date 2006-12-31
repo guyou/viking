@@ -22,6 +22,13 @@
 #ifndef __VIKING_KHMAPS_H
 #define __VIKING_KHMAPS_H
 
+#include <glib.h>
+
+#include "vikcoord.h"
+#include "mapcoord.h"
+
+void khmaps_init ();
+
 guint8 khmaps_zoom ( gdouble mpp );
 
 /* a bit misleading, this is the "mpp" (really just set zoom level, very
