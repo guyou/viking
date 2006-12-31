@@ -19,6 +19,9 @@
  *
  */
 
+#ifndef _MAPCOORD_H
+#define _MAPCOORD_H
+
 /* common struct to all map types and map layer, to hold info about a
  * particular tile */
 
@@ -27,3 +30,5 @@ typedef struct {
   gint z; /* zone or anything else */
   guint scale;
 } MapCoord;
+
+#endif
