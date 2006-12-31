@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2005, Evan Battaglia <viking@greentorch.org>
  * UTM multi-zone stuff by Kit Transue <notlostyet@didactek.com>
+ * Dynamic map type by Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -58,17 +59,6 @@
 #include "google.h"
 #include "khmaps.h"
 #include "expedia.h"
-
-typedef struct {
-  guint8 uniq_id;
-  guint16 tilesize_x;
-  guint16 tilesize_y;
-  guint drawmode;
-  gboolean (*coord_to_mapcoord) ( const VikCoord *src, gdouble xzoom, gdouble yzoom, MapCoord *dest );
-  void (*mapcoord_to_center_coord) ( MapCoord *src, VikCoord *dest );
-  void (*download) ( MapCoord *src, const gchar *dest_fn );
-  /* TODO: constant size (yay!) */
-} VikMapsLayer_MapType;
 
 
 /****** MAP TYPES ******/
@@ -200,6 +190,17 @@ struct _VikMapsLayer {
 
 enum { REDOWNLOAD_NONE = 0, REDOWNLOAD_BAD, REDOWNLOAD_ALL };
 
+
+/****************************************/
+/******** MAPS LAYER TYPES **************/
+/****************************************/
+
+void maps_layer_register_type ( VikMapsLayer_MapType *map_type )
+{
+  g_assert(map_type != NULL);
+
+  /* TODO */
+}
 
 /****************************************/
 /******** CACHE DIR STUFF ***************/

@@ -22,6 +22,8 @@
 #ifndef _VIKING_MAPSLAYER_H
 #define _VIKING_MAPSLAYER_H
 
+#include "mapcoord.h"
+
 #define VIK_MAPS_LAYER_TYPE            (vik_maps_layer_get_type ())
 #define VIK_MAPS_LAYER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), VIK_MAPS_LAYER_TYPE, VikMapsLayer))
 #define VIK_MAPS_LAYER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), VIK_MAPS_LAYER_TYPE, VikMapsLayerClass))
@@ -37,5 +39,18 @@ struct _VikMapsLayerClass
 GType vik_maps_layer_get_type ();
 
 typedef struct _VikMapsLayer VikMapsLayer;
+
+typedef struct {
+  guint8 uniq_id;
+  guint16 tilesize_x;
+  guint16 tilesize_y;
+  guint drawmode;
+  gboolean (*coord_to_mapcoord) ( const VikCoord *src, gdouble xzoom, gdouble yzoom, MapCoord *dest );
+  void (*mapcoord_to_center_coord) ( MapCoord *src, VikCoord *dest );
+  void (*download) ( MapCoord *src, const gchar *dest_fn );
+  /* TODO: constant size (yay!) */
+} VikMapsLayer_MapType;
+
+void maps_layer_register_type ( VikMapsLayer_MapType *map_type );
 
 #endif
