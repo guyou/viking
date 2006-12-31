@@ -59,14 +59,18 @@
 #include "khmaps.h"
 #include "expedia.h"
 
+typedef gboolean (*func_coord_to_mapcoord) ( const VikCoord *src, gdouble xzoom, gdouble yzoom, MapCoord *dest );
+typedef void (*func_mapcoord_to_center_coord) ( MapCoord *src, VikCoord *dest );
+typedef void (*func_download) ( MapCoord *src, const gchar *dest_fn );
+
 typedef struct {
   guint8 uniq_id;
   guint16 tilesize_x;
   guint16 tilesize_y;
   guint drawmode;
-  gboolean (*coord_to_mapcoord) ( const VikCoord *src, gdouble xzoom, gdouble yzoom, MapCoord *dest );
-  void (*mapcoord_to_center_coord) ( MapCoord *src, VikCoord *dest );
-  void (*download) ( MapCoord *src, const gchar *dest_fn );
+  func_coord_to_mapcoord coord_to_mapcoord;
+  func_mapcoord_to_center_coord mapcoord_to_center_coord;
+  func_download download;
   /* TODO: constant size (yay!) */
 } VikMapsLayer_MapType;
 
