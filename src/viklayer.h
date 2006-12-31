@@ -19,7 +19,10 @@
  *
  */
 #include <stdio.h>
+#include <gdk-pixbuf/gdk-pixdata.h>
 #include "vikwindow.h"
+#include "viktreeview.h"
+#include "vikviewport.h"
 
 #ifndef _VIKING_LAYER_H
 #define _VIKING_LAYER_H

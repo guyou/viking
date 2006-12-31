@@ -22,6 +22,9 @@
 #ifndef _VIKING_MAPSLAYER_H
 #define _VIKING_MAPSLAYER_H
 
+#include "vikcoord.h"
+#include "viklayer.h"
+#include "vikviewport.h"
 #include "mapcoord.h"
 
 #define VIK_MAPS_LAYER_TYPE            (vik_maps_layer_get_type ())
