@@ -40,8 +40,6 @@ viking_SOURCES = main.c \
 	mapcache.c mapcache.h \
 	vikmapslayer.c vikmapslayer.h vikmapslayer_pixmap.h \
 	terraserver.c terraserver.h \
-	google.c google.h \
-	googlemaps.c googlemaps.h \
 	gtkcellrendererprogress.c gtkcellrendererprogress.h \
 	khmaps.c khmaps.h \
         gpx.c gpx.h \
@@ -52,6 +50,12 @@ viking_SOURCES = main.c \
 	datasource_google.c \
 	datasource_gc.c \
 	datasources.h
+
+if GOOGLE
+viking_SOURCES += \
+	google.c google.h \
+	googlemaps.c googlemaps.h
+endif
 
 INCLUDES        = @GTK_CFLAGS@ @EXPAT_CFLAGS@
 LDADD           = @GTK_LIBS@ @EXPAT_LIBS@

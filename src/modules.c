@@ -29,8 +29,10 @@
 
 void modules_init()
 {
+#ifdef VIK_CONFIG_GOOGLE 
   google_init();
   googlemaps_init();
+#endif
   expedia_init();
   terraserver_init();
   khmaps_init();

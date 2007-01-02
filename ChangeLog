@@ -1,6 +1,7 @@
 2007-01-01
 Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
 	* Make all .h self sufficient
+	* Add ability to disable Google stuff compilation
 	
 2006-12-31
 Quy Tonthat <qtonthat@gmail.com>:

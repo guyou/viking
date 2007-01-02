@@ -49,6 +49,19 @@ case $ac_cv_enable_alpha_trw in
     ;;
 esac
 
+AC_ARG_ENABLE(google, AC_HELP_STRING([--enable-google],
+              [enable Google stuff (default is enable)]),
+              [ac_cv_enable_google=$enableval],
+              [ac_cv_enable_google=yes])
+AC_CACHE_CHECK([whether to enable Google stuff],
+               [ac_cv_enable_google], [ac_cv_enable_google=yes])
+case $ac_cv_enable_google in
+  yes)
+    AC_DEFINE(VIK_CONFIG_GOOGLE, [], [GOOGLE STUFF])
+    ;;
+esac
+AM_CONDITIONAL([GOOGLE], [test x$ac_cv_enable_google = xyes])
+
 AC_ARG_WITH(mapcache,
             [AC_HELP_STRING([--with-mapcache],
                             [specify the size of the map cache (default is 50331648)])],
