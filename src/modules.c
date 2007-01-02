@@ -32,6 +32,7 @@ void modules_init()
 #ifdef VIK_CONFIG_GOOGLE 
   google_init();
   googlemaps_init();
+  khmaps_init();
 #endif
 #ifdef VIK_CONFIG_EXPEDIA
   expedia_init();
@@ -39,6 +40,5 @@ void modules_init()
 #ifdef VIK_CONFIG_TERRASERVER
   terraserver_init();
 #endif
-  khmaps_init();
 }
 

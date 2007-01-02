@@ -39,7 +39,6 @@ viking_SOURCES = main.c \
 	mapcache.c mapcache.h \
 	vikmapslayer.c vikmapslayer.h vikmapslayer_pixmap.h \
 	gtkcellrendererprogress.c gtkcellrendererprogress.h \
-	khmaps.c khmaps.h \
         gpx.c gpx.h \
 	garminsymbols.c garminsymbols.h \
 	acquire.c acquire.h \
@@ -51,6 +50,7 @@ viking_SOURCES = main.c \
 
 if GOOGLE
 viking_SOURCES += \
+	khmaps.c khmaps.h \
 	google.c google.h \
 	googlemaps.c googlemaps.h
 endif
