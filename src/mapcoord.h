@@ -19,8 +19,10 @@
  *
  */
 
-#ifndef _MAPCOORD_H
-#define _MAPCOORD_H
+#ifndef __MAP_COORD_H
+#define __MAP_COORD_H
+
+#include <glib.h>
 
 /* common struct to all map types and map layer, to hold info about a
  * particular tile */
@@ -32,3 +34,4 @@ typedef struct {
 } MapCoord;
 
 #endif
+
