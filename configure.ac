@@ -62,6 +62,19 @@ case $ac_cv_enable_google in
 esac
 AM_CONDITIONAL([GOOGLE], [test x$ac_cv_enable_google = xyes])
 
+AC_ARG_ENABLE(terraserver, AC_HELP_STRING([--enable-terraserver],
+              [enable Terraserver stuff (default is enable)]),
+              [ac_cv_enable_terraserver=$enableval],
+              [ac_cv_enable_terraserver=yes])
+AC_CACHE_CHECK([whether to enable Terraserver stuff],
+               [ac_cv_enable_terraserver], [ac_cv_enable_terraserver=yes])
+case $ac_cv_enable_terraserver in
+  yes)
+    AC_DEFINE(VIK_CONFIG_TERRASERVER, [], [TERRASERVER STUFF])
+    ;;
+esac
+AM_CONDITIONAL([TERRASERVER], [test x$ac_cv_enable_terraserver = xyes])
+
 AC_ARG_WITH(mapcache,
             [AC_HELP_STRING([--with-mapcache],
                             [specify the size of the map cache (default is 50331648)])],
