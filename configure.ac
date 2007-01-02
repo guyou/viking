@@ -75,6 +75,19 @@ case $ac_cv_enable_terraserver in
 esac
 AM_CONDITIONAL([TERRASERVER], [test x$ac_cv_enable_terraserver = xyes])
 
+AC_ARG_ENABLE(expedia, AC_HELP_STRING([--enable-expedia],
+              [enable Expedia stuff (default is enable)]),
+              [ac_cv_enable_expedia=$enableval],
+              [ac_cv_enable_expedia=yes])
+AC_CACHE_CHECK([whether to enable Expedia stuff],
+               [ac_cv_enable_expedia], [ac_cv_enable_expedia=yes])
+case $ac_cv_enable_expedia in
+  yes)
+    AC_DEFINE(VIK_CONFIG_EXPEDIA, [], [EXPEDIA STUFF])
+    ;;
+esac
+AM_CONDITIONAL([EXPEDIA], [test x$ac_cv_enable_expedia = xyes])
+
 AC_ARG_WITH(mapcache,
             [AC_HELP_STRING([--with-mapcache],
                             [specify the size of the map cache (default is 50331648)])],

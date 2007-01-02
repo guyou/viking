@@ -33,7 +33,9 @@ void modules_init()
   google_init();
   googlemaps_init();
 #endif
+#ifdef VIK_CONFIG_EXPEDIA
   expedia_init();
+#endif
 #ifdef VIK_CONFIG_TERRASERVER
   terraserver_init();
 #endif

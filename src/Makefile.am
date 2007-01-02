@@ -36,7 +36,6 @@ viking_SOURCES = main.c \
 	background.c background.h \
 	vikradiogroup.c vikradiogroup.h \
 	vikcoord.c vikcoord.h \
-	expedia.c expedia.h \
 	mapcache.c mapcache.h \
 	vikmapslayer.c vikmapslayer.h vikmapslayer_pixmap.h \
 	gtkcellrendererprogress.c gtkcellrendererprogress.h \
@@ -59,6 +58,11 @@ endif
 if TERRASERVER
 viking_SOURCES += \
 	terraserver.c terraserver.h
+endif
+
+if EXPEDIA
+viking_SOURCES += \
+	expedia.c expedia.h
 endif
 
 INCLUDES        = @GTK_CFLAGS@ @EXPAT_CFLAGS@
