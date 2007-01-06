@@ -35,9 +35,9 @@ void google_init () {
   VikMapsLayer_MapType google_2 = { 10, 256, 256, VIK_VIEWPORT_DRAWMODE_MERCATOR, google_coord_to_mapcoord, google_mapcoord_to_center_coord, google_trans_download };
   VikMapsLayer_MapType google_3 = { 11, 256, 256, VIK_VIEWPORT_DRAWMODE_MERCATOR, google_coord_to_mapcoord, google_mapcoord_to_center_coord, google_kh_download };
 
-  maps_layer_register_type(&google_1);
-  maps_layer_register_type(&google_2);
-  maps_layer_register_type(&google_3);
+  maps_layer_register_type("Google Maps", 7, &google_1);
+  maps_layer_register_type("Transparent Google Maps", 10, &google_2);
+  maps_layer_register_type("Google Satellite Images", 11, &google_3);
 }
 
 /* 1 << (x) is like a 2**(x) */

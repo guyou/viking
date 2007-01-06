@@ -67,14 +67,18 @@ static GList *__map_types = NULL;
 
 #define NUM_MAP_TYPES g_list_length(__map_types)
 
+/* List of label for each map type */
+static GList *params_maptypes = NULL;
+
+/* Corresponding IDS. (Cf. field uniq_id in VikMapsLayer struct) */
+static GList *params_maptypes_ids = NULL;
+
 /******** MAPZOOMS *********/
 
 static gchar *params_mapzooms[] = { "Use Viking Zoom Level", "0.25", "1", "2", "4", "8", "16", "32", "64", "128", "256", "512", "1024", "USGS 10k", "USGS 24k", "USGS 25k", "USGS 50k", "USGS 100k", "USGS 200k", "USGS 250k", NULL };
 static gdouble __mapzooms_x[] = { 0.0, 0.25, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0, 256.0, 512.0, 1024.0, 1.016, 2.4384, 2.54, 5.08, 10.16, 20.32, 25.4 };
 static gdouble __mapzooms_y[] = { 0.0, 0.25, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0, 256.0, 512.0, 1024.0, 1.016, 2.4384, 2.54, 5.08, 10.16, 20.32, 25.4 };
 
-static gchar *params_maptypes[] = { "Terraserver Topos", "Terraserver Aerials", "Terraserver Urban Areas", "Expedia Street Maps", "Old Google Maps", "Old KH Satellite Images", "Google Maps", "Transparent Google Maps", "Google Satellite Images" };
-static guint params_maptypes_ids[] = { 2, 1, 4, 5, 9, 8, 7, 10, 11 };
 #define NUM_MAPZOOMS (sizeof(params_mapzooms)/sizeof(params_mapzooms[0]) - 1)
 
 /**************************/
@@ -102,7 +106,7 @@ static VikLayerParamScale params_scales[] = {
 };
 
 VikLayerParam maps_layer_params[] = {
-  { "mode", VIK_LAYER_PARAM_UINT, VIK_LAYER_GROUP_NONE, "Map Type:", VIK_LAYER_WIDGET_RADIOGROUP, params_maptypes, params_maptypes_ids },
+  { "mode", VIK_LAYER_PARAM_UINT, VIK_LAYER_GROUP_NONE, "Map Type:", VIK_LAYER_WIDGET_RADIOGROUP, NULL, NULL },
   { "directory", VIK_LAYER_PARAM_STRING, VIK_LAYER_GROUP_NONE, "Maps Directory (Optional):", VIK_LAYER_WIDGET_FILEENTRY },
   { "alpha", VIK_LAYER_PARAM_UINT, VIK_LAYER_GROUP_NONE, "Alpha:", VIK_LAYER_WIDGET_HSCALE, params_scales },
   { "autodownload", VIK_LAYER_PARAM_BOOLEAN, VIK_LAYER_GROUP_NONE, "Autodownload maps:", VIK_LAYER_WIDGET_CHECKBUTTON },
@@ -184,16 +188,37 @@ enum { REDOWNLOAD_NONE = 0, REDOWNLOAD_BAD, REDOWNLOAD_ALL };
 /******** MAPS LAYER TYPES **************/
 /****************************************/
 
-void maps_layer_register_type ( VikMapsLayer_MapType *map_type )
+void maps_layer_register_type ( const char *label, guint id, VikMapsLayer_MapType *map_type )
 {
+  g_assert(label != NULL);
   g_assert(map_type != NULL);
+  g_assert(id == map_type->uniq_id);
+
+  /* Add the label */
+  params_maptypes = g_list_append(params_maptypes, g_strdup(label));
+
+  /* Add the id */
+  params_maptypes_ids = g_list_append(params_maptypes_ids, (gpointer)id);
 
   /* We have to clone */
   VikMapsLayer_MapType *clone = g_memdup(map_type, sizeof(VikMapsLayer_MapType));
   /* Register the clone in the list */
   __map_types = g_list_append(__map_types, clone);
+
+  /* Hack
+     We have to ensure the mode LayerParam reference the up-to-date
+     GLists.
+  */
+  /*
+  memcpy(&maps_layer_params[0].widget_data, &params_maptypes, sizeof(gpointer));
+  memcpy(&maps_layer_params[0].extra_widget_data, &params_maptypes_ids, sizeof(gpointer));
+  */
+  maps_layer_params[0].widget_data = params_maptypes;
+  maps_layer_params[0].extra_widget_data = params_maptypes_ids;
 }
 
+#define MAPS_LAYER_NTH_LABEL(n) ((gchar*)g_list_nth_data(params_maptypes, (n)))
+#define MAPS_LAYER_NTH_ID(n) ((guint)g_list_nth_data(params_maptypes_ids, (n)))
 #define MAPS_LAYER_NTH_TYPE(n) ((VikMapsLayer_MapType*)g_list_nth_data(__map_types, (n)))
 
 /****************************************/
@@ -747,7 +772,7 @@ static void start_download_thread ( VikMapsLayer *vml, VikViewport *vvp, const V
 
     if ( mdi->mapstoget )
     {
-      gchar *tmp = g_strdup_printf ( "%s %s%d %s %s...", redownload ? "Redownloading" : "Downloading", redownload == REDOWNLOAD_BAD ? "up to " : "", mdi->mapstoget, params_maptypes[vml->maptype], (mdi->mapstoget == 1) ? "map" : "maps" );
+      gchar *tmp = g_strdup_printf ( "%s %s%d %s %s...", redownload ? "Redownloading" : "Downloading", redownload == REDOWNLOAD_BAD ? "up to " : "", mdi->mapstoget, MAPS_LAYER_NTH_LABEL(vml->maptype), (mdi->mapstoget == 1) ? "map" : "maps" );
 
       /* launch the thread */
       a_background_thread ( VIK_GTK_WINDOW_FROM_LAYER(vml), /* parent window */

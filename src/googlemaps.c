@@ -32,7 +32,7 @@
 /* initialisation */
 void googlemaps_init () {
   VikMapsLayer_MapType map_type = { 9, 128, 128, VIK_VIEWPORT_DRAWMODE_GOOGLE, googlemaps_coord_to_mapcoord, googlemaps_mapcoord_to_center_coord, googlemaps_download };
-  maps_layer_register_type(&map_type);
+  maps_layer_register_type("Old Google Maps", 9, &map_type);
 }
 
 /* 1 << (x-1) is like a 2**(x-1) */

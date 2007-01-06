@@ -54,6 +54,6 @@ typedef struct {
   /* TODO: constant size (yay!) */
 } VikMapsLayer_MapType;
 
-void maps_layer_register_type ( VikMapsLayer_MapType *map_type );
+void maps_layer_register_type ( const char *label, guint id, VikMapsLayer_MapType *map_type );
 
 #endif

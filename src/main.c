@@ -89,11 +89,11 @@ int main( int argc, char *argv[] )
 
   gtk_init (&argc, &argv);
 
-  a_mapcache_init ();
-  a_background_init ();
-
   /* Init modules/plugins */
   modules_init();
+
+  a_mapcache_init ();
+  a_background_init ();
 
   first_window = new_window();
 

@@ -114,8 +114,8 @@ typedef struct {
   gint16 group;
   const gchar *title;
   guint8 widget_type;
-  const gpointer widget_data;
-  const gpointer extra_widget_data;
+  gpointer widget_data;
+  gpointer extra_widget_data;
 } VikLayerParam;
 
 enum {
