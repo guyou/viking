@@ -1,5 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /*
+ * Viking - GPS data visualizer
+ * Copyright (C) 2007  Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
+ * based on:
  * Pan - A Newsreader for Gtk+
  * Copyright (C) 2002-2006  Charles Kerr <charles@rebelbase.com>
  *
