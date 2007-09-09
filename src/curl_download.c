@@ -30,6 +30,7 @@
 #include <curl/curl.h>
 
 #include "file.h"
+#include "dir.h"
 #include "curl_download.h"
 
 static gchar *get_cookie_file(gboolean init)
@@ -40,7 +41,7 @@ static gchar *get_cookie_file(gboolean init)
   if (init) { /* to make sure  it's thread safe */
     mutex = g_mutex_new();
     static gchar *cookie_fn = "cookies.txt";
-    const gchar *viking_dir = a_get_viking_dir();
+    const gchar *viking_dir = a_get_viking_cookies_dir();
     cookie_file = g_strdup_printf("%s/%s", viking_dir, cookie_fn);
     unlink(cookie_file);
     return NULL;

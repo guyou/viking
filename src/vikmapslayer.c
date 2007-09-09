@@ -56,6 +56,8 @@
 #include "mapcoord.h"
 #include "terraserver.h"
 
+#include "dir.h"
+
 /****** MAP TYPES ******/
 
 static GList *__map_types = NULL;
@@ -261,13 +263,7 @@ static gchar *maps_layer_default_dir ()
     } else if ( access ( GLOBAL_MAPS_DIR, W_OK ) == 0 ) {
       defaultdir = g_strdup ( GLOBAL_MAPS_DIR );
     } else {
-      const gchar *home = g_getenv("HOME");
-      if (!home || access(home, W_OK))
-        home = g_get_home_dir ();
-      if ( home )
-        defaultdir = g_build_filename ( home, ".viking-maps", NULL );
-      else
-        defaultdir = g_strdup ( ".viking-maps" );
+      defaultdir = g_strdup ( a_get_viking_maps_dir() );
     }
     if (defaultdir && (defaultdir[strlen(defaultdir)-1] != G_DIR_SEPARATOR))
     {

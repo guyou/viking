@@ -608,30 +608,3 @@ gboolean a_file_export ( VikTrwLayer *vtl, const gchar *filename, gshort file_ty
   return FALSE;
 }
 
-const gchar *a_get_viking_dir()
-{
-  static gchar *viking_dir = NULL;
-
-  if (!viking_dir) {
-    const gchar *home = g_getenv("HOME");
-    if (!home || access(home, W_OK))
-      home = g_get_home_dir ();
-#ifdef HAVE_MKDTEMP
-    if (!home || access(home, W_OK))
-    {
-      static gchar temp[] = {"/tmp/vikXXXXXX"};
-      home = mkdtemp(temp);
-    }
-#endif
-    if (!home || access(home, W_OK))
-      /* Fatal error */
-      g_critical("Unable to find a base directory");
-
-    /* Build the name of the directory */
-    viking_dir = g_build_filename(home, ".viking", NULL);
-    if (access(viking_dir, F_OK))
-      g_mkdir(viking_dir, 0755);
-  }
-
-  return viking_dir;
-}
