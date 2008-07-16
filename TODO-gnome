@@ -1,0 +1,3 @@
+* Use GConf for preferences
+
+* Use GeoClue instead of gpsd
