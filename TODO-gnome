@@ -1,3 +1,6 @@
 * Use GConf for preferences
 
 * Use GeoClue instead of gpsd
+
+* Use gnome-keyring to store password
+http://live.gnome.org/GnomeKeyring/StoringPasswords
