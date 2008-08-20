@@ -618,6 +618,7 @@ void a_dialog_about ( GtkWindow *parent )
 	"wrap-license", TRUE,
 	/* logo automatically retrieved via gtk_window_get_default_icon_list */
 	/* TODO authors */
+	"authors", AUTHORS,
 	NULL);
 }
 

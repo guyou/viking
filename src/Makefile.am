@@ -8,8 +8,9 @@ bin_PROGRAMS = viking
 authors.h: ../AUTHORS
 	rm -f $@
 	echo "/* Generated file. */" >> $@
-	echo "#define AUTHORS \\" >> $@
-	sed -e "s/ \*\*.*//" -e 's/^/"/' -e 's/$$/\\n"\\/' -e '$$s/\\$$//' $< >> $@
+	echo "#define AUTHORS {\\" >> $@
+	sed -e "s/ \*\*.*//" -e 's/^/"/' -e 's/$$/",\\/' -e '$$s/\\$$//' $< >> $@
+	echo "NULL}" >> $@
 
 BUILT_SOURCES = authors.h
 
