@@ -569,20 +569,64 @@ gboolean a_dialog_time_threshold ( GtkWindow *parent, gchar *title_text, gchar *
   return FALSE;
 }
 
-static void activate_url (GtkAboutDialog *about,
-           	   const gchar    *link,
-	      	      gpointer        data)
+static void
+show_url (GtkWidget *parent,
+	  const char *url)
 {
-	/* FIXME open_url(GTK_WINDOW(about), link); */
-#ifdef G_OS_WIN32
-  ShellExecuteA (0, "open", link, NULL, NULL, SW_SHOWNORMAL);
-#else
-  gchar *command = getenv("BROWSER");
-  command = g_strdup_printf("%s '%s' &", command ? command : "gnome-open", link);
-  system(command);
-  g_free(command);
-#endif
+	GError *error = NULL;
+	/*
+	GdkScreen *screen;
+
+	screen = gtk_widget_get_screen (parent);
+	*/
+
+	gchar *command = getenv("BROWSER");
+	command = g_strdup_printf("%s '%s'", command ? command : "gnome-open", url);
+	/*
+	if (!gnome_url_show_on_screen (url, screen, &error))
+	*/
+	if (!g_spawn_command_line_async(command, &error))
+	{
+		GtkWidget *dialog;
+
+		/* TODO I18N */
+		dialog = gtk_message_dialog_new (GTK_WINDOW (parent),
+						 GTK_DIALOG_DESTROY_WITH_PARENT,
+						 GTK_MESSAGE_ERROR,
+						 GTK_BUTTONS_OK,
+						 "%s", "Could not open link");
+		gtk_message_dialog_format_secondary_text
+			(GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
+		g_error_free (error);
+
+		g_signal_connect (dialog, "response",
+				  G_CALLBACK (gtk_widget_destroy), NULL);
+		gtk_widget_show (dialog);
+	}
+	g_free(command);
 }
+
+static void
+about_url_hook (GtkAboutDialog *about,
+		const char *link,
+		gpointer data)
+{
+	show_url (GTK_WIDGET (about), link);
+}
+
+static void
+about_email_hook (GtkAboutDialog *about,
+		  const char *email,
+		  gpointer data)
+{
+	gchar *address;
+
+	/* FIXME: escaping? */
+	address = g_strdup_printf ("mailto:%s", email);
+	show_url (GTK_WIDGET (about), address);
+	g_free (address);
+}
+
 
 void a_dialog_about ( GtkWindow *parent )
 {
@@ -606,7 +650,8 @@ void a_dialog_about ( GtkWindow *parent )
 			"along with this program; if not, write to the Free Software "
 			"Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA";
 
-  gtk_about_dialog_set_url_hook (activate_url, NULL, NULL);
+  gtk_about_dialog_set_url_hook (about_url_hook, NULL, NULL);
+  gtk_about_dialog_set_email_hook (about_email_hook, NULL, NULL);
   gtk_show_about_dialog (parent,
 	/* TODO do not set program-name and correctly set info for g_get_application_name */
   	"program-name", program_name,
