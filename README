@@ -2,8 +2,9 @@ To compile:
 
 If you downloaded viking from CVS, you have to:
 $ autogen.sh
+$ make
 
-Next, or if you downloaded a tarball, you have to:
+If you downloaded a tarball, you have to:
 $ ./configure
 $ make
 
