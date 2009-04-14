@@ -28,6 +28,10 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #include <glib.h>
 #include <glib/gstdio.h>
 
@@ -449,8 +453,9 @@ static void file_read ( VikAggregateLayer *top, FILE *f, VikViewport *vp )
             VikLayerParamData x;
             line += eq_pos+1;
             if ( params[i].type == VIK_LAYER_PARAM_STRING_LIST ) {
-              GList *l = g_list_append ( g_hash_table_lookup ( string_lists, (gpointer) ((gint) i) ), g_strdup(line) );
-              g_hash_table_replace ( string_lists, (gpointer) ((gint)i), l );
+              GList *l = g_list_append ( g_hash_table_lookup ( string_lists, GINT_TO_POINTER ((gint) i) ), 
+					 g_strdup(line) );
+              g_hash_table_replace ( string_lists, GINT_TO_POINTER ((gint)i), l );
               /* add the value to a list, possibly making a new list.
                * this will be passed to the layer when we read an ~EndLayer */
             } else {
@@ -527,13 +532,15 @@ static FILE *xfopen ( const char *fn, const char *mode )
   if ( strcmp(fn,"-") == 0 )
     return stdin;
   else
-    return fopen(fn, "r");
+    return g_fopen(fn, "r");
 }
 
 static void xfclose ( FILE *f )
 {
-  if ( f != stdin && f != stdout )
+  if ( f != stdin && f != stdout ) {
     fclose ( f );
+    f = NULL;
+  }
 }
 
 /* 0 on failure, 1 on success (vik file) 2 on success (other file) */
@@ -577,7 +584,7 @@ gshort a_file_load ( VikAggregateLayer *top, VikViewport *vp, const gchar *filen
 
 gboolean a_file_save ( VikAggregateLayer *top, gpointer vp, const gchar *filename )
 {
-  FILE *f = fopen(filename, "w");
+  FILE *f = g_fopen(filename, "w");
 
   if ( ! f )
     return FALSE;
@@ -585,6 +592,7 @@ gboolean a_file_save ( VikAggregateLayer *top, gpointer vp, const gchar *filenam
   file_write ( top, f, vp );
 
   fclose(f);
+  f = NULL;
 
   return TRUE;
 }
@@ -603,7 +611,7 @@ const gchar *a_file_basename ( const gchar *filename )
 
 gboolean a_file_export ( VikTrwLayer *vtl, const gchar *filename, gshort file_type )
 {
-  FILE *f = fopen ( filename, "w" );
+  FILE *f = g_fopen ( filename, "w" );
   if ( f )
   {
     if ( file_type == FILE_TYPE_GPSMAPPER )
@@ -613,6 +621,7 @@ gboolean a_file_export ( VikTrwLayer *vtl, const gchar *filename, gshort file_ty
     else
       a_gpspoint_write_file ( vtl, f );
     fclose ( f );
+    f = NULL;
     return TRUE;
   }
   return FALSE;
@@ -626,22 +635,22 @@ const gchar *a_get_viking_dir()
 
   if (!viking_dir) {
     const gchar *home = g_getenv("HOME");
-    if (!home || access(home, W_OK))
+    if (!home || g_access(home, W_OK))
       home = g_get_home_dir ();
 #ifdef HAVE_MKDTEMP
-    if (!home || access(home, W_OK))
+    if (!home || g_access(home, W_OK))
     {
       static gchar temp[] = {"/tmp/vikXXXXXX"};
       home = mkdtemp(temp);
     }
 #endif
-    if (!home || access(home, W_OK))
+    if (!home || g_access(home, W_OK))
       /* Fatal error */
       g_critical("Unable to find a base directory");
 
     /* Build the name of the directory */
     viking_dir = g_build_filename(home, ".viking", NULL);
-    if (access(viking_dir, F_OK))
+    if (g_file_test(viking_dir, G_FILE_TEST_EXISTS) == FALSE)
       g_mkdir(viking_dir, 0755);
   }
 

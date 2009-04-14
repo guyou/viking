@@ -34,7 +34,7 @@
 
 #include "googlemaps.h"
 
-static DownloadOptions googlemaps_options = { "http://maps.google.com/", 0 };
+static DownloadOptions googlemaps_options = { "http://maps.google.com/", 0, a_check_map_file };
 
 /* initialisation */
 void googlemaps_init () {
@@ -84,9 +84,10 @@ void googlemaps_mapcoord_to_center_coord ( MapCoord *src, VikCoord *dest )
   dest->east_west = 1.0 / (131072 >> src->scale) * (src->x+0.5) / 0.77162458338772 * 128 - 98.35;
 }
 
-void googlemaps_download ( MapCoord *src, const gchar *dest_fn )
+int googlemaps_download ( MapCoord *src, const gchar *dest_fn )
 {
    gchar *uri = g_strdup_printf ( "/mt?&x=%d&y=%d&zoom=%d", src->x, src->y, src->scale );
    a_http_download_get_url ( "mt.google.com", uri, dest_fn, &googlemaps_options );
    g_free ( uri );
+   return 1;
 }

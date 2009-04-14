@@ -22,6 +22,7 @@
 #include "config.h"
 #endif
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <glib/gi18n.h>
@@ -45,7 +46,7 @@ static int google_kh_download ( MapCoord *src, const gchar *dest_fn );
 static void google_mapcoord_to_center_coord ( MapCoord *src, VikCoord *dest );
 static gboolean google_coord_to_mapcoord ( const VikCoord *src, gdouble xzoom, gdouble yzoom, MapCoord *dest );
 
-static DownloadOptions google_options = { "http://maps.google.com/", 0 };
+static DownloadOptions google_options = { "http://maps.google.com/", 0, a_check_map_file };
 
 void google_init () {
   VikMapsLayer_MapType google_1 = { 7, 256, 256, VIK_VIEWPORT_DRAWMODE_MERCATOR, google_coord_to_mapcoord, google_mapcoord_to_center_coord, google_download };
@@ -110,13 +111,14 @@ static const gchar *google_version_number(MapCoord *mapcoord, GoogleType google_
   gchar *tmpname;
   gchar *uri;
   VikCoord coord;
+  gchar coord_north_south[G_ASCII_DTOSTR_BUF_SIZE], coord_east_west[G_ASCII_DTOSTR_BUF_SIZE];
   gchar *text, *pat, *beg;
   GMappedFile *mf;
   gsize len;
   gchar *gvers, *tvers, *kvers, *terrvers, *tmpvers;
-  static DownloadOptions dl_options = { "http://maps.google.com/", 0 };
+  static DownloadOptions dl_options = { "http://maps.google.com/", 0, a_check_map_file };
   static const char *gvers_pat = "http://mt0.google.com/mt?n\\x3d404\\x26v\\x3d";
-  static const char *kvers_pat = "http://kh0.google.com/kh?n\\x3d404\\x26v\\x3d";
+  static const char *kvers_pat = "http://khm0.google.com/kh?n\\x3d404\\x26v\\x3d";
 
   g_assert(google_type < TYPE_GOOGLE_NUM);
 
@@ -132,7 +134,9 @@ static const gchar *google_version_number(MapCoord *mapcoord, GoogleType google_
   } 
 
   google_mapcoord_to_center_coord(mapcoord, &coord);
-  uri = g_strdup_printf("http://maps.google.com/maps?f=q&hl=en&q=%f,%f", coord.north_south, coord.east_west);
+  uri = g_strdup_printf("http://maps.google.com/maps?f=q&hl=en&q=%s,%s",
+                        g_ascii_dtostr (coord_north_south, G_ASCII_DTOSTR_BUF_SIZE, (gdouble) coord.north_south),
+                        g_ascii_dtostr (coord_east_west, G_ASCII_DTOSTR_BUF_SIZE, (gdouble) coord.east_west));
   tmp_file = fdopen(tmp_fd, "r+");
 
   if (curl_download_uri(uri, tmp_file, &dl_options)) {  /* error */
@@ -193,6 +197,7 @@ failed:
   }
 
   fclose(tmp_file);
+  tmp_file = NULL;
   g_free(tmpname);
   g_free (uri);
   return (vers[google_type]);
@@ -299,7 +304,7 @@ static int google_kh_download ( MapCoord *src, const gchar *dest_fn )
    const gchar *vers_str = google_version_number(src, TYPE_GOOGLE_SAT);
    gchar *uri = g_strdup_printf ( "/kh?n=404&v=%s&t=%s", vers_str, khenc );
    g_free ( khenc );
-   res = a_http_download_get_url ( "kh.google.com", uri, dest_fn, &google_options );
+   res = a_http_download_get_url ( "khm.google.com", uri, dest_fn, &google_options );
    g_free ( uri );
    return(res);
 }

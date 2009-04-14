@@ -19,12 +19,14 @@
  *
  */
 
-#include <unistd.h>
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
+#include <stdio.h>
+
+#include <glib.h>
+#include <glib/gstdio.h>
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 
@@ -32,7 +34,19 @@
 
 #include "file.h"
 #include "dir.h"
+#include "globals.h"
 #include "curl_download.h"
+
+/*
+ * Even if writing to FILE* is supported by libcurl by default,
+ * it seems that it is non-portable (win32 DLL specific).
+ *
+ * So, we provide our own trivial CURLOPT_WRITEFUNCTION.
+ */
+static size_t curl_write_func(void *ptr, size_t size, size_t nmemb, FILE *stream)
+{
+  return fwrite(ptr, size, nmemb, stream);
+}
 
 static gchar *get_cookie_file(gboolean init)
 {
@@ -44,27 +58,43 @@ static gchar *get_cookie_file(gboolean init)
     static gchar *cookie_fn = "cookies.txt";
     const gchar *viking_dir = a_get_viking_cookies_dir();
     cookie_file = g_build_filename(viking_dir, cookie_fn, NULL);
-    unlink(cookie_file);
+    g_unlink(cookie_file);
     return NULL;
   }
 
   g_assert(cookie_file != NULL);
 
   g_mutex_lock(mutex);
-  if (access(cookie_file, F_OK)) {  /* file not there */
-    FILE * out_file = fopen("/dev/null", "w");
+  if (g_file_test(cookie_file, G_FILE_TEST_EXISTS) == FALSE) {  /* file not there */
+    gchar * name_tmp = NULL;
+    FILE * out_file = tmpfile();
+    if (out_file == NULL) {
+      // Something wrong with previous call (unsuported?)
+      name_tmp = g_strdup_printf("%s.tmp", cookie_file);
+      out_file = g_fopen(name_tmp, "w+b");
+    }
     CURLcode res;
     CURL *curl = curl_easy_init();
+    if (vik_verbose)
+      curl_easy_setopt ( curl, CURLOPT_VERBOSE, 1 );
     curl_easy_setopt(curl, CURLOPT_URL, "http://maps.google.com/"); /* google.com sets "PREF" cookie */
     curl_easy_setopt ( curl, CURLOPT_FILE, out_file );
+    curl_easy_setopt ( curl, CURLOPT_WRITEFUNCTION, curl_write_func);
     curl_easy_setopt(curl, CURLOPT_COOKIEJAR, cookie_file);
     res = curl_easy_perform(curl);
     if (res != CURLE_OK) {
       g_warning(_("%s() Curl perform failed: %s"), __PRETTY_FUNCTION__,
           curl_easy_strerror(res));
-      unlink(cookie_file);
+      g_unlink(cookie_file);
     }
     curl_easy_cleanup(curl);
+    fclose(out_file);
+    out_file = NULL;
+    if (name_tmp != NULL) {
+      g_remove(name_tmp);
+      g_free(name_tmp);
+      name_tmp = NULL;
+    }
   }
   g_mutex_unlock(mutex);
 
@@ -84,11 +114,16 @@ int curl_download_uri ( const char *uri, FILE *f, DownloadOptions *options )
   CURLcode res = CURLE_FAILED_INIT;
   const gchar *cookie_file;
 
+  g_debug("%s: uri=%s", __PRETTY_FUNCTION__, uri);
+
   curl = curl_easy_init ();
   if ( curl )
     {
+      if (vik_verbose)
+        curl_easy_setopt ( curl, CURLOPT_VERBOSE, 1 );
       curl_easy_setopt ( curl, CURLOPT_URL, uri );
       curl_easy_setopt ( curl, CURLOPT_FILE, f );
+      curl_easy_setopt ( curl, CURLOPT_WRITEFUNCTION, curl_write_func);
       if (options != NULL) {
         if(options->referer != NULL)
           curl_easy_setopt ( curl, CURLOPT_REFERER, options->referer);

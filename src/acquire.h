@@ -38,12 +38,13 @@ typedef struct {
   VikViewport *vvp;
   GtkWidget *dialog;
   gboolean ok; /* if OK is false when we exit, we MUST free w */
-  VikDataSourceInterface *interface;
+  VikDataSourceInterface *source_interface;
   gpointer user_data;
 } acq_dialog_widgets_t;
 
 typedef enum {
   VIK_DATASOURCE_GPSBABEL_DIRECT,
+  VIK_DATASOURCE_URL,
   VIK_DATASOURCE_SHELL_CMD
 } vik_datasource_type_t;
 
@@ -72,6 +73,7 @@ typedef void (*VikDataSourceAddSetupWidgetsFunc) ( GtkWidget *dialog, VikViewpor
 
 /* if VIK_DATASOURCE_GPSBABEL_DIRECT, babelargs and inputfile.
    if VIK_DATASOURCE_SHELL_CMD, shellcmd and inputtype.
+   if VIK_DATASOURCE_URL, url and inputtype.
    set both to NULL to signal refusal (ie already downloading) */
 typedef void (*VikDataSourceGetCmdStringFunc) ( gpointer user_data, gchar **babelargs_or_shellcmd, gchar **inputfile_or_inputtype );
 
@@ -125,7 +127,7 @@ struct _VikDataSourceInterface {
 /**********************************/
 
 /* for sources with no input data */
-void a_acquire ( VikWindow *vw, VikLayersPanel *vlp, VikViewport *vvp, VikDataSourceInterface *interface );
+void a_acquire ( VikWindow *vw, VikLayersPanel *vlp, VikViewport *vvp, VikDataSourceInterface *source_interface );
 
 /* Create a sub menu intended for rightclicking on a TRWLayer. menu called "Filter"
  * returns NULL if no filters */

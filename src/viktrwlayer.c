@@ -52,9 +52,12 @@
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <ctype.h>
 
 #include <gdk/gdkkeysyms.h>
+#include <glib.h>
+#include <glib/gstdio.h>
 #include <glib/gi18n.h>
 
 /* Relax some dependencies */
@@ -63,7 +66,7 @@ static gboolean return_true (gpointer a, gpointer b, gpointer c) { return TRUE; 
 static g_hash_table_remove_all (GHashTable *ght) { g_hash_table_foreach_remove ( ght, (GHRFunc) return_true, FALSE ); }
 #endif
 
-#define GOOGLE_DIRECTIONS_STRING "(wget -O - \"http://maps.google.com/maps?q=%f,%f to %f,%f&output=js\" 2>/dev/null)"
+#define GOOGLE_DIRECTIONS_STRING "maps.google.com/maps?q=from:%s,%s+to:%s,%s&output=js"
 #define VIK_TRW_LAYER_TRACK_GC 13
 #define VIK_TRW_LAYER_TRACK_GC_RATES 10
 #define VIK_TRW_LAYER_TRACK_GC_MIN 0
@@ -252,27 +255,25 @@ static void trw_layer_tpwin_init ( VikTrwLayer *vtl );
 
 static gpointer tool_edit_trackpoint_create ( VikWindow *vw, VikViewport *vvp);
 static gboolean tool_edit_trackpoint_click ( VikTrwLayer *vtl, GdkEventButton *event, gpointer data );
-static gboolean tool_edit_trackpoint_move ( VikTrwLayer *vtl, GdkEventButton *event, gpointer data );
+static gboolean tool_edit_trackpoint_move ( VikTrwLayer *vtl, GdkEventMotion *event, gpointer data );
 static gboolean tool_edit_trackpoint_release ( VikTrwLayer *vtl, GdkEventButton *event, gpointer data );
 static gpointer tool_show_picture_create ( VikWindow *vw, VikViewport *vvp);
 static gboolean tool_show_picture_click ( VikTrwLayer *vtl, GdkEventButton *event, VikViewport *vvp ); 
 static gpointer tool_edit_waypoint_create ( VikWindow *vw, VikViewport *vvp);
 static gboolean tool_edit_waypoint_click ( VikTrwLayer *vtl, GdkEventButton *event, gpointer data );
-static gboolean tool_edit_waypoint_move ( VikTrwLayer *vtl, GdkEventButton *event, gpointer data );
+static gboolean tool_edit_waypoint_move ( VikTrwLayer *vtl, GdkEventMotion *event, gpointer data );
 static gboolean tool_edit_waypoint_release ( VikTrwLayer *vtl, GdkEventButton *event, gpointer data );
 static gpointer tool_begin_track_create ( VikWindow *vw, VikViewport *vvp);
 static gboolean tool_begin_track_click ( VikTrwLayer *vtl, GdkEventButton *event, VikViewport *vvp ); 
 static gpointer tool_new_track_create ( VikWindow *vw, VikViewport *vvp);
 static gboolean tool_new_track_click ( VikTrwLayer *vtl, GdkEventButton *event, VikViewport *vvp ); 
-static VikLayerToolFuncStatus tool_new_track_move ( VikTrwLayer *vtl, GdkEventButton *event, VikViewport *vvp ); 
+static VikLayerToolFuncStatus tool_new_track_move ( VikTrwLayer *vtl, GdkEventMotion *event, VikViewport *vvp ); 
 static gboolean tool_new_track_key_press ( VikTrwLayer *vtl, GdkEventKey *event, VikViewport *vvp ); 
 static gpointer tool_new_waypoint_create ( VikWindow *vw, VikViewport *vvp);
 static gboolean tool_new_waypoint_click ( VikTrwLayer *vtl, GdkEventButton *event, VikViewport *vvp );
 static gpointer tool_magic_scissors_create ( VikWindow *vw, VikViewport *vvp);
 static gboolean tool_magic_scissors_click ( VikTrwLayer *vtl, GdkEventButton *event, VikViewport *vvp );
 
-
-static gboolean uppercase_exists_in_hash ( GHashTable *hash, const gchar *str );
 
 static void cached_pixbuf_free ( CachedPixbuf *cp );
 static gint cached_pixbuf_cmp ( CachedPixbuf *cp, const gchar *name );
@@ -295,30 +296,30 @@ static void highest_wp_number_remove_wp(VikTrwLayer *vtl, const gchar *old_wp_na
 
 static VikToolInterface trw_layer_tools[] = {
   { N_("Create Waypoint"), (VikToolConstructorFunc) tool_new_waypoint_create,    NULL, NULL, NULL, 
-    (VikToolMouseFunc) tool_new_waypoint_click,    NULL, NULL, (VikToolKeyFunc) NULL, &cursor_addwp },
+    (VikToolMouseFunc) tool_new_waypoint_click,    NULL, NULL, (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_addwp },
 
   { N_("Create Track"),    (VikToolConstructorFunc) tool_new_track_create,       NULL, NULL, NULL, 
-    (VikToolMouseFunc) tool_new_track_click, (VikToolMouseFunc) tool_new_track_move, NULL,
-    (VikToolKeyFunc) tool_new_track_key_press, &cursor_addtr },
+    (VikToolMouseFunc) tool_new_track_click, (VikToolMouseMoveFunc) tool_new_track_move, NULL,
+    (VikToolKeyFunc) tool_new_track_key_press, GDK_CURSOR_IS_PIXMAP, &cursor_addtr },
 
   { N_("Begin Track"),    (VikToolConstructorFunc) tool_begin_track_create,       NULL, NULL, NULL, 
-    (VikToolMouseFunc) tool_begin_track_click,       NULL, NULL, (VikToolKeyFunc) NULL, &cursor_begintr },
+    (VikToolMouseFunc) tool_begin_track_click,       NULL, NULL, (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_begintr },
 
   { N_("Edit Waypoint"),   (VikToolConstructorFunc) tool_edit_waypoint_create,   NULL, NULL, NULL, 
     (VikToolMouseFunc) tool_edit_waypoint_click,   
-    (VikToolMouseFunc) tool_edit_waypoint_move,
-    (VikToolMouseFunc) tool_edit_waypoint_release, (VikToolKeyFunc) NULL, &cursor_edwp },
+    (VikToolMouseMoveFunc) tool_edit_waypoint_move,
+    (VikToolMouseFunc) tool_edit_waypoint_release, (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_edwp },
 
   { N_("Edit Trackpoint"), (VikToolConstructorFunc) tool_edit_trackpoint_create, NULL, NULL, NULL, 
     (VikToolMouseFunc) tool_edit_trackpoint_click,
-    (VikToolMouseFunc) tool_edit_trackpoint_move,
-    (VikToolMouseFunc) tool_edit_trackpoint_release, (VikToolKeyFunc) NULL, &cursor_edtr },
+    (VikToolMouseMoveFunc) tool_edit_trackpoint_move,
+    (VikToolMouseFunc) tool_edit_trackpoint_release, (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_edtr },
 
   { N_("Show Picture"),    (VikToolConstructorFunc) tool_show_picture_create,    NULL, NULL, NULL, 
-    (VikToolMouseFunc) tool_show_picture_click,    NULL, NULL, (VikToolKeyFunc) NULL, &cursor_showpic },
+    (VikToolMouseFunc) tool_show_picture_click,    NULL, NULL, (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_showpic },
 
   { N_("Magic Scissors"),  (VikToolConstructorFunc) tool_magic_scissors_create,  NULL, NULL, NULL,
-    (VikToolMouseFunc) tool_magic_scissors_click, NULL, NULL, (VikToolKeyFunc) NULL, &cursor_iscissors },
+    (VikToolMouseFunc) tool_magic_scissors_click, NULL, NULL, (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_iscissors },
 };
 enum { TOOL_CREATE_WAYPOINT=0, TOOL_CREATE_TRACK, TOOL_BEGIN_TRACK, TOOL_EDIT_WAYPOINT, TOOL_EDIT_TRACKPOINT, TOOL_SHOW_PICTURE, NUM_TOOLS };
 
@@ -479,7 +480,7 @@ static void trw_layer_del_item ( VikTrwLayer *vtl, gint subtype, gpointer sublay
   
   pass_along[0] = vtl;
   pass_along[1] = NULL;
-  pass_along[2] = (gpointer) subtype;
+  pass_along[2] = GINT_TO_POINTER (subtype);
   pass_along[3] = sublayer;
   pass_along[4] = NULL;
 
@@ -489,7 +490,7 @@ static void trw_layer_del_item ( VikTrwLayer *vtl, gint subtype, gpointer sublay
 static void trw_layer_copy_item_cb( gpointer pass_along[5])
 {
   VikTrwLayer *vtl = VIK_TRW_LAYER(pass_along[0]);
-  gint subtype = (gint)pass_along[2];
+  gint subtype = GPOINTER_TO_INT (pass_along[2]);
   gpointer * sublayer = pass_along[3];
   guint8 *data = NULL;
   guint len;
@@ -676,6 +677,7 @@ static void trw_layer_marshall( VikTrwLayer *vtl, guint8 **data, gint *len )
     a_gpx_write_file(vtl, f);
     vik_layer_marshall_params(VIK_LAYER(vtl), &pd, &pl);
     fclose(f);
+    f = NULL;
     g_file_get_contents(tmpname, (void *)&dd, (void *)&dl, NULL);
     *len = sizeof(pl) + pl + dl;
     *data = g_malloc(*len);
@@ -685,7 +687,7 @@ static void trw_layer_marshall( VikTrwLayer *vtl, guint8 **data, gint *len )
     
     g_free(pd);
     g_free(dd);
-    remove(tmpname);
+    g_remove(tmpname);
     g_free(tmpname);
   }
 }
@@ -711,7 +713,8 @@ static VikTrwLayer *trw_layer_unmarshall( gpointer data, gint len, VikViewport *
   rewind(f);
   a_gpx_read_file(rv, f);
   fclose(f);
-  remove(tmpname);
+  f = NULL;
+  g_remove(tmpname);
   g_free(tmpname);
   return rv;
 }
@@ -725,6 +728,33 @@ static GList * str_array_to_glist(gchar* data[])
   return(g_list_reverse(gl));
 }
 
+static gboolean strcase_equal(gconstpointer s1, gconstpointer s2)
+{
+  return (strcasecmp(s1, s2) == 0);
+}
+
+static guint strcase_hash(gconstpointer v)
+{
+  /* 31 bit hash function */
+  int i;
+  const gchar *t = v;
+  gchar s[128];   /* malloc is too slow for reading big files */
+  gchar *p = s;
+
+  for (i = 0; (i < (sizeof(s)- 1)) && t[i]; i++)
+      p[i] = toupper(t[i]);
+  p[i] = '\0';
+
+  p = s;
+  guint32 h = *p;
+  if (h) {
+    for (p += 1; *p != '\0'; p++)
+      h = (h << 5) - h + *p;
+  }
+
+  return h;  
+}
+
 VikTrwLayer *vik_trw_layer_new ( gint drawmode )
 {
   if (trw_layer_params[PARAM_DM].widget_data == NULL)
@@ -735,10 +765,10 @@ VikTrwLayer *vik_trw_layer_new ( gint drawmode )
   VikTrwLayer *rv = VIK_TRW_LAYER ( g_object_new ( VIK_TRW_LAYER_TYPE, NULL ) );
   vik_layer_init ( VIK_LAYER(rv), VIK_LAYER_TRW );
 
-  rv->waypoints = g_hash_table_new_full ( g_str_hash, g_str_equal, g_free, (GDestroyNotify) vik_waypoint_free );
+  rv->waypoints = g_hash_table_new_full ( strcase_hash, strcase_equal, g_free, (GDestroyNotify) vik_waypoint_free );
   rv->tracks = g_hash_table_new_full ( g_str_hash, g_str_equal, g_free, (GDestroyNotify) vik_track_free );
   rv->tracks_iters = g_hash_table_new_full ( g_str_hash, g_str_equal, NULL, g_free );
-  rv->waypoints_iters = g_hash_table_new_full ( g_str_hash, g_str_equal, NULL, g_free );
+  rv->waypoints_iters = g_hash_table_new_full ( strcase_hash, strcase_equal, NULL, g_free );
 
   /* TODO: constants at top */
   rv->waypoints_visible = rv->tracks_visible = TRUE;
@@ -1305,7 +1335,7 @@ static void trw_layer_realize_track ( gchar *name, VikTrack *track, gpointer pas
   GtkTreeIter *new_iter = g_malloc(sizeof(GtkTreeIter));
 
 #ifdef VIK_CONFIG_ALPHABETIZED_TRW
-  vik_treeview_add_sublayer_alphabetized ( (VikTreeview *) pass_along[3], (GtkTreeIter *) pass_along[0], (GtkTreeIter *) pass_along[1], name, pass_along[2], name, (gint) pass_along[4], NULL, TRUE, TRUE );
+  vik_treeview_add_sublayer_alphabetized ( (VikTreeview *) pass_along[3], (GtkTreeIter *) pass_along[0], (GtkTreeIter *) pass_along[1], name, pass_along[2], name, GPOINTER_TO_INT (pass_along[4]), NULL, TRUE, TRUE );
 #else
   vik_treeview_add_sublayer ( (VikTreeview *) pass_along[3], (GtkTreeIter *) pass_along[0], (GtkTreeIter *) pass_along[1], name, pass_along[2], name, (gint) pass_along[4], NULL, TRUE, TRUE );
 #endif
@@ -1321,7 +1351,7 @@ static void trw_layer_realize_waypoint ( gchar *name, VikWaypoint *wp, gpointer 
 {
   GtkTreeIter *new_iter = g_malloc(sizeof(GtkTreeIter));
 #ifdef VIK_CONFIG_ALPHABETIZED_TRW
-  vik_treeview_add_sublayer_alphabetized ( (VikTreeview *) pass_along[3], (GtkTreeIter *) pass_along[0], (GtkTreeIter *) pass_along[1], name, pass_along[2], name, (gint) pass_along[4], NULL, TRUE, TRUE );
+  vik_treeview_add_sublayer_alphabetized ( (VikTreeview *) pass_along[3], (GtkTreeIter *) pass_along[0], (GtkTreeIter *) pass_along[1], name, pass_along[2], name, GPOINTER_TO_INT (pass_along[4]), NULL, TRUE, TRUE );
 #else
   vik_treeview_add_sublayer ( (VikTreeview *) pass_along[3], (GtkTreeIter *) pass_along[0], (GtkTreeIter *) pass_along[1], name, pass_along[2], name, (gint) pass_along[4], NULL, TRUE, TRUE );
 #endif
@@ -1466,13 +1496,18 @@ static void trw_layer_export ( gpointer layer_and_vlp[2], guint file_type )
   GtkWidget *file_selector;
   const gchar *fn;
   gboolean failed = FALSE;
-  file_selector = gtk_file_selection_new (_("Export Layer"));
-  gtk_file_selection_set_filename (GTK_FILE_SELECTION(file_selector), vik_layer_get_name(VIK_LAYER(layer_and_vlp[0])));
+  file_selector = gtk_file_chooser_dialog_new (_("Export Layer"),
+				      NULL,
+				      GTK_FILE_CHOOSER_ACTION_SAVE,
+				      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+				      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+				      NULL);
+  gtk_file_chooser_set_filename (GTK_FILE_CHOOSER(file_selector), vik_layer_get_name(VIK_LAYER(layer_and_vlp[0])));
 
-  while ( gtk_dialog_run ( GTK_DIALOG(file_selector) ) == GTK_RESPONSE_OK )
+  while ( gtk_dialog_run ( GTK_DIALOG(file_selector) ) == GTK_RESPONSE_ACCEPT )
   {
-    fn = gtk_file_selection_get_filename (GTK_FILE_SELECTION(file_selector) );
-    if ( access ( fn, F_OK ) != 0 )
+    fn = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER(file_selector) );
+    if ( g_file_test ( fn, G_FILE_TEST_EXISTS ) == FALSE )
     {
       gtk_widget_hide ( file_selector );
       failed = ! a_file_export ( VIK_TRW_LAYER(layer_and_vlp[0]), fn, file_type );
@@ -1708,21 +1743,6 @@ void vik_trw_layer_add_track ( VikTrwLayer *vtl, gchar *name, VikTrack *t )
  
 }
 
-static gboolean uppercase_exists_in_hash ( GHashTable *hash, const gchar *str )
-{
-  gchar *upp = g_strdup ( str );
-  gboolean rv;
-  char *tmp = upp;
-  while  ( *tmp )
-  {
-    *tmp = toupper(*tmp);
-    tmp++;
-  }
-  rv = g_hash_table_lookup ( hash, upp ) ? TRUE : FALSE;
-  g_free (upp);
-  return rv;
-}
-
 /* to be called whenever a track has been deleted or may have been changed. */
 void trw_layer_cancel_tps_of_track ( VikTrwLayer *vtl, const gchar *trk_name )
 {
@@ -1924,7 +1944,7 @@ static void trw_layer_delete_item ( gpointer pass_along[5] )
 {
   VikTrwLayer *vtl = VIK_TRW_LAYER(pass_along[0]);
   gboolean was_visible = FALSE;
-  if ( (gint) pass_along[2] == VIK_TRW_LAYER_SUBLAYER_WAYPOINT )
+  if ( GPOINTER_TO_INT (pass_along[2]) == VIK_TRW_LAYER_SUBLAYER_WAYPOINT )
   {
     was_visible = vik_trw_layer_delete_waypoint ( vtl, (gchar *) pass_along[3] );
   }
@@ -1940,7 +1960,7 @@ static void trw_layer_delete_item ( gpointer pass_along[5] )
 static void trw_layer_properties_item ( gpointer pass_along[5] )
 {
   VikTrwLayer *vtl = VIK_TRW_LAYER(pass_along[0]);
-  if ( (gint) pass_along[2] == VIK_TRW_LAYER_SUBLAYER_WAYPOINT )
+  if ( GPOINTER_TO_INT (pass_along[2]) == VIK_TRW_LAYER_SUBLAYER_WAYPOINT )
   {
     VikWaypoint *wp = g_hash_table_lookup ( vtl->waypoints, pass_along[3] );
     if ( wp )
@@ -2038,7 +2058,7 @@ static void find_nearby_track(gpointer key, gpointer value, gpointer user_data)
 
   GList **nearby_tracks = ((gpointer *)user_data)[0];
   GList *orig_track = ((gpointer *)user_data)[1];
-  guint thr = (guint)((gpointer *)user_data)[2];
+  guint thr = GPOINTER_TO_UINT (((gpointer *)user_data)[2]);
 
   /* outline: 
    * detect reasons for not merging, and return
@@ -2140,7 +2160,7 @@ static void trw_layer_merge_by_timestamp ( gpointer pass_along[6] )
     /*    g_print("Original track times: %d and %d\n", t1, t2);  */
     params[0] = &nearby_tracks;
     params[1] = trps;
-    params[2] = (gpointer)thr;
+    params[2] = GUINT_TO_POINTER (thr);
 
     /* get a list of adjacent-in-time tracks */
     g_hash_table_foreach(vtl->tracks, find_nearby_track, (gpointer)params);
@@ -2279,17 +2299,18 @@ const gchar *vik_trw_layer_sublayer_rename_request ( VikTrwLayer *l, const gchar
 {
   if ( subtype == VIK_TRW_LAYER_SUBLAYER_WAYPOINT )
   {
-    int i;
     gchar *rv;
     VikWaypoint *wp;
 
-    if ( strcasecmp ( newname, sublayer ) == 0 )
+    if (strcmp(newname, sublayer) == 0 )
       return NULL;
 
-    if ( uppercase_exists_in_hash ( l->waypoints, newname ) )
-    {
-      a_dialog_error_msg ( VIK_GTK_WINDOW_FROM_LAYER(l), _("Waypoint Already Exists") );
-      return NULL;
+    if (strcasecmp(newname, sublayer)) { /* Not just changing case */
+      if (g_hash_table_lookup( l->waypoints, newname))
+      {
+        a_dialog_error_msg ( VIK_GTK_WINDOW_FROM_LAYER(l), _("Waypoint Already Exists") );
+        return NULL;
+      }
     }
 
     iter = g_hash_table_lookup ( l->waypoints_iters, sublayer );
@@ -2300,8 +2321,6 @@ const gchar *vik_trw_layer_sublayer_rename_request ( VikTrwLayer *l, const gchar
     g_hash_table_remove ( l->waypoints, sublayer );
 
     rv = g_strdup(newname);
-    for ( i = strlen(rv) - 1; i >= 0; i-- )
-      rv[i] = toupper(rv[i]);
 
     vik_treeview_item_set_pointer ( VIK_LAYER(l)->vt, iter, rv );
 
@@ -2319,19 +2338,20 @@ const gchar *vik_trw_layer_sublayer_rename_request ( VikTrwLayer *l, const gchar
   }
   if ( subtype == VIK_TRW_LAYER_SUBLAYER_TRACK )
   {
-    int i;
     gchar *rv;
     VikTrack *tr;
     GtkTreeIter *iter;
     gchar *orig_key;
 
-    if ( strcasecmp ( newname, sublayer ) == 0 )
+    if (strcmp(newname, sublayer) == 0)
       return NULL;
 
-    if ( uppercase_exists_in_hash ( l->tracks, newname ) )
-    {
-      a_dialog_error_msg ( VIK_GTK_WINDOW_FROM_LAYER(l), _("Track Already Exists") );
-      return NULL;
+    if (strcasecmp(newname, sublayer)) { /* Not just changing case */
+      if (g_hash_table_lookup( l->waypoints, newname))
+      {
+        a_dialog_error_msg ( VIK_GTK_WINDOW_FROM_LAYER(l), _("Track Already Exists") );
+        return NULL;
+      }
     }
 
     g_hash_table_lookup_extended ( l->tracks, sublayer, (void *)&orig_key, (void *)&tr );
@@ -2341,8 +2361,6 @@ const gchar *vik_trw_layer_sublayer_rename_request ( VikTrwLayer *l, const gchar
     g_hash_table_steal ( l->tracks_iters, sublayer );
 
     rv = g_strdup(newname);
-    for ( i = strlen(rv) - 1; i >= 0; i-- )
-      rv[i] = toupper(rv[i]);
 
     vik_treeview_item_set_pointer ( VIK_LAYER(l)->vt, iter, rv );
 
@@ -2413,7 +2431,7 @@ gboolean vik_trw_layer_sublayer_add_menu_items ( VikTrwLayer *l, GtkMenu *menu, 
 
   pass_along[0] = l;
   pass_along[1] = vlp;
-  pass_along[2] = (gpointer) subtype;
+  pass_along[2] = GINT_TO_POINTER (subtype);
   pass_along[3] = sublayer;
   staticiter = *iter; /* will exist after function has ended */
   pass_along[4] = &staticiter;
@@ -2949,7 +2967,7 @@ static gboolean tool_edit_waypoint_click ( VikTrwLayer *vtl, GdkEventButton *eve
   return FALSE;
 }
 
-static gboolean tool_edit_waypoint_move ( VikTrwLayer *vtl, GdkEventButton *event, gpointer data )
+static gboolean tool_edit_waypoint_move ( VikTrwLayer *vtl, GdkEventMotion *event, gpointer data )
 {
   tool_ed_t *t = data;
   VikViewport *vvp = t->vvp;
@@ -3074,7 +3092,7 @@ static gboolean ct_sync ( gpointer passalong )
   return FALSE;
 }
 
-static VikLayerToolFuncStatus tool_new_track_move ( VikTrwLayer *vtl, GdkEventButton *event, VikViewport *vvp )
+static VikLayerToolFuncStatus tool_new_track_move ( VikTrwLayer *vtl, GdkEventMotion *event, VikViewport *vvp )
 {
   /* if we haven't sync'ed yet, we don't have time to do more. */
   if ( vtl->ct_sync_done && vtl->current_track && vtl->current_track->trackpoints ) {
@@ -3292,7 +3310,7 @@ static gboolean tool_edit_trackpoint_click ( VikTrwLayer *vtl, GdkEventButton *e
   return FALSE;
 }
 
-static gboolean tool_edit_trackpoint_move ( VikTrwLayer *vtl, GdkEventButton *event, gpointer data )
+static gboolean tool_edit_trackpoint_move ( VikTrwLayer *vtl, GdkEventMotion *event, gpointer data )
 {
   tool_ed_t *t = data;
   VikViewport *vvp = t->vvp;
@@ -3393,11 +3411,12 @@ static gboolean tool_magic_scissors_click ( VikTrwLayer *vtl, GdkEventButton *ev
   }
   else if ( vtl->magic_scissors_started || (event->state & GDK_CONTROL_MASK && vtl->magic_scissors_current_track) ) {
     struct LatLon start, end;
-    gchar *cmd;
+    gchar startlat[G_ASCII_DTOSTR_BUF_SIZE], startlon[G_ASCII_DTOSTR_BUF_SIZE];
+    gchar endlat[G_ASCII_DTOSTR_BUF_SIZE], endlon[G_ASCII_DTOSTR_BUF_SIZE];
+    gchar *url;
 
     vik_coord_to_latlon ( &(vtl->magic_scissors_coord), &start );
     vik_coord_to_latlon ( &(tmp), &end );
-    cmd = g_strdup_printf(GOOGLE_DIRECTIONS_STRING, start.lat, start.lon, end.lat, end.lon );
     vtl->magic_scissors_coord = tmp; /* for continuations */
 
     /* these are checked when adding a track from a file (vik_trw_layer_filein_add_track) */
@@ -3408,8 +3427,13 @@ static gboolean tool_magic_scissors_click ( VikTrwLayer *vtl, GdkEventButton *ev
       vtl->magic_scissors_started = FALSE;
     }
 
-    a_babel_convert_from_shellcommand ( vtl, cmd, "google", NULL, NULL );
-    g_free ( cmd );
+    url = g_strdup_printf(GOOGLE_DIRECTIONS_STRING,
+                          g_ascii_dtostr (startlat, G_ASCII_DTOSTR_BUF_SIZE, (gdouble) start.lat),
+                          g_ascii_dtostr (startlon, G_ASCII_DTOSTR_BUF_SIZE, (gdouble) start.lon),
+                          g_ascii_dtostr (endlat, G_ASCII_DTOSTR_BUF_SIZE, (gdouble) end.lat),
+                          g_ascii_dtostr (endlon, G_ASCII_DTOSTR_BUF_SIZE, (gdouble) end.lon));
+    a_babel_convert_from_url ( vtl, url, "google", NULL, NULL );
+    g_free ( url );
 
     /* see if anything was done -- a track was added or appended to */
     if ( vtl->magic_scissors_check_added_track && vtl->magic_scissors_added_track_name ) {

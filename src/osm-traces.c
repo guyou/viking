@@ -24,9 +24,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <errno.h>
 
 #include <curl/curl.h>
@@ -181,6 +178,8 @@ void osm_traces_upload_file(const char *user,
   curl_easy_setopt(curl, CURLOPT_USERPWD, user_pass);
   curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
   curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, &curl_error_buffer);
+  if (vik_verbose)
+    curl_easy_setopt ( curl, CURLOPT_VERBOSE, 1 );
 
   /* Execute request */
   res = curl_easy_perform(curl);
@@ -252,6 +251,7 @@ static void osm_traces_upload_thread ( OsmTracesInfo *oti, gpointer threaddata )
   /* We can close the file */
   /* This also close the associated fd */
   fclose(file);
+  file = NULL;
 
   /* finally, upload it */
   osm_traces_upload_file(user, password, filename,

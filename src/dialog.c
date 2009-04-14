@@ -297,11 +297,7 @@ gboolean a_dialog_new_waypoint ( GtkWindow *parent, gchar **dest, VikWaypoint *w
       if ( strlen(constname) == 0 ) /* TODO: other checks (isalpha or whatever ) */
         a_dialog_info_msg ( parent, _("Please enter a name for the waypoint.") );
       else {
-        int i;
         gchar *name = g_strdup ( constname );
-
-        for ( i = strlen ( name ) - 1; i >= 0; i-- )
-          name[i] = toupper(name[i]); /* all caps for stardandization */
 
         if ( g_hash_table_lookup ( waypoints, name ) && !a_dialog_overwrite ( parent, _("The waypoint \"%s\" exists, do you want to overwrite it?"), name ) )
           g_free ( name );
@@ -401,10 +397,6 @@ gchar *a_dialog_new_track ( GtkWindow *parent, GHashTable *tracks )
       a_dialog_info_msg ( parent, _("Please enter a name for the track.") );
     else {
       gchar *name = g_strdup ( constname );
-      gint i;
-
-      for ( i = strlen ( name ) - 1; i >= 0; i-- )
-        name[i] = toupper(name[i]); /* all caps for stardandization */
 
       if ( g_hash_table_lookup( tracks, name ) && !a_dialog_overwrite ( parent, _("The track \"%s\" exists, do you want to overwrite it?"), gtk_entry_get_text ( GTK_ENTRY(entry) ) ) )
       {
@@ -644,8 +636,7 @@ void a_dialog_about ( GtkWindow *parent )
   const gchar *program_name = PACKAGE_NAME;
   const gchar *version = VIKING_VERSION;
   const gchar *website = VIKING_URL;
-  const gchar *authors[] = AUTHORS;
-  const gchar *copyright = "2003-2007, Evan Battaglia";
+  const gchar *copyright = "2003-2008, Evan Battaglia";
   const gchar *comments = _("GPS Data and Topo Analyzer, Explorer, and Manager.");
   const gchar *license = _("This program is free software; you can redistribute it and/or modify "
 			"it under the terms of the GNU General Public License as published by "
@@ -673,7 +664,7 @@ void a_dialog_about ( GtkWindow *parent )
 	"license", license,
 	"wrap-license", TRUE,
 	/* logo automatically retrieved via gtk_window_get_default_icon_list */
-	"authors", authors,
+	"authors", AUTHORS,
 	NULL);
 }
 

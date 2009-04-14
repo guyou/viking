@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(viking, 0.9.4)
+AC_INIT(viking, 0.9.5)
 AM_INIT_AUTOMAKE()
 dnl AC_CONFIG_SRCDIR([src/main.c])
 AC_CONFIG_HEADERS([src/config.h])
@@ -10,6 +10,7 @@ AC_CONFIG_HEADERS([src/config.h])
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_MAKE_SET
+AC_PROG_RANLIB
 
 # I18N
 GETTEXT_PACKAGE=viking
@@ -30,7 +31,7 @@ AC_SUBST(ACLOCAL_AMFLAGS)
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([malloc.h netdb.h netinet/in.h stdlib.h string.h sys/param.h sys/socket.h unistd.h math.h])
+AC_CHECK_HEADERS([malloc.h netdb.h netinet/in.h stdlib.h string.h sys/param.h sys/socket.h sys/types.h sys/wait.h unistd.h math.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -39,7 +40,7 @@ AC_TYPE_MODE_T
 # Checks for library functions.
 AC_FUNC_STAT
 AC_FUNC_STRTOD
-AC_CHECK_FUNCS([bzero floor gethostbyname memset mkdir mkdtemp pow realpath socket sqrt strcasecmp strchr strdup strncasecmp strtol strtoul])
+AC_CHECK_FUNCS([floor gethostbyname memset mkdtemp pow realpath socket sqrt strcasecmp strchr strdup strncasecmp strtol strtoul])
 
 # Expat
 AM_WITH_EXPAT
@@ -190,6 +191,12 @@ AC_ARG_WITH(mapcache,
              [VIK_CONFIG_MAPCACHE_SIZE=50331648])
 AC_DEFINE_UNQUOTED(VIK_CONFIG_MAPCACHE_SIZE, ${VIK_CONFIG_MAPCACHE_SIZE},
                    [Size of the map cache])
+
+dnl man pages processing
+DB2MAN_XSL=/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/manpages/docbook.xsl
+AC_SUBST(DB2MAN_XSL)
+AC_PATH_PROG(XP,xsltproc)
+AM_CONDITIONAL([GEN_MANPAGES],[test "x$XP" != "x" && test -r "$DB2MAN_XSL"])
 
 dnl This will cause the automake generated makefiles to pass the
 dnl correct flags to aclocal.

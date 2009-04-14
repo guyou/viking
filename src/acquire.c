@@ -22,6 +22,7 @@
 #include "config.h"
 #endif
 
+#include <stdio.h>
 #include <string.h>
 #include <glib/gprintf.h>
 #include <glib/gi18n.h>
@@ -75,16 +76,16 @@ static void progress_func ( BabelProgressCode c, gpointer data, acq_dialog_widge
 {
   gdk_threads_enter ();
   if (!w->ok) {
-    if ( w->interface->cleanup_func )
-      w->interface->cleanup_func( w->user_data );
+    if ( w->source_interface->cleanup_func )
+      w->source_interface->cleanup_func( w->user_data );
     g_free ( w );
     gdk_threads_leave();
     g_thread_exit ( NULL );
   }
   gdk_threads_leave ();
 
-  if ( w->interface->progress_func )
-    w->interface->progress_func ( (gpointer) c, data, w );
+  if ( w->source_interface->progress_func )
+    w->source_interface->progress_func ( (gpointer) c, data, w );
 }
 
 
@@ -99,12 +100,12 @@ static void get_from_anything ( w_and_interface_t *wi )
   gboolean creating_new_layer = TRUE;
 
   acq_dialog_widgets_t *w = wi->w;
-  VikDataSourceInterface *interface = wi->w->interface;
+  VikDataSourceInterface *source_interface = wi->w->source_interface;
   g_free ( wi );
   wi = NULL;
 
   gdk_threads_enter();
-  if (interface->mode == VIK_DATASOURCE_ADDTOLAYER) {
+  if (source_interface->mode == VIK_DATASOURCE_ADDTOLAYER) {
     VikLayer *current_selected = vik_layers_panel_get_selected ( w->vlp );
     if ( IS_VIK_TRW_LAYER(current_selected) ) {
       vtl = VIK_TRW_LAYER(current_selected);
@@ -113,22 +114,31 @@ static void get_from_anything ( w_and_interface_t *wi )
   }
   if ( creating_new_layer ) {
     vtl = VIK_TRW_LAYER ( vik_layer_create ( VIK_LAYER_TRW, w->vvp, NULL, FALSE ) );
-    vik_layer_rename ( VIK_LAYER ( vtl ), _(interface->layer_title) );
+    vik_layer_rename ( VIK_LAYER ( vtl ), _(source_interface->layer_title) );
     gtk_label_set_text ( GTK_LABEL(w->status), _("Working...") );
   }
   gdk_threads_leave();
 
-  if ( interface->type == VIK_DATASOURCE_GPSBABEL_DIRECT )
+  switch ( source_interface->type ) {
+  case VIK_DATASOURCE_GPSBABEL_DIRECT:
     result = a_babel_convert_from (vtl, cmd, (BabelStatusFunc) progress_func, extra, w);
-  else
+    break;
+  case VIK_DATASOURCE_URL:
+    result = a_babel_convert_from_url (vtl, cmd, extra, (BabelStatusFunc) progress_func, w);
+    break;
+  case VIK_DATASOURCE_SHELL_CMD:
     result = a_babel_convert_from_shellcommand ( vtl, cmd, extra, (BabelStatusFunc) progress_func, w);
+    break;
+  default:
+    g_critical("Houston, we've had a problem.");
+  }
 
   g_free ( cmd );
   g_free ( extra );
 
   if (!result) {
     gdk_threads_enter();
-    gtk_label_set_text ( GTK_LABEL(w->status), _("Error: couldn't find gpsbabel.") );
+    gtk_label_set_text ( GTK_LABEL(w->status), _("Error: acquisition failed.") );
     if ( creating_new_layer )
       g_object_unref ( G_OBJECT ( vtl ) );
     gdk_threads_leave();
@@ -139,7 +149,7 @@ static void get_from_anything ( w_and_interface_t *wi )
       gtk_label_set_text ( GTK_LABEL(w->status), _("Done.") );
       if ( creating_new_layer )
 	vik_aggregate_layer_add_layer( vik_layers_panel_get_top_layer(w->vlp), VIK_LAYER(vtl));
-      if ( interface->keep_dialog_open ) {
+      if ( source_interface->keep_dialog_open ) {
         gtk_dialog_set_response_sensitive ( GTK_DIALOG(w->dialog), GTK_RESPONSE_ACCEPT, TRUE );
         gtk_dialog_set_response_sensitive ( GTK_DIALOG(w->dialog), GTK_RESPONSE_REJECT, FALSE );
       } else {
@@ -151,8 +161,8 @@ static void get_from_anything ( w_and_interface_t *wi )
 	g_object_unref(vtl);
     }
   }
-  if ( interface->cleanup_func )
-    interface->cleanup_func ( w->user_data );
+  if ( source_interface->cleanup_func )
+    source_interface->cleanup_func ( w->user_data );
 
   if ( w->ok ) {
     w->ok = FALSE;
@@ -174,6 +184,7 @@ static gchar *write_tmp_trwlayer ( VikTrwLayer *vtl )
   f = fdopen(fd_src, "w");
   a_gpx_write_file(vtl, f);
   fclose(f);
+  f = NULL;
   return name_src;
 }
 
@@ -187,6 +198,7 @@ static gchar *write_tmp_track ( VikTrack *track )
   f = fdopen(fd_src, "w");
   a_gpx_write_track_file("track", track, f); /* Thank you Guilhem! Just when I needed this function... -- Evan */
   fclose(f);
+  f = NULL;
   return name_src;
 }
 
@@ -195,7 +207,7 @@ static gchar *write_tmp_track ( VikTrack *track )
 /* depending on type of filter, often only vtl or track will be given.
  * the other can be NULL.
  */
-static void acquire ( VikWindow *vw, VikLayersPanel *vlp, VikViewport *vvp, VikDataSourceInterface *interface,
+static void acquire ( VikWindow *vw, VikLayersPanel *vlp, VikViewport *vvp, VikDataSourceInterface *source_interface,
 		      VikTrwLayer *vtl, VikTrack *track )
 {
   /* for manual dialogs */
@@ -212,14 +224,14 @@ static void acquire ( VikWindow *vw, VikLayersPanel *vlp, VikViewport *vvp, VikD
   w_and_interface_t *wi;
 
   /*** INIT AND CHECK EXISTENCE ***/
-  if ( interface->init_func )
-    user_data = interface->init_func();
+  if ( source_interface->init_func )
+    user_data = source_interface->init_func();
   else
     user_data = NULL;
   pass_along_data = user_data;
 
-  if ( interface->check_existence_func ) {
-    gchar *error_str = interface->check_existence_func();
+  if ( source_interface->check_existence_func ) {
+    gchar *error_str = source_interface->check_existence_func();
     if ( error_str ) {
       a_dialog_error_msg ( GTK_WINDOW(vw), error_str );
       g_free ( error_str );
@@ -231,24 +243,24 @@ static void acquire ( VikWindow *vw, VikLayersPanel *vlp, VikViewport *vvp, VikD
 
   /* POSSIBILITY 0: NO OPTIONS. DO NOTHING HERE. */
   /* POSSIBILITY 1: ADD_SETUP_WIDGETS_FUNC */
-  if ( interface->add_setup_widgets_func ) {
+  if ( source_interface->add_setup_widgets_func ) {
     dialog = gtk_dialog_new_with_buttons ( "", GTK_WINDOW(vw), 0, GTK_STOCK_OK, GTK_RESPONSE_ACCEPT, GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT, NULL );
 
-    interface->add_setup_widgets_func(dialog, vvp, user_data);
-    gtk_window_set_title ( GTK_WINDOW(dialog), _(interface->window_title) );
+    source_interface->add_setup_widgets_func(dialog, vvp, user_data);
+    gtk_window_set_title ( GTK_WINDOW(dialog), _(source_interface->window_title) );
 
     if ( gtk_dialog_run ( GTK_DIALOG(dialog) ) != GTK_RESPONSE_ACCEPT ) {
-      interface->cleanup_func(user_data);
+      source_interface->cleanup_func(user_data);
       gtk_widget_destroy(dialog);
       return;
     }
   }
   /* POSSIBILITY 2: UI BUILDER */
-  else if ( interface->params ) {
+  else if ( source_interface->params ) {
     paramdatas = a_uibuilder_run_dialog ( GTK_WINDOW(vw),
-			interface->params, interface->params_count,
-			interface->params_groups, interface->params_groups_count,
-			interface->params_defaults );
+			source_interface->params, source_interface->params_count,
+			source_interface->params_groups, source_interface->params_groups_count,
+			source_interface->params_defaults );
     if ( paramdatas )
       pass_along_data = paramdatas;
     else
@@ -257,39 +269,39 @@ static void acquire ( VikWindow *vw, VikLayersPanel *vlp, VikViewport *vvp, VikD
 
   /* CREATE INPUT DATA & GET COMMAND STRING */
 
-  if ( interface->inputtype == VIK_DATASOURCE_INPUTTYPE_TRWLAYER ) {
+  if ( source_interface->inputtype == VIK_DATASOURCE_INPUTTYPE_TRWLAYER ) {
     gchar *name_src = write_tmp_trwlayer ( vtl );
 
-    ((VikDataSourceGetCmdStringFuncWithInput) interface->get_cmd_string_func)
+    ((VikDataSourceGetCmdStringFuncWithInput) source_interface->get_cmd_string_func)
 	( pass_along_data, &cmd, &extra, name_src );
 
     g_free ( name_src );
     /* TODO: delete the tmp file? or delete it only after we're done with it? */
-  } else if ( interface->inputtype == VIK_DATASOURCE_INPUTTYPE_TRWLAYER_TRACK ) {
+  } else if ( source_interface->inputtype == VIK_DATASOURCE_INPUTTYPE_TRWLAYER_TRACK ) {
     gchar *name_src = write_tmp_trwlayer ( vtl );
     gchar *name_src_track = write_tmp_track ( track );
 
-    ((VikDataSourceGetCmdStringFuncWithInputInput) interface->get_cmd_string_func)
+    ((VikDataSourceGetCmdStringFuncWithInputInput) source_interface->get_cmd_string_func)
 	( pass_along_data, &cmd, &extra, name_src, name_src_track );
 
     g_free ( name_src );
     g_free ( name_src_track );
-  } else if ( interface->inputtype == VIK_DATASOURCE_INPUTTYPE_TRACK ) {
+  } else if ( source_interface->inputtype == VIK_DATASOURCE_INPUTTYPE_TRACK ) {
     gchar *name_src_track = write_tmp_track ( track );
 
-    ((VikDataSourceGetCmdStringFuncWithInput) interface->get_cmd_string_func)
+    ((VikDataSourceGetCmdStringFuncWithInput) source_interface->get_cmd_string_func)
 	( pass_along_data, &cmd, &extra, name_src_track );
 
     g_free ( name_src_track );
   } else
-    interface->get_cmd_string_func ( pass_along_data, &cmd, &extra );
+    source_interface->get_cmd_string_func ( pass_along_data, &cmd, &extra );
 
   /* cleanup for option dialogs */
-  if ( interface->add_setup_widgets_func ) {
+  if ( source_interface->add_setup_widgets_func ) {
     gtk_widget_destroy(dialog);
     dialog = NULL;
-  } else if ( interface->params ) {
-    a_uibuilder_free_paramdatas ( paramdatas, interface->params, interface->params_count );
+  } else if ( source_interface->params ) {
+    a_uibuilder_free_paramdatas ( paramdatas, source_interface->params, source_interface->params_count );
   }
 
   /*** LET'S DO IT! ***/
@@ -300,13 +312,13 @@ static void acquire ( VikWindow *vw, VikLayersPanel *vlp, VikViewport *vvp, VikD
   w = g_malloc(sizeof(*w));
   wi = g_malloc(sizeof(*wi));
   wi->w = w;
-  wi->w->interface = interface;
+  wi->w->source_interface = source_interface;
   wi->cmd = cmd;
   wi->extra = extra; /* usually input data type (?) */
 
   dialog = gtk_dialog_new_with_buttons ( "", GTK_WINDOW(vw), 0, GTK_STOCK_OK, GTK_RESPONSE_ACCEPT, GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT, NULL );
   gtk_dialog_set_response_sensitive ( GTK_DIALOG(dialog), GTK_RESPONSE_ACCEPT, FALSE );
-  gtk_window_set_title ( GTK_WINDOW(dialog), _(interface->window_title) );
+  gtk_window_set_title ( GTK_WINDOW(dialog), _(source_interface->window_title) );
 
 
   w->dialog = dialog;
@@ -319,8 +331,8 @@ static void acquire ( VikWindow *vw, VikLayersPanel *vlp, VikViewport *vvp, VikD
   w->vw = vw;
   w->vlp = vlp;
   w->vvp = vvp;
-  if ( interface->add_progress_widgets_func ) {
-    interface->add_progress_widgets_func ( dialog, user_data );
+  if ( source_interface->add_progress_widgets_func ) {
+    source_interface->add_progress_widgets_func ( dialog, user_data );
   }
   w->user_data = user_data;
 
@@ -336,8 +348,8 @@ static void acquire ( VikWindow *vw, VikLayersPanel *vlp, VikViewport *vvp, VikD
   gtk_widget_destroy ( dialog );
 }
 
-void a_acquire ( VikWindow *vw, VikLayersPanel *vlp, VikViewport *vvp, VikDataSourceInterface *interface ) {
-  acquire ( vw, vlp, vvp, interface, NULL, NULL );
+void a_acquire ( VikWindow *vw, VikLayersPanel *vlp, VikViewport *vvp, VikDataSourceInterface *source_interface ) {
+  acquire ( vw, vlp, vvp, source_interface, NULL, NULL );
 }
 
 static void acquire_trwlayer_callback ( GObject *menuitem, gpointer *pass_along )

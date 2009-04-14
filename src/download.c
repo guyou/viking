@@ -24,53 +24,24 @@
 #endif
 
 #include <stdio.h>
-#include <errno.h>
 #include <ctype.h>
 #include <string.h>
-#include <strings.h>
-#include <gtk/gtk.h>
-#include <sys/stat.h>
-#include <sys/types.h>
+#include <glib.h>
+#include <glib/gstdio.h>
 #include <glib/gi18n.h>
 
 #include "download.h"
 
 #include "curl_download.h"
 
-#ifdef WINDOWS
-
-#include <io.h>
-#define access(a,b) _access(a,b)
-#define close(a) closesocket(a)
-
-char *dirname ( char * dir )
+gboolean a_check_html_file(FILE* f)
 {
-  char *tmp = dir + strlen(dir) - 1;
-  while ( tmp != dir && *tmp != '\\' )
-    tmp--;
-  *tmp = '\0';
-  return dir;
-}
-
-#else
-
-#include <unistd.h>
-#include <sys/types.h>
-
-/* dirname */
-#include <libgen.h>
-
-#endif 
-
-static int check_map_file(FILE* f)
-{
-  char **s;
-  char *bp;
-  int res = 0;  /* good */
+  gchar **s;
+  gchar *bp;
   fpos_t pos;
-  char buf[33];
+  gchar buf[33];
   size_t nr;
-  char * html_str[] = {
+  gchar * html_str[] = {
     "<html",
     "<!DOCTYPE html",
     "<head",
@@ -78,8 +49,7 @@ static int check_map_file(FILE* f)
     NULL
   };
 
-
-  bzero(buf, sizeof(buf));
+  memset(buf, 0, sizeof(buf));
   fgetpos(f, &pos);
   rewind(f);
   nr = fread(buf, 1, sizeof(buf) - 1, f);
@@ -89,69 +59,77 @@ static int check_map_file(FILE* f)
       break;
   }
   if ((bp >= (buf + sizeof(buf) -1)) || ((bp - buf) >= nr))
-    return(res);
+    return FALSE;
   for (s = html_str; *s; s++) {
     if (strncasecmp(*s, bp, strlen(*s)) == 0)
-      return(-1);
+      return TRUE;
   }
-  return(res);
+  return FALSE;
+}
+
+gboolean a_check_map_file(FILE* f)
+{
+  return !a_check_html_file(f);
 }
 
 static int download( const char *hostname, const char *uri, const char *fn, DownloadOptions *options, gboolean ftp)
 {
   FILE *f;
   int ret;
-  char *tmpfilename;
+  gchar *tmpfilename;
+  gboolean failure = FALSE;
 
   /* Check file */
-  if ( access ( fn, F_OK ) == 0 )
+  if ( g_file_test ( fn, G_FILE_TEST_EXISTS ) == TRUE )
   {
     /* File exists: return */
     return -3;
   } else {
-    if ( errno == ENOENT)
-    {
-      char *tmp = g_strdup ( fn );
-#ifdef WINDOWS
-      mkdir( dirname ( dirname ( tmp ) ) );
-      g_free ( tmp ); tmp = g_strdup ( fn );
-      mkdir( dirname ( tmp ) );
-#else
-      mkdir( dirname ( dirname ( tmp ) ), 0777 );
-      g_free ( tmp ); tmp = g_strdup ( fn );
-      mkdir( dirname ( tmp ), 0777 );
-#endif
-      g_free ( tmp );
-    }
+    gchar *dir = g_path_get_dirname ( fn );
+    g_mkdir_with_parents ( dir , 0777 );
+    g_free ( dir );
+
     /* create placeholder file */
-    if ( ! (f = fopen ( fn, "w+b" )) ) /* immediately open file so other threads won't -- prevents race condition */
+    if ( ! (f = g_fopen ( fn, "w+b" )) ) /* immediately open file so other threads won't -- prevents race condition */
       return -4;
     fclose ( f );
+    f = NULL;
   }
 
   tmpfilename = g_strdup_printf("%s.tmp", fn);
-  f = fopen ( tmpfilename, "w+b" );
+  f = g_fopen ( tmpfilename, "w+b" );
   if ( ! f ) {
     g_free ( tmpfilename );
-    remove ( fn ); /* couldn't create temporary. delete 0-byte file. */
+    g_remove ( fn ); /* couldn't create temporary. delete 0-byte file. */
     return -4;
   }
 
   /* Call the backend function */
   ret = curl_download_get_url ( hostname, uri, f, options, ftp );
+  if (ret == -1 || ret == 1 || ret == -2) {
+    g_debug("%s: download failed: curl_download_get_url=%d", __FUNCTION__, ret);
+    failure = TRUE;
+  }
 
-  if (ret == -1 || ret == 1 || ret == -2 || check_map_file(f))
+  if (!failure && options != NULL && options->check_file != NULL && ! options->check_file(f)) {
+    g_debug("%s: file content checking failed", __FUNCTION__);
+    failure = TRUE;
+  }
+
+  if (failure)
   {
     g_warning(_("Download error: %s"), fn);
     fclose ( f );
-    remove ( tmpfilename );
+    f = NULL;
+    g_remove ( tmpfilename );
     g_free ( tmpfilename );
-    remove ( fn ); /* couldn't create temporary. delete 0-byte file. */
+    g_remove ( fn ); /* couldn't create temporary. delete 0-byte file. */
     return -1;
   }
 
   fclose ( f );
-  rename ( tmpfilename, fn ); /* move completely-downloaded file to permanent location */
+  f = NULL;
+  g_rename ( tmpfilename, fn ); /* move completely-downloaded file to permanent location */
   g_free ( tmpfilename );
   return ret;
 }

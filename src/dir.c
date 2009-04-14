@@ -19,15 +19,21 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef WINDOWS
+#include <io.h>
+#endif
 
 #include <glib.h>
 #include <glib/gstdio.h>
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 #include "viking.h"
 
 const gchar *a_get_viking_base_cache_dir()
@@ -37,13 +43,13 @@ const gchar *a_get_viking_base_cache_dir()
   if (!viking_dir) {
     const gchar *cache_dir = g_get_user_cache_dir();
 #ifdef HAVE_MKDTEMP
-    if (!cache_dir || access(cache_dir, W_OK))
+    if (!cache_dir || g_access(cache_dir, W_OK))
     {
       static gchar temp[] = {"/tmp/vikXXXXXX"};
       cache_dir = mkdtemp(temp);
     }
 #endif
-    if (!cache_dir || access(cache_dir, W_OK))
+    if (!cache_dir || g_access(cache_dir, W_OK))
     {
       /* Fatal error */
       g_critical("Unable to find a base directory");
@@ -52,7 +58,7 @@ const gchar *a_get_viking_base_cache_dir()
 
     /* Build the name of the directory */
     viking_dir = g_build_filename(cache_dir, "viking", NULL);
-    if (access(viking_dir, F_OK))
+    if (g_access(viking_dir, F_OK))
       g_mkdir(viking_dir, 0755);
   }
 
@@ -68,7 +74,7 @@ const gchar *a_get_viking_cookies_dir()
 
     /* Build the name of the directory */
     viking_dir = g_build_filename(cache_dir, "cookies", NULL);
-    if (access(viking_dir, F_OK))
+    if (g_access(viking_dir, F_OK))
       g_mkdir(viking_dir, 0755);
   }
 
@@ -84,7 +90,7 @@ const gchar *a_get_viking_maps_dir()
 
     /* Build the name of the directory */
     viking_dir = g_build_filename(cache_dir, "maps", NULL);
-    if (access(viking_dir, F_OK))
+    if (g_access(viking_dir, F_OK))
       g_mkdir(viking_dir, 0755);
   }
 

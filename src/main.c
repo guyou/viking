@@ -24,7 +24,7 @@
 #endif /* HAVE_CONFIG */
 
 #include "viking.h"
-#include "icons/viking_icon.png_h"
+#include "icons/icons.h"
 #include "mapcache.h"
 #include "background.h"
 #include "dems.h"
@@ -45,6 +45,14 @@ void a_datasource_gc_init();
 
 #define MAX_WINDOWS 1024
 
+/* FIXME LOCALEDIR must be configured by ./configure --localedir */
+/* But something does not work actually. */
+/* So, we need to redefine this variable on windows. */
+#ifdef WINDOWS
+#undef LOCALEDIR
+#define LOCALEDIR "locale"
+#endif
+
 static guint window_count = 0;
 
 static VikWindow *new_window ();
@@ -52,6 +60,14 @@ static void open_window ( VikWindow *vw, const gchar **files );
 static void destroy( GtkWidget *widget,
                      gpointer   data );
 
+/* Callback to mute log message */
+static void mute_log(const gchar *log_domain,
+                     GLogLevelFlags log_level,
+                     const gchar *message,
+                     gpointer user_data)
+{
+  /* Nothing to do, we just want to mute */
+}
 
 /* Another callback */
 static void destroy( GtkWidget *widget,
@@ -94,11 +110,11 @@ static void open_window ( VikWindow *vw, const gchar **files )
 }
 
 /* Options */
-static gboolean version = FALSE;
-
 static GOptionEntry entries[] = 
 {
-  { "version", 'v', 0, G_OPTION_ARG_NONE, &version, N_("Show version"), NULL },
+  { "debug", 'd', 0, G_OPTION_ARG_NONE, &vik_debug, N_("Enable debug output"), NULL },
+  { "verbose", 'V', 0, G_OPTION_ARG_NONE, &vik_verbose, N_("Enable verbose output"), NULL },
+  { "version", 'v', 0, G_OPTION_ARG_NONE, &vik_version, N_("Show version"), NULL },
   { NULL }
 };
 
@@ -138,11 +154,14 @@ int main( int argc, char *argv[] )
     return EXIT_FAILURE;
   }
    
-  if (version)
+  if (vik_version)
   {
     g_printf ("%s %s, Copyright (c) 2003-2007 Evan Battaglia\n", PACKAGE_NAME, PACKAGE_VERSION);
     return EXIT_SUCCESS;
   }
+
+  if (!vik_debug)
+    g_log_set_handler (NULL, G_LOG_LEVEL_DEBUG, mute_log, NULL);
 
   curl_download_init();
 
@@ -156,9 +175,6 @@ int main( int argc, char *argv[] )
 #ifdef VIK_CONFIG_GEOCACHES
   a_datasource_gc_init();
 #endif
-
-  vik_layer_cursors_init ();
-  vik_window_cursors_init ();
 
   /* Set the icon */
   main_icon = gdk_pixbuf_from_pixdata(&viking_icon, FALSE, NULL);
@@ -181,8 +197,6 @@ int main( int argc, char *argv[] )
   a_mapcache_uninit ();
   a_dems_uninit ();
   a_preferences_uninit ();
-  vik_layer_cursors_uninit ();
-  vik_window_cursors_uninit ();
 
   return 0;
 }

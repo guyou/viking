@@ -26,10 +26,18 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdlib.h>
-#include <sys/stat.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #include <errno.h>
 #include <string.h>
+#include <glib.h>
+#include <glib/gstdio.h>
 #include "viking.h"
 #include "thumbnails.h"
 #include "thumbnails_pixbuf.h"
@@ -53,15 +61,14 @@
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #endif
 
+#define HOME_DIR g_get_home_dir()
+
 #ifdef WINDOWS
-#define HOME_DIR "C:\\VIKING"
 #define THUMB_DIR "\\THUMBNAILS\\" /* viking maps default viking\maps */
 #define THUMB_SUB_DIR "normal\\"
-#define mkdir(a,b) mkdir(a)
 #define realpath(X,Y) _fullpath(Y,X,MAX_PATH)
 
 #else
-#define HOME_DIR g_get_home_dir()
 #define THUMB_DIR "/.thumbnails/"
 #define THUMB_SUB_DIR "normal/"
 #endif
@@ -180,13 +187,9 @@ static GdkPixbuf *save_thumbnail(const char *pathname, GdkPixbuf *full)
 	g_free(path);
 		
 	to = g_string_new(HOME_DIR);
-#ifndef WINDOWS
-	mkdir(to->str, 0700);
-#endif
 	g_string_append(to, THUMB_DIR);
-	mkdir(to->str, 0700);
 	g_string_append(to, THUMB_SUB_DIR);
-	mkdir(to->str, 0700);
+	g_mkdir_with_parents(to->str, 0700);
 	g_string_append(to, md5);
 	name_len = to->len + 4; /* Truncate to this length when renaming */
 #ifdef WINDOWS

@@ -2,6 +2,8 @@
 #include <glib/gi18n.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <glib/gstdio.h>
 #include "preferences.h"
 #include "file.h"
 
@@ -43,14 +45,14 @@ void a_preferences_register_group ( const gchar *key, const gchar *name )
     g_error("Duplicate preferences group keys");
   else {
     g_ptr_array_add ( groups_names, g_strdup(name) );
-    g_hash_table_insert ( groups_keys_to_indices, g_strdup(key), (gpointer) ((gint) groups_names->len ) ); /* index + 1 */
+    g_hash_table_insert ( groups_keys_to_indices, g_strdup(key), GINT_TO_POINTER ( (gint) groups_names->len ) ); /* index + 1 */
   }
 }
 
 /* returns -1 if not found. */
 static gint16 preferences_groups_key_to_index( const gchar *key )
 {
-  gint index = (gint) g_hash_table_lookup ( groups_keys_to_indices, key );
+  gint index = GPOINTER_TO_INT ( g_hash_table_lookup ( groups_keys_to_indices, key ) );
   if ( ! index )
     return VIK_LAYER_GROUP_NONE; /* which should be -1 anyway */
   return (gint16) (index - 1);
@@ -159,7 +161,7 @@ static gboolean preferences_load_parse_param(gchar *buf, gchar **key, gchar **va
 static gboolean preferences_load_from_file()
 {
   gchar *fn = g_build_filename(a_get_viking_dir(), VIKING_PREFS_FILE, NULL);
-  FILE *f = fopen(fn, "r");
+  FILE *f = g_fopen(fn, "r");
   g_free ( fn );
 
   if ( f ) {
@@ -190,6 +192,7 @@ static gboolean preferences_load_from_file()
       }
     }
     fclose(f);
+    f = NULL;
     return TRUE;
   }
   return FALSE;
@@ -217,7 +220,7 @@ static gboolean preferences_save_to_file()
   gchar *fn = g_build_filename(a_get_viking_dir(), VIKING_PREFS_FILE, NULL);
 
   // TODO: error checking
-  FILE *f = fopen(fn, "w");
+  FILE *f = g_fopen(fn, "w");
   g_free ( fn );
 
   if ( f ) {
@@ -231,6 +234,7 @@ static gboolean preferences_save_to_file()
       file_write_layer_param ( f, param->name, val->type, val->data );
     }
     fclose(f);
+    f = NULL;
     return TRUE;
   }
 

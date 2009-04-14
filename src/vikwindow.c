@@ -31,21 +31,16 @@
 #include "dems.h"
 #include "print.h"
 #include "preferences.h"
+#include "icons/icons.h"
 
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
 #include <ctype.h>
+#include <glib.h>
+#include <glib/gstdio.h>
 #include <glib/gprintf.h>
 #include <glib/gi18n.h>
-#ifdef WINDOWS
-/* TODO IMPORTANT: mkdir for windows header? is it called 'mkdir' */
-#define make_dir(dir) mkdir(dir)
-#else
-#include <sys/types.h>
-#include <sys/stat.h>
-#define make_dir(dir) mkdir(dir,0777)
-#endif
 
 #define VIKING_WINDOW_WIDTH      1000
 #define VIKING_WINDOW_HEIGHT     800
@@ -108,8 +103,9 @@ static toolbox_tools_t* toolbox_create(VikWindow *vw);
 static void toolbox_add_tool(toolbox_tools_t *vt, VikToolInterface *vti, gint layer_type );
 static int toolbox_get_tool(toolbox_tools_t *vt, const gchar *tool_name);
 static void toolbox_activate(toolbox_tools_t *vt, const gchar *tool_name);
+static const GdkCursor *toolbox_get_cursor(toolbox_tools_t *vt, const gchar *tool_name);
 static void toolbox_click (toolbox_tools_t *vt, GdkEventButton *event);
-static void toolbox_move (toolbox_tools_t *vt, GdkEventButton *event);
+static void toolbox_move (toolbox_tools_t *vt, GdkEventMotion *event);
 static void toolbox_release (toolbox_tools_t *vt, GdkEventButton *event);
 
 
@@ -162,7 +158,8 @@ struct _VikWindow {
 };
 
 enum {
- TOOL_ZOOM = 0,
+ TOOL_PAN = 0,
+ TOOL_ZOOM,
  TOOL_RULER,
  TOOL_LAYER,
  NUMBER_OF_TOOLS
@@ -176,10 +173,7 @@ enum {
 
 static guint window_signals[VW_LAST_SIGNAL] = { 0 };
 
-static gchar *tool_names[NUMBER_OF_TOOLS] = { N_("Zoom"), N_("Ruler"), N_("Pan") };
-
-GdkCursor *vw_cursor_zoom = NULL;
-GdkCursor *vw_cursor_ruler = NULL;
+static gchar *tool_names[NUMBER_OF_TOOLS] = { N_("Pan"), N_("Zoom"), N_("Ruler") };
 
 GType vik_window_get_type (void)
 {
@@ -273,7 +267,7 @@ static void window_init ( VikWindow *vw )
   window_create_ui(vw);
   window_set_filename (vw, NULL);
   
-  toolbox_activate(vw->vt, "Zoom");
+  toolbox_activate(vw->vt, "Pan");
 
   vw->filename = NULL;
   vw->item_factory = NULL;
@@ -407,8 +401,17 @@ void vik_window_set_redraw_trigger(VikLayer *vl)
 
 static void window_configure_event ( VikWindow *vw )
 {
+  static int first = 1;
   draw_redraw ( vw );
-  gdk_window_set_cursor ( GTK_WIDGET(vw->viking_vvp)->window, vw_cursor_zoom );
+  if (first) {
+    // This is a hack to set the cursor corresponding to the first tool
+    // FIXME find the correct way to initialize both tool and its cursor
+    const GdkCursor *cursor = NULL;
+    first = 0;
+    cursor = toolbox_get_cursor(vw->vt, "Pan");
+    /* We set cursor, even if it is NULL: it resets to default */
+    gdk_window_set_cursor ( GTK_WIDGET(vw->viking_vvp)->window, cursor );
+  }
 }
 
 static void draw_redraw ( VikWindow *vw )
@@ -451,6 +454,13 @@ static gboolean draw_buf(gpointer data)
 
 /* Mouse event handlers ************************************************************************/
 
+static void vik_window_pan_click (VikWindow *vw, GdkEventButton *event)
+{
+  /* set panning origin */
+  vw->pan_x = (gint) event->x;
+  vw->pan_y = (gint) event->y;
+}
+
 static void draw_click (VikWindow *vw, GdkEventButton *event)
 {
   gtk_widget_grab_focus ( GTK_WIDGET(vw->viking_vvp) );
@@ -459,12 +469,17 @@ static void draw_click (VikWindow *vw, GdkEventButton *event)
    * for panning and zooming; tools only get left/right/movement 
    */
   if ( event->button == 2) {
-    /* set panning origin */
-    vw->pan_x = (gint) event->x;
-    vw->pan_y = (gint) event->y;
+    vik_window_pan_click ( vw, event );
   } 
   else {
     toolbox_click(vw->vt, event);
+  }
+}
+
+static void vik_window_pan_move (VikWindow *vw, GdkEventMotion *event)
+{
+  if ( vw->pan_x != -1 ) {
+    vik_viewport_pan_sync ( vw->viking_vvp, event->x - vw->pan_x, event->y - vw->pan_y );
   }
 }
 
@@ -478,7 +493,7 @@ static void draw_mouse_motion (VikWindow *vw, GdkEventMotion *event)
   gdouble zoom;
   VikDemInterpol interpol_method;
 
-  toolbox_move(vw->vt, (GdkEventButton *)event);
+  toolbox_move(vw->vt, event);
 
   vik_viewport_screen_to_coord ( vw->viking_vvp, event->x, event->y, &coord );
   vik_coord_to_utm ( &coord, &utm );
@@ -497,9 +512,18 @@ static void draw_mouse_motion (VikWindow *vw, GdkEventMotion *event)
     g_snprintf ( pointer_buf, 36, _("Cursor: %f %f"), ll.lat, ll.lon );
   vik_statusbar_set_message ( vw->viking_vs, 4, pointer_buf );
 
-  if ( vw->pan_x != -1 ) {
-    vik_viewport_pan_sync ( vw->viking_vvp, event->x - vw->pan_x, event->y - vw->pan_y );
-  }
+  vik_window_pan_move ( vw, event );
+}
+
+static void vik_window_pan_release ( VikWindow *vw, GdkEventButton *event )
+{
+  if ( ABS(vw->pan_x - event->x) <= 1 && ABS(vw->pan_y - event->y) <= 1 )
+    vik_viewport_set_center_screen ( vw->viking_vvp, vw->pan_x, vw->pan_y );
+  else
+     vik_viewport_set_center_screen ( vw->viking_vvp, vik_viewport_get_width(vw->viking_vvp)/2 - event->x + vw->pan_x,
+                                      vik_viewport_get_height(vw->viking_vvp)/2 - event->y + vw->pan_y );
+  draw_update ( vw );
+  vw->pan_x = vw->pan_y = -1;
 }
 
 static void draw_release ( VikWindow *vw, GdkEventButton *event )
@@ -507,13 +531,7 @@ static void draw_release ( VikWindow *vw, GdkEventButton *event )
   gtk_widget_grab_focus ( GTK_WIDGET(vw->viking_vvp) );
 
   if ( event->button == 2 ) {  /* move / pan */
-    if ( ABS(vw->pan_x - event->x) <= 1 && ABS(vw->pan_y - event->y) <= 1 )
-        vik_viewport_set_center_screen ( vw->viking_vvp, vw->pan_x, vw->pan_y );
-      else
-         vik_viewport_set_center_screen ( vw->viking_vvp, vik_viewport_get_width(vw->viking_vvp)/2 - event->x + vw->pan_x,
-                                         vik_viewport_get_height(vw->viking_vvp)/2 - event->y + vw->pan_y );
-      draw_update ( vw );
-      vw->pan_x = vw->pan_y = -1;
+    vik_window_pan_release(vw, event);
   }
   else {
     toolbox_release(vw->vt, event);
@@ -787,7 +805,7 @@ static VikLayerToolFuncStatus ruler_click (VikLayer *vl, GdkEventButton *event, 
   return VIK_LAYER_TOOL_ACK;
 }
 
-static VikLayerToolFuncStatus ruler_move (VikLayer *vl, GdkEventButton *event, ruler_tool_state_t *s)
+static VikLayerToolFuncStatus ruler_move (VikLayer *vl, GdkEventMotion *event, ruler_tool_state_t *s)
 {
   VikViewport *vvp = s->vvp;
   VikWindow *vw = s->vw;
@@ -850,8 +868,11 @@ static VikToolInterface ruler_tool =
     (VikToolActivationFunc) NULL,
     (VikToolActivationFunc) ruler_deactivate, 
     (VikToolMouseFunc) ruler_click, 
-    (VikToolMouseFunc) ruler_move, 
-    (VikToolMouseFunc) ruler_release };
+    (VikToolMouseMoveFunc) ruler_move, 
+    (VikToolMouseFunc) ruler_release,
+    NULL,
+    GDK_CURSOR_IS_PIXMAP,
+    &cursor_ruler };
 /*** end ruler code ********************************************************/
 
 
@@ -876,7 +897,7 @@ static VikLayerToolFuncStatus zoomtool_click (VikLayer *vl, GdkEventButton *even
   return VIK_LAYER_TOOL_ACK;
 }
 
-static VikLayerToolFuncStatus zoomtool_move (VikLayer *vl, GdkEventButton *event, VikViewport *vvp)
+static VikLayerToolFuncStatus zoomtool_move (VikLayer *vl, GdkEventMotion *event, VikViewport *vvp)
 {
   return VIK_LAYER_TOOL_ACK;
 }
@@ -893,9 +914,55 @@ static VikToolInterface zoom_tool =
     (VikToolActivationFunc) NULL,
     (VikToolActivationFunc) NULL,
     (VikToolMouseFunc) zoomtool_click, 
-    (VikToolMouseFunc) zoomtool_move,
-    (VikToolMouseFunc) zoomtool_release };
-/*** end ruler code ********************************************************/
+    (VikToolMouseMoveFunc) zoomtool_move,
+    (VikToolMouseFunc) zoomtool_release,
+    NULL,
+    GDK_CURSOR_IS_PIXMAP,
+    &cursor_zoom };
+/*** end zoom code ********************************************************/
+
+/********************************************************************************
+ ** Pan tool code
+ ********************************************************************************/
+static gpointer pantool_create (VikWindow *vw, VikViewport *vvp)
+{
+  return vw;
+}
+
+static VikLayerToolFuncStatus pantool_click (VikLayer *vl, GdkEventButton *event, VikWindow *vw)
+{
+  vw->modified = TRUE;
+  if ( event->button == 1 )
+    vik_window_pan_click ( vw, event );
+  draw_update ( vw );
+  return VIK_LAYER_TOOL_ACK;
+}
+
+static VikLayerToolFuncStatus pantool_move (VikLayer *vl, GdkEventMotion *event, VikWindow *vw)
+{
+  vik_window_pan_move ( vw, event );
+  return VIK_LAYER_TOOL_ACK;
+}
+
+static VikLayerToolFuncStatus pantool_release (VikLayer *vl, GdkEventButton *event, VikWindow *vw)
+{
+  if ( event->button == 1 )
+    vik_window_pan_release ( vw, event );
+  return VIK_LAYER_TOOL_ACK;
+}
+
+static VikToolInterface pan_tool = 
+  { "Pan", 
+    (VikToolConstructorFunc) pantool_create,
+    (VikToolDestructorFunc) NULL,
+    (VikToolActivationFunc) NULL,
+    (VikToolActivationFunc) NULL,
+    (VikToolMouseFunc) pantool_click, 
+    (VikToolMouseMoveFunc) pantool_move,
+    (VikToolMouseFunc) pantool_release,
+    NULL,
+    GDK_FLEUR };
+/*** end pan code ********************************************************/
 
 static void draw_pan_cb ( GtkAction *a, VikWindow *vw )
 {
@@ -1108,6 +1175,24 @@ static void toolbox_activate(toolbox_tools_t *vt, const gchar *tool_name)
   vt->active_tool = tool;
 }
 
+static const GdkCursor *toolbox_get_cursor(toolbox_tools_t *vt, const gchar *tool_name)
+{
+  int tool = toolbox_get_tool(vt, tool_name);
+  toolbox_tool_t *t = &vt->tools[tool];
+  if (t->ti.cursor == NULL) {
+    if (t->ti.cursor_type == GDK_CURSOR_IS_PIXMAP && t->ti.cursor_data != NULL) {
+      GError *cursor_load_err = NULL;
+      GdkPixbuf *cursor_pixbuf = gdk_pixbuf_from_pixdata (t->ti.cursor_data, FALSE, &cursor_load_err);
+      /* TODO: settable offeset */
+      t->ti.cursor = gdk_cursor_new_from_pixbuf ( gdk_display_get_default(), cursor_pixbuf, 3, 3 );
+      g_object_unref ( G_OBJECT(cursor_pixbuf) );
+    } else {
+      t->ti.cursor = gdk_cursor_new ( t->ti.cursor_type );
+    }
+  }
+  return t->ti.cursor;
+}
+
 static void toolbox_click (toolbox_tools_t *vt, GdkEventButton *event)
 {
   VikLayer *vl = vik_layers_panel_get_selected ( vt->vw->viking_vlp );
@@ -1118,7 +1203,7 @@ static void toolbox_click (toolbox_tools_t *vt, GdkEventButton *event)
   }
 }
 
-static void toolbox_move (toolbox_tools_t *vt, GdkEventButton *event)
+static void toolbox_move (toolbox_tools_t *vt, GdkEventMotion *event)
 {
   VikLayer *vl = vik_layers_panel_get_selected ( vt->vw->viking_vlp );
   if (vt->active_tool != -1 && vt->tools[vt->active_tool].ti.move) {
@@ -1150,16 +1235,22 @@ static void menu_tool_cb ( GtkAction *old, GtkAction *a, VikWindow *vw )
 {
   /* White Magic, my friends ... White Magic... */
   int layer_id, tool_id;
+  const GdkCursor *cursor = NULL;
 
   toolbox_activate(vw->vt, gtk_action_get_name(a));
 
-  if (!strcmp(gtk_action_get_name(a), "Zoom")) {
+  cursor = toolbox_get_cursor(vw->vt, gtk_action_get_name(a));
+  /* We set cursor, even if it is NULL: it resets to default */
+  gdk_window_set_cursor ( GTK_WIDGET(vw->viking_vvp)->window, cursor );
+
+  if (!strcmp(gtk_action_get_name(a), "Pan")) {
+    vw->current_tool = TOOL_PAN;
+  } 
+  else if (!strcmp(gtk_action_get_name(a), "Zoom")) {
     vw->current_tool = TOOL_ZOOM;
-    gdk_window_set_cursor ( GTK_WIDGET(vw->viking_vvp)->window, vw_cursor_zoom );
   } 
   else if (!strcmp(gtk_action_get_name(a), "Ruler")) {
     vw->current_tool = TOOL_RULER;
-    gdk_window_set_cursor ( GTK_WIDGET(vw->viking_vvp)->window, vw_cursor_ruler );
   }
   else {
     /* TODO: only enable tools from active layer */
@@ -1169,7 +1260,6 @@ static void menu_tool_cb ( GtkAction *old, GtkAction *a, VikWindow *vw )
            vw->current_tool = TOOL_LAYER;
            vw->tool_layer_id = layer_id;
            vw->tool_tool_id = tool_id;
-           gdk_window_set_cursor ( GTK_WIDGET(vw->viking_vvp)->window, vik_layer_get_tool_cursor ( layer_id, tool_id ) );
 	}
       }
     }
@@ -1246,6 +1336,8 @@ void vik_window_open_file ( VikWindow *vw, const gchar *filename, gboolean chang
 }
 static void load_file ( GtkAction *a, VikWindow *vw )
 {
+  GSList *files = NULL;
+  GSList *cur_file = NULL;
   gboolean newwindow;
   if (!strcmp(gtk_action_get_name(a), "Open")) {
     newwindow = TRUE;
@@ -1260,12 +1352,17 @@ static void load_file ( GtkAction *a, VikWindow *vw )
     
   if ( ! vw->open_dia )
   {
-    vw->open_dia = gtk_file_selection_new ( _("Please select a GPS data file to open. ") );
-    gtk_file_selection_set_select_multiple ( GTK_FILE_SELECTION(vw->open_dia), TRUE );
+    vw->open_dia = gtk_file_chooser_dialog_new (_("Please select a GPS data file to open. "),
+				      GTK_WINDOW(vw),
+				      GTK_FILE_CHOOSER_ACTION_OPEN,
+				      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+				      GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+				      NULL);
+    gtk_file_chooser_set_select_multiple ( GTK_FILE_CHOOSER(vw->open_dia), TRUE );
     gtk_window_set_transient_for ( GTK_WINDOW(vw->open_dia), GTK_WINDOW(vw) );
     gtk_window_set_destroy_with_parent ( GTK_WINDOW(vw->open_dia), TRUE );
   }
-  if ( gtk_dialog_run ( GTK_DIALOG(vw->open_dia) ) == GTK_RESPONSE_OK )
+  if ( gtk_dialog_run ( GTK_DIALOG(vw->open_dia) ) == GTK_RESPONSE_ACCEPT )
   {
     gtk_widget_hide ( vw->open_dia );
 #ifdef VIKING_PROMPT_IF_MODIFIED
@@ -1273,14 +1370,19 @@ static void load_file ( GtkAction *a, VikWindow *vw )
 #else
     if ( vw->filename && newwindow )
 #endif
-      g_signal_emit ( G_OBJECT(vw), window_signals[VW_OPENWINDOW_SIGNAL], 0, gtk_file_selection_get_selections (GTK_FILE_SELECTION(vw->open_dia) ) );
+      g_signal_emit ( G_OBJECT(vw), window_signals[VW_OPENWINDOW_SIGNAL], 0, gtk_file_chooser_get_filenames (GTK_FILE_CHOOSER(vw->open_dia) ) );
     else {
-      gchar **files = gtk_file_selection_get_selections (GTK_FILE_SELECTION(vw->open_dia) );
-      gboolean change_fn = newwindow && (!files[1]); /* only change fn if one file */
-      while ( *files ) {
-        vik_window_open_file ( vw, *files, change_fn );
-        files++;
+      files = gtk_file_chooser_get_filenames (GTK_FILE_CHOOSER(vw->open_dia) );
+      gboolean change_fn = newwindow && (g_slist_length(files)==1); /* only change fn if one file */
+      
+      cur_file = files;
+      while ( cur_file ) {
+        gchar *file_name = cur_file->data;
+        vik_window_open_file ( vw, file_name, change_fn );
+        g_free (file_name);
+        cur_file = g_slist_next (cur_file);
       }
+      g_slist_free (files);
     }
   }
   else
@@ -1293,15 +1395,20 @@ static gboolean save_file_as ( GtkAction *a, VikWindow *vw )
   const gchar *fn;
   if ( ! vw->save_dia )
   {
-    vw->save_dia = gtk_file_selection_new ( _("Save as Viking File.") );
+    vw->save_dia = gtk_file_chooser_dialog_new (_("Save as Viking File."),
+				      GTK_WINDOW(vw),
+				      GTK_FILE_CHOOSER_ACTION_SAVE,
+				      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+				      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+				      NULL);
     gtk_window_set_transient_for ( GTK_WINDOW(vw->save_dia), GTK_WINDOW(vw) );
     gtk_window_set_destroy_with_parent ( GTK_WINDOW(vw->save_dia), TRUE );
   }
 
-  while ( gtk_dialog_run ( GTK_DIALOG(vw->save_dia) ) == GTK_RESPONSE_OK )
+  while ( gtk_dialog_run ( GTK_DIALOG(vw->save_dia) ) == GTK_RESPONSE_ACCEPT )
   {
-    fn = gtk_file_selection_get_filename (GTK_FILE_SELECTION(vw->save_dia) );
-    if ( access ( fn, F_OK ) != 0 || a_dialog_overwrite ( GTK_WINDOW(vw->save_dia), _("The file \"%s\" exists, do you wish to overwrite it?"), a_file_basename ( fn ) ) )
+    fn = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER(vw->save_dia) );
+    if ( g_file_test ( fn, G_FILE_TEST_EXISTS ) == FALSE || a_dialog_overwrite ( GTK_WINDOW(vw->save_dia), _("The file \"%s\" exists, do you wish to overwrite it?"), a_file_basename ( fn ) ) )
     {
       window_set_filename ( vw, fn );
       rv = window_save ( vw );
@@ -1454,7 +1561,7 @@ static void save_image_dir ( VikWindow *vw, const gchar *fn, guint w, guint h, g
 
   g_assert ( vik_viewport_get_coord_mode ( vw->viking_vvp ) == VIK_COORD_UTM );
 
-  make_dir(fn);
+  g_mkdir(fn,0777);
 
   utm_orig = *((const struct UTM *)vik_viewport_get_center ( vw->viking_vvp ));
 
@@ -1656,15 +1763,20 @@ static void draw_to_image_file_cb ( GtkAction *a, VikWindow *vw )
 {
   const gchar *fn;
   if (!vw->save_img_dia) {
-    vw->save_img_dia = gtk_file_selection_new ( _("Save Image") );
+    vw->save_img_dia = gtk_file_chooser_dialog_new (_("Save Image"),
+				      GTK_WINDOW(vw),
+				      GTK_FILE_CHOOSER_ACTION_SAVE,
+				      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+				      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+				      NULL);
     gtk_window_set_transient_for ( GTK_WINDOW(vw->save_img_dia), GTK_WINDOW(vw) );
     gtk_window_set_destroy_with_parent ( GTK_WINDOW(vw->save_img_dia), TRUE );
   }
 
-  while ( gtk_dialog_run ( GTK_DIALOG(vw->save_img_dia) ) == GTK_RESPONSE_OK )
+  while ( gtk_dialog_run ( GTK_DIALOG(vw->save_img_dia) ) == GTK_RESPONSE_ACCEPT )
   {
-    fn = gtk_file_selection_get_filename (GTK_FILE_SELECTION(vw->save_img_dia) );
-    if ( access ( fn, F_OK ) != 0 || a_dialog_overwrite ( GTK_WINDOW(vw->save_img_dia), _("The file \"%s\" exists, do you wish to overwrite it?"), a_file_basename ( fn ) ) )
+    fn = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER(vw->save_img_dia) );
+    if ( g_file_test ( fn, G_FILE_TEST_EXISTS ) == FALSE || a_dialog_overwrite ( GTK_WINDOW(vw->save_img_dia), _("The file \"%s\" exists, do you wish to overwrite it?"), a_file_basename ( fn ) ) )
     {
       draw_to_image_file ( vw, fn, TRUE );
       break;
@@ -1675,21 +1787,27 @@ static void draw_to_image_file_cb ( GtkAction *a, VikWindow *vw )
 
 static void draw_to_image_dir_cb ( GtkAction *a, VikWindow *vw )
 {
-  const gchar *fn;
+  gchar *fn = NULL;
+  
   if (!vw->save_img_dir_dia) {
-    vw->save_img_dir_dia = gtk_file_selection_new ( _("Choose a name for a new directory to hold images"));
+    vw->save_img_dir_dia = gtk_file_chooser_dialog_new (_("Choose a directory to hold images"),
+				      GTK_WINDOW(vw),
+				      GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
+				      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+				      GTK_STOCK_OK, GTK_RESPONSE_ACCEPT,
+				      NULL);
     gtk_window_set_transient_for ( GTK_WINDOW(vw->save_img_dir_dia), GTK_WINDOW(vw) );
     gtk_window_set_destroy_with_parent ( GTK_WINDOW(vw->save_img_dir_dia), TRUE );
   }
-
-  while ( gtk_dialog_run ( GTK_DIALOG(vw->save_img_dir_dia) ) == GTK_RESPONSE_OK )
+  
+  while ( gtk_dialog_run ( GTK_DIALOG(vw->save_img_dir_dia) ) == GTK_RESPONSE_ACCEPT )
   {
-    fn = gtk_file_selection_get_filename (GTK_FILE_SELECTION(vw->save_img_dir_dia) );
-    if ( access ( fn, F_OK ) == 0 )
-      a_dialog_info_msg_extra ( GTK_WINDOW(vw->save_img_dir_dia), _("The file %s exists. Please choose a name for a new directory to hold images in that does not exist."), a_file_basename(fn) );
-    else
+    fn = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER(vw->save_img_dir_dia) );
+    if ( fn )
     {
       draw_to_image_file ( vw, fn, FALSE );
+      g_free(fn);
+      fn = NULL;
       break;
     }
   }
@@ -1859,8 +1977,9 @@ static GtkRadioActionEntry mode_entries[] = {
 };
 
 static GtkRadioActionEntry tool_entries[] = {
-  { "Zoom",      "vik-icon-zoom",        N_("_Zoom"),                         "<control><shift>Z", N_("Zoom Tool"),  0 },
-  { "Ruler",     "vik-icon-ruler",       N_("_Ruler"),                        "<control><shift>R", N_("Ruler Tool"), 1 }
+  { "Pan",      "vik-icon-pan",        N_("_Pan"),                         "<control><shift>P", N_("Pan Tool"),  0 },
+  { "Zoom",      "vik-icon-zoom",        N_("_Zoom"),                         "<control><shift>Z", N_("Zoom Tool"),  1 },
+  { "Ruler",     "vik-icon-ruler",       N_("_Ruler"),                        "<control><shift>R", N_("Ruler Tool"), 2 }
 };
 
 static GtkToggleActionEntry toggle_entries[] = {
@@ -1887,6 +2006,7 @@ static void window_create_ui( VikWindow *window )
 
   toolbox_add_tool(window->vt, &ruler_tool, TOOL_LAYER_TYPE_NONE);
   toolbox_add_tool(window->vt, &zoom_tool, TOOL_LAYER_TYPE_NONE);
+  toolbox_add_tool(window->vt, &pan_tool, TOOL_LAYER_TYPE_NONE);
 
   error = NULL;
   if (!(mid = gtk_ui_manager_add_ui_from_string (uim, menu_xml, -1, &error))) {
@@ -1985,7 +2105,6 @@ static void window_create_ui( VikWindow *window )
 
 
 
-#include "icons/icons.h"
 static struct { 
   const GdkPixdata *data;
   gchar *stock_id;
@@ -1996,6 +2115,7 @@ static struct {
   { &addwp_18,		"Create Waypoint"   },
   { &edwp_18,		"Edit Waypoint"     },
   { &iscissors_18,	"Magic Scissors"   },
+  { &mover_22,		"vik-icon-pan"     },
   { &zoom_18,		"vik-icon-zoom"     },
   { &ruler_18,		"vik-icon-ruler"    },
   { &geozoom_18,	"Georef Zoom Tool"  },
@@ -2021,24 +2141,3 @@ register_vik_icons (GtkIconFactory *icon_factory)
   }
 }
 
-void vik_window_cursors_init()
-{
-  GdkPixbuf *cursor_pixbuf;
-  GError *cursor_load_err;
-
-  cursor_pixbuf = gdk_pixbuf_from_pixdata (&cursor_zoom, FALSE, &cursor_load_err);
-  vw_cursor_zoom = gdk_cursor_new_from_pixbuf ( gdk_display_get_default(), cursor_pixbuf, 6, 6 );
-
-  g_object_unref ( G_OBJECT(cursor_pixbuf) );
-
-  cursor_pixbuf = gdk_pixbuf_from_pixdata (&cursor_ruler, FALSE, &cursor_load_err);
-  vw_cursor_ruler = gdk_cursor_new_from_pixbuf ( gdk_display_get_default(), cursor_pixbuf, 6, 6 );
-
-  g_object_unref ( G_OBJECT(cursor_pixbuf) );
-}
-
-void vik_window_cursors_uninit()
-{
-  gdk_cursor_unref ( vw_cursor_zoom );
-  gdk_cursor_unref ( vw_cursor_ruler );
-}

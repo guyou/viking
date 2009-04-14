@@ -115,7 +115,7 @@ static gboolean dem_layer_download_click ( VikDEMLayer *vdl, GdkEventButton *eve
 static VikToolInterface dem_tools[] = {
   { N_("DEM Download/Import"), (VikToolConstructorFunc) dem_layer_download_create, NULL, NULL, NULL,
     (VikToolMouseFunc) dem_layer_download_click, NULL,  (VikToolMouseFunc) dem_layer_download_release,
-    (VikToolKeyFunc) NULL, &cursor_demdl },
+    (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_demdl },
 };
 
 
@@ -756,7 +756,7 @@ static void srtm_dem_download_thread ( DEMDownloadParams *p, gpointer threaddata
 		(intlon >= 0) ? 'E' : 'W',
 		ABS(intlon) );
 
-  DownloadOptions options = { NULL, 0 };
+  static DownloadOptions options = { NULL, 0, a_check_map_file };
   a_ftp_download_get_url ( SRTM_FTP_SITE, src_fn, p->dest, &options );
   g_free ( src_fn );
 }
@@ -805,7 +805,7 @@ static void srtm_draw_existence ( VikViewport *vp )
 		ABS(i),
 		(j >= 0) ? 'E' : 'W',
 		ABS(j) );
-      if ( access(buf, F_OK ) == 0 ) {
+      if ( g_file_test(buf, G_FILE_TEST_EXISTS ) == TRUE ) {
         VikCoord ne, sw;
         gint x1, y1, x2, y2;
         sw.north_south = i;
@@ -866,7 +866,7 @@ static void dem24k_draw_existence ( VikViewport *vp )
     g_snprintf(buf, sizeof(buf), "%sdem24k/%d/",
         MAPS_CACHE_DIR,
 	(gint) i );
-    if ( access(buf, F_OK) != 0 )
+    if ( g_file_test(buf, G_FILE_TEST_EXISTS) == FALSE )
       continue;
     for (j = floor(min_lon*8)/8; j <= floor(max_lon*8)/8; j+=0.125) {
       /* check lon dir first -- faster */
@@ -874,7 +874,7 @@ static void dem24k_draw_existence ( VikViewport *vp )
         MAPS_CACHE_DIR,
 	(gint) i,
         (gint) j );
-      if ( access(buf, F_OK) != 0 )
+      if ( g_file_test(buf, G_FILE_TEST_EXISTS) == FALSE )
         continue;
       g_snprintf(buf, sizeof(buf), "%sdem24k/%d/%d/%.03f,%.03f.dem",
 	        MAPS_CACHE_DIR,
@@ -882,7 +882,7 @@ static void dem24k_draw_existence ( VikViewport *vp )
 		(gint) j,
 		floor(i*8)/8,
 		floor(j*8)/8 );
-      if ( access(buf, F_OK ) == 0 ) {
+      if ( g_file_test(buf, G_FILE_TEST_EXISTS ) == TRUE ) {
         VikCoord ne, sw;
         gint x1, y1, x2, y2;
         sw.north_south = i;
@@ -922,7 +922,7 @@ static void weak_ref_cb ( gpointer ptr, GObject * dead_vdl )
  */
 static gboolean dem_layer_add_file ( VikDEMLayer *vdl, const gchar *full_path )
 {
-  if ( access(full_path, F_OK ) == 0 ) {
+  if ( g_file_test(full_path, G_FILE_TEST_EXISTS ) == TRUE ) {
     /* only load if file size is not 0 (not in progress */
     struct stat sb;
     stat (full_path, &sb);

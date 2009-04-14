@@ -31,7 +31,7 @@
 
 #include "khmaps.h"
 
-static DownloadOptions khmaps_options = { NULL, 0 };
+static DownloadOptions khmaps_options = { NULL, 0, a_check_map_file };
 
 void khmaps_init () {
   VikMapsLayer_MapType map_type = { 8, 256, 256, VIK_VIEWPORT_DRAWMODE_KH, khmaps_coord_to_mapcoord, khmaps_mapcoord_to_center_coord, khmaps_download };
@@ -123,7 +123,7 @@ static char *kh_encode(guint32 x, guint32 y, guint8 scale)
   return buf;
 }
 
-void khmaps_download ( MapCoord *src, const gchar *dest_fn )
+int khmaps_download ( MapCoord *src, const gchar *dest_fn )
 {
    gchar *tmp = kh_encode(src->x, src->y, src->scale);
    gchar *uri = g_strdup_printf ( "/kh?v=2&t=%s", tmp );
@@ -131,6 +131,7 @@ void khmaps_download ( MapCoord *src, const gchar *dest_fn )
    g_free ( tmp );
    a_http_download_get_url ( "kh.google.com", uri, dest_fn, &khmaps_options );
    g_free ( uri );
+   return 1;
 }
 
 /* Popularity has its disadvantages ... */

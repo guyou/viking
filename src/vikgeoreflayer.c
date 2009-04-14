@@ -25,9 +25,10 @@
 
 #include "viking.h"
 #include "vikgeoreflayer_pixmap.h"
-#include <stdlib.h>
-#include <string.h>
+#include <glib.h>
+#include <glib/gstdio.h>
 #include <glib/gi18n.h>
+#include <string.h>
 
 #include "icons/icons.h"
 
@@ -65,11 +66,11 @@ static gboolean georef_layer_zoom_press ( VikGeorefLayer *vgl, GdkEventButton *e
 static VikToolInterface georef_tools[] = {
   { N_("Georef Move Map"), (VikToolConstructorFunc) georef_layer_move_create, NULL, NULL, NULL,
     (VikToolMouseFunc) georef_layer_move_press, NULL, (VikToolMouseFunc) georef_layer_move_release,
-    (VikToolKeyFunc) NULL, &cursor_geomove },
+    (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_geomove },
 
   { N_("Georef Zoom Tool"), (VikToolConstructorFunc) georef_layer_zoom_create, NULL, NULL, NULL,
     (VikToolMouseFunc) georef_layer_zoom_press, NULL, NULL,
-    (VikToolKeyFunc) NULL, &cursor_geozoom },
+    (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_geozoom },
 };
 
 VikLayerInterface vik_georef_layer_interface = {
@@ -293,11 +294,12 @@ static gboolean world_file_read_line ( gchar *buffer, gint size, FILE *f, GtkWid
     a_dialog_error_msg ( VIK_GTK_WINDOW_FROM_WIDGET(widget), _("Unexpected end of file reading World file.") );
     g_free ( buffer );
     fclose ( f );
+    f = NULL;
     return FALSE;
   }
   if ( use_value )
   {
-    gdouble val = strtod ( buffer, NULL );
+    gdouble val = g_strtod ( buffer, NULL );
     gtk_spin_button_set_value ( GTK_SPIN_BUTTON(widget), val > 0 ? val : -val );
   }
   return TRUE;
@@ -305,11 +307,16 @@ static gboolean world_file_read_line ( gchar *buffer, gint size, FILE *f, GtkWid
 
 static void georef_layer_dialog_load ( GtkWidget *pass_along[4] )
 {
-  GtkWidget *file_selector = gtk_file_selection_new (_("Choose World file"));
+  GtkWidget *file_selector = gtk_file_chooser_dialog_new (_("Choose World file"),
+				      NULL,
+				      GTK_FILE_CHOOSER_ACTION_OPEN,
+				      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+				      GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+				      NULL);
 
-  if ( gtk_dialog_run ( GTK_DIALOG ( file_selector ) ) == GTK_RESPONSE_OK )
+  if ( gtk_dialog_run ( GTK_DIALOG ( file_selector ) ) == GTK_RESPONSE_ACCEPT )
   {
-    FILE *f = fopen ( gtk_file_selection_get_filename ( GTK_FILE_SELECTION(file_selector) ), "r" );
+    FILE *f = g_fopen ( gtk_file_chooser_get_filename ( GTK_FILE_CHOOSER(file_selector) ), "r" );
     gtk_widget_destroy ( file_selector ); 
     if ( !f )
     {
@@ -325,6 +332,7 @@ static void georef_layer_dialog_load ( GtkWidget *pass_along[4] )
       {
         g_free ( buffer );
         fclose ( f );
+	f = NULL;
       }
     }
   }
@@ -344,11 +352,16 @@ We need a
 static void georef_layer_export_params ( gpointer *pass_along[2] )
 {
   VikGeorefLayer *vgl = VIK_GEOREF_LAYER(pass_along[0]);
-  GtkWidget *file_selector = gtk_file_selection_new (_("Choose World file"));
-
-  if ( gtk_dialog_run ( GTK_DIALOG ( file_selector ) ) == GTK_RESPONSE_OK )
+  GtkWidget *file_selector = gtk_file_chooser_dialog_new (_("Choose World file"),
+				      NULL,
+				      GTK_FILE_CHOOSER_ACTION_SAVE,
+				      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+				      GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+				      NULL);
+  if ( gtk_dialog_run ( GTK_DIALOG ( file_selector ) ) == GTK_RESPONSE_ACCEPT )
   {
-    FILE *f = fopen ( gtk_file_selection_get_filename ( GTK_FILE_SELECTION(file_selector) ), "w" );
+    FILE *f = g_fopen ( gtk_file_chooser_get_filename ( GTK_FILE_CHOOSER(file_selector) ), "w" );
+    
     gtk_widget_destroy ( file_selector ); 
     if ( !f )
     {
@@ -359,6 +372,7 @@ static void georef_layer_export_params ( gpointer *pass_along[2] )
     {
       fprintf ( f, "%f\n%f\n%f\n%f\n%f\n%f\n", vgl->mpp_easting, vgl->mpp_northing, 0.0, 0.0, vgl->corner.easting, vgl->corner.northing );
       fclose ( f );
+      f = NULL;
     }
   }
   else

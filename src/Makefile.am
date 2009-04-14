@@ -5,21 +5,24 @@ SUBDIRS = icons
 
 bin_PROGRAMS = viking
 
-authors.h: ../AUTHORS
+noinst_LIBRARIES = libviking.a
+
+authors.h: $(srcdir)/../AUTHORS
 	rm -f $@
 	echo "/* Generated file. */" >> $@
-	echo "#define AUTHORS {\\" >> $@
-	sed -e "s/ \*\*.*//" -e 's/^/"/' -e 's/$$/",\\/' $< >> $@
-	echo "NULL}" >> $@
+	echo "const gchar *AUTHORS[] = {\\" >> $@
+	sed -e "s/ \*\*.*//" -e 's/^/"/' -e 's/$$/",\\/' -e '$$s/\\$$//' $< >> $@
+	echo "NULL};" >> $@
 
 BUILT_SOURCES = authors.h
 
-viking_SOURCES = main.c \
+libviking_a_SOURCES = \
 	modules.h modules.c \
 	curl_download.c curl_download.h \
 	menu.xml.h \
     degrees_converters.c degrees_converters.h \
-	viking.h globals.h mapcoord.h config.h \
+	globals.c globals.h \
+	viking.h mapcoord.h config.h \
 	viktrack.c viktrack.h \
 	vikwaypoint.c vikwaypoint.h \
 	clipboard.c clipboard.h \
@@ -75,33 +78,44 @@ viking_SOURCES = main.c \
 	preferences.c preferences.h
 
 if GOOGLE
-viking_SOURCES += \
+libviking_a_SOURCES += \
 	khmaps.c khmaps.h \
 	google.c google.h \
 	googlemaps.c googlemaps.h
 endif
 
 if TERRASERVER
-viking_SOURCES += \
+libviking_a_SOURCES += \
 	terraserver.c terraserver.h
 endif
 
 if EXPEDIA
-viking_SOURCES += \
+libviking_a_SOURCES += \
 	expedia.c expedia.h
 endif
 
 if OPENSTREETMAP
-viking_SOURCES += \
+libviking_a_SOURCES += \
 	osm.c osm.h \
 	osm-traces.c osm-traces.h
 endif
 
+viking_SOURCES = main.c
 
 INCLUDES        = @GTK_CFLAGS@ @EXPAT_CFLAGS@ @LIBCURL_CPPFLAGS@
-LDADD           = @GTK_LIBS@ @EXPAT_LIBS@ @LIBCURL@
+LDADD           = libviking.a @GTK_LIBS@ @EXPAT_LIBS@ @LIBCURL@ icons/libicons.a
 if REALTIME_GPS_TRACKING
 LDADD           += -lgps
 endif
 #LDADD           = -lz @GTK_LIBS@ @EXPAT_LIBS@ @LIBCURL@
 AM_CFLAGS		= -Wall -g -D_GNU_SOURCE
+
+@INTLTOOL_DESKTOP_RULE@
+
+desktopdir = $(datadir)/applications
+desktop_in_files = viking.desktop.in
+desktop_DATA = $(desktop_in_files:.desktop.in=.desktop)
+EXTRA_DIST=$(desktop_in_files)
+BUILT_SOURCES += viking.desktop
+
+CLEANFILES = $(BUILT_SOURCES)
