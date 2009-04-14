@@ -41,6 +41,8 @@ renaming functions and defining LatLon and UTM structs.
 #include <math.h>
 
 #include "viking.h"
+#include "globals.h"
+#include "degrees_converters.h"
 
 /**
  * Convert a double to a string WITHOUT LOCALE.
@@ -52,19 +54,9 @@ renaming functions and defining LatLon and UTM structs.
  */
 char *a_coords_dtostr ( double d )
 {
-  /* In order to ignore locale, we do all the stuff manually */
-  double integer, decimal;
-  integer = trunc(d);
-
-  /* 6 decimals are sufficient (~0,1m) */
-  /* Cf. http://www.tbs-sct.gc.ca/rpm-gbi/guides/Latlong_f.asp */
-  decimal = d - integer;
-  decimal = decimal * 1000000;
-  decimal = trunc ( decimal );
-  decimal = fabs ( decimal );
-
-  /* Format */
-  return g_strdup_printf ( "%g.%06g", integer, decimal );
+  gchar *buffer = g_malloc(G_ASCII_DTOSTR_BUF_SIZE*sizeof(gchar));
+  g_ascii_dtostr (buffer, G_ASCII_DTOSTR_BUF_SIZE, (gdouble) d);
+  return buffer;
 }
 
 #define PIOVER180 0.01745329252
@@ -97,11 +89,14 @@ double a_coords_utm_diff( const struct UTM *utm1, const struct UTM *utm2 )
 double a_coords_latlon_diff ( const struct LatLon *ll1, const struct LatLon *ll2 )
 {
   static struct LatLon tmp1, tmp2;
+  gdouble tmp3;
   tmp1.lat = ll1->lat * PIOVER180;
   tmp1.lon = ll1->lon * PIOVER180;
   tmp2.lat = ll2->lat * PIOVER180;
   tmp2.lon = ll2->lon * PIOVER180;
-  return EquatorialRadius * acos(sin(tmp1.lat)*sin(tmp2.lat)+cos(tmp1.lat)*cos(tmp2.lat)*cos(tmp1.lon-tmp2.lon));
+  tmp3 = EquatorialRadius * acos(sin(tmp1.lat)*sin(tmp2.lat)+cos(tmp1.lat)*cos(tmp2.lat)*cos(tmp1.lon-tmp2.lon));
+  // For very small differences we can sometimes get NaN returned
+  return isnan(tmp3)?0:tmp3;
 }
 
 void a_coords_latlon_to_utm( const struct LatLon *latlon, struct UTM *utm )
@@ -245,3 +240,29 @@ void a_coords_utm_to_latlon( const struct UTM *utm, struct LatLon *latlon )
     latlon->lon = longitude;
 
     }
+
+void a_coords_latlon_to_string ( const struct LatLon *latlon,
+				 gchar **lat,
+				 gchar **lon )
+{
+  g_return_if_fail ( latlon != NULL );
+
+  vik_degree_format_t format = a_vik_get_degree_format ();
+
+  switch (format) {
+  case VIK_DEGREE_FORMAT_DDD:
+    *lat = convert_lat_dec_to_ddd ( latlon->lat );
+    *lon = convert_lon_dec_to_ddd ( latlon->lon );
+    break;
+  case VIK_DEGREE_FORMAT_DMM:
+    *lat = convert_lat_dec_to_dmm ( latlon->lat );
+    *lon = convert_lon_dec_to_dmm ( latlon->lon );
+    break;
+  case VIK_DEGREE_FORMAT_DMS:
+    *lat = convert_lat_dec_to_dms ( latlon->lat );
+    *lon = convert_lon_dec_to_dms ( latlon->lon );
+    break;
+  default:
+    g_critical("Houston, we've had a problem. format=%d", format);
+  }
+}

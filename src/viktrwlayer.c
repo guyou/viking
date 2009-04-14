@@ -30,7 +30,6 @@
 
 #include "viking.h"
 #include "vikmapslayer.h"
-#include "viktrwlayer_pixmap.h"
 #include "viktrwlayer_tpwin.h"
 #include "viktrwlayer_propwin.h"
 #include "garminsymbols.h"
@@ -296,30 +295,30 @@ static void highest_wp_number_remove_wp(VikTrwLayer *vtl, const gchar *old_wp_na
 
 static VikToolInterface trw_layer_tools[] = {
   { N_("Create Waypoint"), (VikToolConstructorFunc) tool_new_waypoint_create,    NULL, NULL, NULL, 
-    (VikToolMouseFunc) tool_new_waypoint_click,    NULL, NULL, (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_addwp },
+    (VikToolMouseFunc) tool_new_waypoint_click,    NULL, NULL, (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_addwp_pixbuf },
 
   { N_("Create Track"),    (VikToolConstructorFunc) tool_new_track_create,       NULL, NULL, NULL, 
     (VikToolMouseFunc) tool_new_track_click, (VikToolMouseMoveFunc) tool_new_track_move, NULL,
-    (VikToolKeyFunc) tool_new_track_key_press, GDK_CURSOR_IS_PIXMAP, &cursor_addtr },
+    (VikToolKeyFunc) tool_new_track_key_press, GDK_CURSOR_IS_PIXMAP, &cursor_addtr_pixbuf },
 
   { N_("Begin Track"),    (VikToolConstructorFunc) tool_begin_track_create,       NULL, NULL, NULL, 
-    (VikToolMouseFunc) tool_begin_track_click,       NULL, NULL, (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_begintr },
+    (VikToolMouseFunc) tool_begin_track_click,       NULL, NULL, (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_begintr_pixbuf },
 
   { N_("Edit Waypoint"),   (VikToolConstructorFunc) tool_edit_waypoint_create,   NULL, NULL, NULL, 
     (VikToolMouseFunc) tool_edit_waypoint_click,   
     (VikToolMouseMoveFunc) tool_edit_waypoint_move,
-    (VikToolMouseFunc) tool_edit_waypoint_release, (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_edwp },
+    (VikToolMouseFunc) tool_edit_waypoint_release, (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_edwp_pixbuf },
 
   { N_("Edit Trackpoint"), (VikToolConstructorFunc) tool_edit_trackpoint_create, NULL, NULL, NULL, 
     (VikToolMouseFunc) tool_edit_trackpoint_click,
     (VikToolMouseMoveFunc) tool_edit_trackpoint_move,
-    (VikToolMouseFunc) tool_edit_trackpoint_release, (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_edtr },
+    (VikToolMouseFunc) tool_edit_trackpoint_release, (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_edtr_pixbuf },
 
   { N_("Show Picture"),    (VikToolConstructorFunc) tool_show_picture_create,    NULL, NULL, NULL, 
-    (VikToolMouseFunc) tool_show_picture_click,    NULL, NULL, (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_showpic },
+    (VikToolMouseFunc) tool_show_picture_click,    NULL, NULL, (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_showpic_pixbuf },
 
   { N_("Magic Scissors"),  (VikToolConstructorFunc) tool_magic_scissors_create,  NULL, NULL, NULL,
-    (VikToolMouseFunc) tool_magic_scissors_click, NULL, NULL, (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_iscissors },
+    (VikToolMouseFunc) tool_magic_scissors_click, NULL, NULL, (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_iscissors_pixbuf },
 };
 enum { TOOL_CREATE_WAYPOINT=0, TOOL_CREATE_TRACK, TOOL_BEGIN_TRACK, TOOL_EDIT_WAYPOINT, TOOL_EDIT_TRACKPOINT, TOOL_SHOW_PICTURE, NUM_TOOLS };
 
@@ -392,7 +391,7 @@ enum { PARAM_TV, PARAM_WV, PARAM_DM, PARAM_DL, PARAM_DP, PARAM_DE, PARAM_EF, PAR
 
 VikLayerInterface vik_trw_layer_interface = {
   "TrackWaypoint",
-  &trwlayer_pixbuf,
+  &viktrwlayer_pixbuf,
 
   trw_layer_tools,
   sizeof(trw_layer_tools) / sizeof(VikToolInterface),
@@ -1515,7 +1514,7 @@ static void trw_layer_export ( gpointer layer_and_vlp[2], guint file_type )
     }
     else
     {
-      if ( a_dialog_overwrite ( VIK_GTK_WINDOW_FROM_LAYER(layer_and_vlp[0]), _("The file \"%s\" exists, do you wish to overwrite it?"), a_file_basename ( fn ) ) )
+      if ( a_dialog_overwrite ( GTK_WINDOW(file_selector), _("The file \"%s\" exists, do you wish to overwrite it?"), a_file_basename ( fn ) ) )
       {
         gtk_widget_hide ( file_selector );
         failed = ! a_file_export ( VIK_TRW_LAYER(layer_and_vlp[0]), fn, file_type );
@@ -2019,10 +2018,28 @@ static void trw_layer_extend_track_end ( gpointer pass_along[6] )
   VikTrack *track = g_hash_table_lookup ( VIK_TRW_LAYER(pass_along[0])->tracks, pass_along[3] );
 
   vtl->current_track = track;
-  vik_window_enable_layer_tool ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)), VIK_LAYER_TRW, TOOL_CREATE_TRACK );
+  vik_window_enable_layer_tool ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)), VIK_LAYER_TRW, TOOL_CREATE_TRACK);
 
   if ( track->trackpoints )
     goto_coord ( VIK_LAYERS_PANEL(pass_along[1]), &(((VikTrackpoint *)g_list_last(track->trackpoints)->data)->coord) );
+}
+
+/**
+ * extend a track using magic scissors
+ */
+static void trw_layer_extend_track_end_ms ( gpointer pass_along[6] )
+{
+  VikTrwLayer *vtl = VIK_TRW_LAYER(pass_along[0]);
+  VikTrack *track = g_hash_table_lookup ( VIK_TRW_LAYER(pass_along[0])->tracks, pass_along[3] );
+  VikCoord last_coord = (((VikTrackpoint *)g_list_last(track->trackpoints)->data)->coord);
+
+  vik_window_enable_layer_tool ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)), VIK_LAYER_TRW, NUM_TOOLS );
+  vtl->magic_scissors_coord =  last_coord;
+  vtl->magic_scissors_current_track = track;
+
+  if ( track->trackpoints )
+    goto_coord ( VIK_LAYERS_PANEL(pass_along[1]), &last_coord) ;
+
 }
 
 static void trw_layer_apply_dem_data ( gpointer pass_along[6] )
@@ -2529,8 +2546,13 @@ gboolean vik_trw_layer_sublayer_add_menu_items ( VikTrwLayer *l, GtkMenu *menu, 
     gtk_menu_shell_append ( GTK_MENU_SHELL(menu), item );
     gtk_widget_show ( item );
 
-    item = gtk_menu_item_new_with_label ( "Extend track end" );
+    item = gtk_menu_item_new_with_label ( _("Extend track end") );
     g_signal_connect_swapped ( G_OBJECT(item), "activate", G_CALLBACK(trw_layer_extend_track_end), pass_along );
+    gtk_menu_shell_append ( GTK_MENU_SHELL(menu), item );
+    gtk_widget_show ( item );
+
+    item = gtk_menu_item_new_with_label ( _("Extend using magic scissors") );
+    g_signal_connect_swapped ( G_OBJECT(item), "activate", G_CALLBACK(trw_layer_extend_track_end_ms), pass_along );
     gtk_menu_shell_append ( GTK_MENU_SHELL(menu), item );
     gtk_widget_show ( item );
 
@@ -2543,13 +2565,13 @@ gboolean vik_trw_layer_sublayer_add_menu_items ( VikTrwLayer *l, GtkMenu *menu, 
 
     if ( is_valid_google_route ( l, (gchar *) sublayer ) )
     {
-      item = gtk_menu_item_new_with_label ( "View Google Directions" );
+      item = gtk_menu_item_new_with_label ( _("View Google Directions") );
       g_signal_connect_swapped ( G_OBJECT(item), "activate", G_CALLBACK(trw_layer_track_google_route_webpage), pass_along );
       gtk_menu_shell_append ( GTK_MENU_SHELL(menu), item );
       gtk_widget_show ( item );
     }
 
-    item = gtk_menu_item_new_with_label ( "Use with filter" );
+    item = gtk_menu_item_new_with_label ( _("Use with filter") );
     g_signal_connect_swapped ( G_OBJECT(item), "activate", G_CALLBACK(trw_layer_track_use_with_filter), pass_along );
     gtk_menu_shell_append ( GTK_MENU_SHELL(menu), item );
     gtk_widget_show ( item );

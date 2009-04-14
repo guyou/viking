@@ -29,6 +29,7 @@
 #include "degrees_converters.h"
 #include "authors.h"
 #include "googlesearch.h"
+#include "util.h"
 
 #include <glib/gi18n.h>
 
@@ -572,64 +573,19 @@ gboolean a_dialog_time_threshold ( GtkWindow *parent, gchar *title_text, gchar *
   return FALSE;
 }
 
-static void
-show_url (GtkWidget *parent,
-	  const char *url)
+static void about_url_hook (GtkAboutDialog *about,
+                            const gchar    *link,
+                            gpointer        data)
 {
-	GError *error = NULL;
-	/*
-	GdkScreen *screen;
-
-	screen = gtk_widget_get_screen (parent);
-	*/
-
-	gchar *command = getenv("BROWSER");
-	command = g_strdup_printf("%s '%s'", command ? command : "gnome-open", url);
-	/*
-	if (!gnome_url_show_on_screen (url, screen, &error))
-	*/
-	if (!g_spawn_command_line_async(command, &error))
-	{
-		GtkWidget *dialog;
-
-		/* TODO I18N */
-		dialog = gtk_message_dialog_new (GTK_WINDOW (parent),
-						 GTK_DIALOG_DESTROY_WITH_PARENT,
-						 GTK_MESSAGE_ERROR,
-						 GTK_BUTTONS_OK,
-						 "%s", "Could not open link");
-		gtk_message_dialog_format_secondary_text
-			(GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
-		g_error_free (error);
-
-		g_signal_connect (dialog, "response",
-				  G_CALLBACK (gtk_widget_destroy), NULL);
-		gtk_widget_show (dialog);
-	}
-	g_free(command);
+  open_url (GTK_WINDOW(about), link);
 }
 
-static void
-about_url_hook (GtkAboutDialog *about,
-		const char *link,
-		gpointer data)
+static void about_email_hook (GtkAboutDialog *about,
+                              const gchar    *email,
+                              gpointer        data)
 {
-	show_url (GTK_WIDGET (about), link);
+  new_email (GTK_WINDOW(about), email);
 }
-
-static void
-about_email_hook (GtkAboutDialog *about,
-		  const char *email,
-		  gpointer data)
-{
-	gchar *address;
-
-	/* FIXME: escaping? */
-	address = g_strdup_printf ("mailto:%s", email);
-	show_url (GTK_WIDGET (about), address);
-	g_free (address);
-}
-
 
 void a_dialog_about ( GtkWindow *parent )
 {

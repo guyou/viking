@@ -42,8 +42,6 @@
 #include "vikaggregatelayer.h"
 #include "viklayerspanel.h"
 #include "vikdemlayer.h"
-#include "vikdemlayer_pixmap.h"
-#include "vikmapslayer.h"
 #include "dialog.h"
 
 #include "dem.h"
@@ -115,7 +113,7 @@ static gboolean dem_layer_download_click ( VikDEMLayer *vdl, GdkEventButton *eve
 static VikToolInterface dem_tools[] = {
   { N_("DEM Download/Import"), (VikToolConstructorFunc) dem_layer_download_create, NULL, NULL, NULL,
     (VikToolMouseFunc) dem_layer_download_click, NULL,  (VikToolMouseFunc) dem_layer_download_release,
-    (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_demdl },
+    (VikToolKeyFunc) NULL, GDK_CURSOR_IS_PIXMAP, &cursor_demdl_pixbuf },
 };
 
 
@@ -233,7 +231,7 @@ static const guint DEM_N_COLORS = sizeof(dem_colors)/sizeof(dem_colors[0]);
 
 VikLayerInterface vik_dem_layer_interface = {
   "DEM",
-  &demlayer_pixbuf,
+  &vikdemlayer_pixbuf,
 
   dem_tools,
   sizeof(dem_tools) / sizeof(dem_tools[0]),
@@ -923,14 +921,14 @@ static void weak_ref_cb ( gpointer ptr, GObject * dead_vdl )
 static gboolean dem_layer_add_file ( VikDEMLayer *vdl, const gchar *full_path )
 {
   if ( g_file_test(full_path, G_FILE_TEST_EXISTS ) == TRUE ) {
-    /* only load if file size is not 0 (not in progress */
+    /* only load if file size is not 0 (not in progress) */
     struct stat sb;
     stat (full_path, &sb);
     if ( sb.st_size ) {
       gchar *duped_path = g_strdup(full_path);
       vdl->files = g_list_prepend ( vdl->files, duped_path );
       a_dems_load ( duped_path );
-      g_warning(duped_path);
+      g_debug("%s: %s", __FUNCTION__, duped_path);
       vik_layer_emit_update ( VIK_LAYER(vdl) );
     }
     return TRUE;
@@ -1000,7 +998,7 @@ static gboolean dem_layer_download_release ( VikDEMLayer *vdl, GdkEventButton *e
 
   full_path = g_strdup_printf("%s%s", MAPS_CACHE_DIR, dem_file );
 
-  g_warning(full_path);
+  g_debug("%s: %s", __FUNCTION__, full_path);
 
   // TODO: check if already in filelist
 

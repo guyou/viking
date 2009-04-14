@@ -21,47 +21,78 @@
 #include "config.h"
 #endif
 
+#include <stdlib.h>
 #ifdef WINDOWS
 #include <windows.h>
 #endif
 
 #include <glib/gi18n.h>
 
+
 #include "dialog.h"
+
+static void
+show_url (GtkWidget *parent,
+          const char *url)
+{
+  GError *error = NULL;
+  /*
+  GdkScreen *screen;
+
+  screen = gtk_widget_get_screen (parent);
+  */
+
+  gchar *command = getenv("BROWSER");
+  command = g_strdup_printf("%s '%s'", command ? command : "gnome-open", url);
+  /*
+  if (!gnome_url_show_on_screen (url, screen, &error))
+  */
+  if (!g_spawn_command_line_async(command, &error))
+  {
+    GtkWidget *dialog;
+
+    /* TODO I18N */
+    dialog = gtk_message_dialog_new (GTK_WINDOW (parent),
+             GTK_DIALOG_DESTROY_WITH_PARENT,
+             GTK_MESSAGE_ERROR,
+             GTK_BUTTONS_OK,
+             "%s", "Could not open link");
+    gtk_message_dialog_format_secondary_text
+      (GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
+    g_error_free (error);
+
+    g_signal_connect (dialog, "response",
+          G_CALLBACK (gtk_widget_destroy), NULL);
+    gtk_widget_show (dialog);
+  }
+  g_free(command);
+}
+
+static gboolean spawn_command_line_async(const gchar * cmd,
+                                         const gchar * arg)
+{
+  gchar *cmdline = NULL;
+  gboolean status;
+
+  cmdline = g_strdup_printf("%s '%s'", cmd, arg);
+  g_debug("Running: %s", cmdline);
+    
+  status = g_spawn_command_line_async(cmdline, NULL);
+
+  g_free(cmdline);
+ 
+}
 
 void open_url(GtkWindow *parent, const gchar * url)
 {
-#ifdef WINDOWS
-  ShellExecute(NULL, NULL, (char *) url, NULL, ".\\", 0);
-#else /* WINDOWS */
-  const gchar *browsers[] = {
-    "xdg-open", "gnome-open", "kfmclient openURL",
-    "sensible-browser", "firefox", "epiphany",
-    "iceweasel", "seamonkey", "galeon", "mozilla",
-    "opera", "konqueror", "netscape", "links -g",
-    NULL
-  };
-  gint i=0;
-  gchar *cmdline = NULL;
-  
-  const gchar *browser = g_getenv("BROWSER");
-  if (browser == NULL || browser[0] == '\0') {
-    /* $BROWSER not set -> use first entry */
-    browser = browsers[i++];
-  }
-  do {
-    cmdline = g_strdup_printf("%s '%s'", browser, url);
-    g_debug("Running: %s", cmdline);
-    
-    if (g_spawn_command_line_async(cmdline, NULL)) {
-      g_free(cmdline);
-      return;
-    }
+  show_url (GTK_WIDGET (parent), url);
+}
 
-    g_free(cmdline);
-    browser = browsers[i++];
-  } while(browser);
-  
-  a_dialog_error_msg ( parent, _("Could not launch web browser.") );
-#endif /* WINDOWS */
+void new_email(GtkWindow *parent, const gchar *email)
+{
+  gchar *address;
+  /* FIXME: escaping? */
+  address = g_strdup_printf ("mailto:%s", email);
+  show_url (GTK_WIDGET (parent), address);
+  g_free (address);
 }

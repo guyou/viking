@@ -30,6 +30,7 @@
 #include "dems.h"
 #include "curl_download.h"
 #include "preferences.h"
+#include "globals.h"
 
 #ifdef VIK_CONFIG_GEOCACHES
 void a_datasource_gc_init();
@@ -165,19 +166,22 @@ int main( int argc, char *argv[] )
 
   curl_download_init();
 
+  a_preferences_init ();
+
+  a_vik_preferences_init ();
+
   /* Init modules/plugins */
   modules_init();
 
   a_mapcache_init ();
   a_background_init ();
-  a_preferences_init ();
 
 #ifdef VIK_CONFIG_GEOCACHES
   a_datasource_gc_init();
 #endif
 
   /* Set the icon */
-  main_icon = gdk_pixbuf_from_pixdata(&viking_icon, FALSE, NULL);
+  main_icon = gdk_pixbuf_from_pixdata(&viking_pixbuf, FALSE, NULL);
   gtk_window_set_default_icon(main_icon);
 
   /* Create the first window */

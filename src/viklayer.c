@@ -469,8 +469,8 @@ static gboolean layer_properties_factory ( VikLayer *vl, VikViewport *vp )
 					    (gpointer) vik_layer_interfaces[vl->type]->get_param, 
 					    vl) ) {
     case 0:
-      return FALSE;
     case 3:
+      return FALSE;
       /* redraw (?) */
     case 2:
       vik_layer_post_read ( vl, vp, FALSE ); /* update any gc's */
