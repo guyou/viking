@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(viking, 0.9.2)
+AC_INIT(viking, 0.9.3)
 AM_INIT_AUTOMAKE()
 dnl AC_CONFIG_SRCDIR([src/main.c])
 AC_CONFIG_HEADERS([src/config.h])
@@ -29,6 +29,10 @@ AM_WITH_EXPAT
 
 # Curl
 LIBCURL_CHECK_CONFIG([yes],[],[],[AC_MSG_ERROR([libcurl is needed but not found])])
+
+# libgps
+#AC_CHECK_LIB(gps,gps_poll,AC_DEFINE(HAVE_LIBGPS,[],[libgps to connect to gpsd]),)
+#AM_CONDITIONAL([LIBGPS], [test x$ac_cv_lib_gps_gps_poll = xyes])
 
 AC_CHECK_PROG([GDK_PIXBUF_CSOURCE],gdk-pixbuf-csource,[yes])
 if test $GDK_PIXBUF_CSOURCE != "yes"
@@ -67,8 +71,8 @@ AM_CONDITIONAL([GOOGLE], [test x$ac_cv_enable_google = xyes])
 
 AC_ARG_ENABLE(oldgoogle, AC_HELP_STRING([--enable-old-google],
               [enable old Google stuff (default is disable)]),
-              [ac_cv_enable_google=$enableval],
-              [ac_cv_enable_google=no])
+              [ac_cv_enable_old_google=$enableval],
+              [ac_cv_enable_old_google=no])
 AC_CACHE_CHECK([whether to enable Old Google stuff],
                [ac_cv_enable_old_google], [ac_cv_enable_old_google=yes])
 case $ac_cv_enable_google in
@@ -131,6 +135,35 @@ case $ac_cv_enable_geocaches in
 esac
 AM_CONDITIONAL([GEOCACHES], [test x$ac_cv_enable_geocaches = xyes])
 
+
+AC_ARG_ENABLE(dem24k, AC_HELP_STRING([--enable-dem24k],
+	      [enable USGS 24k DEM (default is disable) download source. Requires dem24k.pl script in path.]),
+              [ac_cv_enable_dem24k=$enableval],
+              [ac_cv_enable_dem24k=no])
+AC_CACHE_CHECK([whether to enable USGS DEM 24k download source],
+               [ac_cv_enable_dem24k], [ac_cv_enable_dem24k=yes])
+case $ac_cv_enable_dem24k in
+  yes)
+    AC_DEFINE(VIK_CONFIG_DEM24K, [], [DEM24K STUFF])
+    ;;
+esac
+AM_CONDITIONAL([DEM24K], [test x$ac_cv_enable_dem24k = xyes])
+
+# Realtime GPS tracking
+AC_ARG_ENABLE(realtime-gps-tracking, AC_HELP_STRING([--enable-realtime-gps-tracking],
+              [enable realtime GPS tracking (default is enable)]),
+              [ac_cv_enable_realtimegpstracking=$enableval],
+              [ac_cv_enable_realtimegpstracking=yes])
+AC_CACHE_CHECK([whether to enable Realtime GPS Tracking stuff],
+               [ac_cv_enable_realtimegpstracking], [ac_cv_enable_realtimegpstracking=yes])
+case $ac_cv_enable_realtimegpstracking in
+  yes)
+    AC_CHECK_LIB(gps,gps_poll,,AC_MSG_ERROR([libgps is needed for Realtime GPS Tracking feature[,] but not found. The feature can be disable with --disable-realtime-gps-tracking]))
+    AC_DEFINE(VIK_CONFIG_REALTIME_GPS_TRACKING, [], [REALTIME GPS TRACKING STUFF])
+    ;;
+esac
+AM_CONDITIONAL([REALTIME_GPS_TRACKING], [test x$ac_cv_enable_realtimegpstracking = xyes])
+
 AC_ARG_WITH(mapcache,
             [AC_HELP_STRING([--with-mapcache],
                             [specify the size of the map cache (default is 50331648)])],
@@ -155,3 +188,23 @@ AC_CONFIG_FILES([Makefile
 AC_OUTPUT([
 	   viking.spec
 	   ])
+
+dnl Output the configuration summary
+echo ""
+echo "==========================================="
+echo "$PACKAGE $VERSION"
+echo "-------------------------------------------"
+echo "Alphabetized track & waypoints   : $ac_cv_enable_alpha_trw"
+echo "Google Maps                      : $ac_cv_enable_google"
+#echo "Old Google Maps                  : $ac_cv_enable_old_google"
+echo "Terraserver Maps                 : $ac_cv_enable_terraserver"
+#echo "Expedia Maps                     : $ac_cv_enable_expedia"
+echo "Open Street Map                  : $ac_cv_enable_openstreetmap"
+#echo "Geocaches Acquire                : $ac_cv_enable_geocaches"
+echo "USGS 24k DEM                     : $ac_cv_enable_dem24k"
+echo "Realtime GPS Tracking            : $ac_cv_enable_realtimegpstracking"
+echo "Size of map cache (in memory)    : ${VIK_CONFIG_MAPCACHE_SIZE}"
+echo "-------------------------------------------"
+echo ""
+echo "Configure finished, type 'make' to build."
+

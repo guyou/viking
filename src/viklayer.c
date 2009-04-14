@@ -92,6 +92,24 @@ static void layer_class_init (VikLayerClass *klass)
 
 void vik_layer_emit_update ( VikLayer *vl )
 {
+  if ( vl->visible ) {
+    vik_window_set_redraw_trigger(vl);
+    g_signal_emit ( G_OBJECT(vl), layer_signals[VL_UPDATE_SIGNAL], 0 );
+  }
+}
+
+/* should only be done by VikLayersPanel -- need to redraw and record trigger
+ * when we make a layer invisible.
+ */
+void vik_layer_emit_update_although_invisible ( VikLayer *vl )
+{
+  vik_window_set_redraw_trigger(vl);
+  g_signal_emit ( G_OBJECT(vl), layer_signals[VL_UPDATE_SIGNAL], 0 );
+}
+
+/* doesn't set the trigger. should be done by aggregate layer when child emits update. */
+void vik_layer_emit_update_secondary ( VikLayer *vl )
+{
   if ( vl->visible )
     g_signal_emit ( G_OBJECT(vl), layer_signals[VL_UPDATE_SIGNAL], 0 );
 }
@@ -190,22 +208,6 @@ void vik_layer_change_coord_mode ( VikLayer *l, VikCoordMode mode )
     vik_layer_interfaces[l->type]->change_coord_mode ( l, mode );
 }
 
-VikLayer *vik_layer_copy ( VikLayer *vl, gpointer vp )
-{
-  if ( vik_layer_interfaces[vl->type]->copy )
-  {
-    VikLayer *rv = vik_layer_interfaces[vl->type]->copy ( vl, vp );
-    if ( rv )
-    {
-      vik_layer_rename ( rv, vl->name );
-      rv->visible = vl->visible;
-    }
-    return rv;
-  }
-  else
-    return NULL;
-}
-
 typedef struct {
   gint layer_type;
   gint len;
@@ -257,6 +259,24 @@ void vik_layer_marshall_params ( VikLayer *vl, guint8 **data, gint *datalen )
       case VIK_LAYER_PARAM_STRING: 
 	vlm_append(d.s, strlen(d.s));
 	break;
+
+      /* print out the string list in the array */
+      case VIK_LAYER_PARAM_STRING_LIST: {
+        GList *list = d.sl;
+        
+        /* write length of list (# of strings) */
+        gint listlen = g_list_length ( list );
+        g_byte_array_append ( b, (guint8 *)&listlen, sizeof(listlen) );
+
+        /* write each string */
+        while ( list ) {
+          gchar *s = (gchar *) list->data;
+          vlm_append(s, strlen(s));
+          list = list->next;
+        }
+
+	break;
+      }
       default:
 	vlm_append(&d, sizeof(d));
 	break;
@@ -307,6 +327,24 @@ void vik_layer_unmarshall_params ( VikLayer *vl, guint8 *data, gint datalen, Vik
 	set_param(vl, i, d, vvp);
 	g_free(s);
 	break;
+      case VIK_LAYER_PARAM_STRING_LIST:  {
+        gint listlen = vlm_size, j;
+        GList *list = NULL;
+        b += sizeof(gint); /* skip listlen */;
+
+        for ( j = 0; j < listlen; j++ ) {
+          /* get a string */
+          s = g_malloc(vlm_size + 1);
+	  s[vlm_size]=0;
+	  vlm_read(s);
+          list = g_list_append ( list, s );
+        }
+        d.sl = list;
+        set_param ( vl, i, d, vvp );
+        /* don't free -- string list is responsibility of the layer */
+
+        break;
+        }
       default:
 	vlm_read(&d);
 	set_param(vl, i, d, vvp);
@@ -472,6 +510,24 @@ static GtkWidget *properties_widget_new_widget ( VikLayerParam *param, VikLayerP
           vik_radio_group_set_selected ( VIK_RADIO_GROUP(rv), data.u );
       }
       break;
+    case VIK_LAYER_WIDGET_RADIOGROUP_STATIC:
+      if ( param->type == VIK_LAYER_PARAM_UINT && param->widget_data )
+      {
+        rv = vik_radio_group_new_static ( (const gchar **) param->widget_data );
+        if ( param->extra_widget_data ) /* map of alternate uint values for options */
+        {
+          int i;
+          for ( i = 0; ((const char **)param->widget_data)[i]; i++ )
+            if ( ((guint *)param->extra_widget_data)[i] == data.u )
+            {
+              vik_radio_group_set_selected ( VIK_RADIO_GROUP(rv), i );
+              break;
+            }
+        }
+        else if ( data.u ) /* zero is already default */
+          vik_radio_group_set_selected ( VIK_RADIO_GROUP(rv), data.u );
+      }
+      break;
     case VIK_LAYER_WIDGET_SPINBUTTON:
       if ( (param->type == VIK_LAYER_PARAM_DOUBLE || param->type == VIK_LAYER_PARAM_UINT
            || param->type == VIK_LAYER_PARAM_INT)  && param->widget_data )
@@ -537,6 +593,7 @@ static VikLayerParamData properties_widget_get_value ( GtkWidget *widget, VikLay
       break;
 #endif
     case VIK_LAYER_WIDGET_RADIOGROUP:
+    case VIK_LAYER_WIDGET_RADIOGROUP_STATIC:
       rv.u = vik_radio_group_get_selected(VIK_RADIO_GROUP(widget));
       if ( param->extra_widget_data )
         rv.u = (guint32)g_list_nth_data(param->extra_widget_data, rv.u);
@@ -607,7 +664,7 @@ static gboolean layer_properties_factory ( VikLayer *vl, VikViewport *vp )
     GtkWidget *notebook = NULL;
     GtkWidget **widgets = g_malloc ( sizeof(GtkWidget *) * widget_count );
 
-    if ( groups && groups_count )
+    if ( groups && groups_count > 1 )
     {
       guint8 current_group;
       guint16 tab_widget_count;
@@ -672,8 +729,10 @@ static gboolean layer_properties_factory ( VikLayer *vl, VikViewport *vp )
       gtk_widget_destroy ( dialog ); /* hide before redrawing. */
       g_free ( widgets );
 
+#ifdef XXXXXXXXXXXXXXXXXXXX
       if ( must_redraw )
         vik_layer_emit_update ( vl ); /* if this is a new layer, it won't redraw twice because no on'es listening to this signal. */
+#endif /*XXXXXXXXXXXXXXXXXXXXX*/
       return TRUE; /* user clicked OK */
     }
 
@@ -683,4 +742,56 @@ static gboolean layer_properties_factory ( VikLayer *vl, VikViewport *vp )
     g_free ( widgets );
     return FALSE;
   }
+}
+
+static GdkCursor ***layers_cursors;
+
+GdkCursor *vik_layer_get_tool_cursor ( gint layer_id, gint tool_id )
+{
+  if ( layer_id >= VIK_LAYER_NUM_TYPES )
+    return NULL;
+  if ( tool_id >= vik_layer_interfaces[layer_id]->tools_count )
+    return NULL;
+  return layers_cursors[layer_id][tool_id];
+}
+
+void vik_layer_cursors_init()
+{
+  gint i, j;
+  layers_cursors = g_malloc ( sizeof(GdkCursor **) * VIK_LAYER_NUM_TYPES );
+  for ( i = 0 ; i < VIK_LAYER_NUM_TYPES; i++ ) {
+    if ( vik_layer_interfaces[i]->tools_count ) {
+      layers_cursors[i] = g_malloc ( sizeof(GdkCursor *) *  vik_layer_interfaces[i]->tools_count );
+      for ( j = 0; j < vik_layer_interfaces[i]->tools_count; j++ ) {
+        if ( vik_layer_interfaces[i]->tools[j].cursor ) {
+          const GdkPixdata *cursor_pixdata = vik_layer_interfaces[i]->tools[j].cursor;
+          GError *cursor_load_err = NULL;
+          GdkPixbuf *cursor_pixbuf = gdk_pixbuf_from_pixdata (cursor_pixdata, FALSE, &cursor_load_err);
+          /* TODO: settable offeset */
+          GdkCursor *cursor = gdk_cursor_new_from_pixbuf ( gdk_display_get_default(), cursor_pixbuf, 3, 3 );
+          layers_cursors[i][j] = cursor;
+
+          g_object_unref ( G_OBJECT(cursor_pixbuf) );
+        }
+        else
+          layers_cursors[i][j] = NULL;
+      }
+    } else
+      layers_cursors[i] = NULL;
+  }
+}
+
+void vik_layer_cursors_uninit()
+{
+  gint i, j;
+  for ( i = 0 ; i < VIK_LAYER_NUM_TYPES; i++ ) {
+    if ( vik_layer_interfaces[i]->tools_count ) {
+      for ( j = 0; j < vik_layer_interfaces[i]->tools_count; j++ ) {
+        if ( layers_cursors[i][j] )
+          gdk_cursor_unref ( layers_cursors[i][j] );
+      }
+      g_free ( layers_cursors[i] );
+    }
+  }
+  g_free ( layers_cursors );
 }

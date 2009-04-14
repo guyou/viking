@@ -65,7 +65,8 @@ viking_SOURCES = main.c \
 	vikdemlayer.h vikdemlayer.c \
 	vikdemlayer_pixmap.h \
 	vikfilelist.c vikfilelist.h \
-	dems.c dems.h
+	dems.c dems.h \
+	srtm_continent.c
 
 if GOOGLE
 viking_SOURCES += \
@@ -93,5 +94,8 @@ endif
 
 INCLUDES        = @GTK_CFLAGS@ @EXPAT_CFLAGS@ @LIBCURL_CPPFLAGS@
 LDADD           = @GTK_LIBS@ @EXPAT_LIBS@ @LIBCURL@
+if REALTIME_GPS_TRACKING
+LDADD           += -lgps
+endif
 #LDADD           = -lz @GTK_LIBS@ @EXPAT_LIBS@ @LIBCURL@
-AM_CFLAGS		= -Wall -g
+AM_CFLAGS		= -Wall -g -D_GNU_SOURCE

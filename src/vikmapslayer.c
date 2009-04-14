@@ -24,6 +24,8 @@
 #define MAX_SHRINKFACTOR 8.0000001 /* zoom 1 viewing 8-tiles */
 #define MIN_SHRINKFACTOR 0.0312499 /* zoom 32 viewing 1-tiles */
 
+#define REAL_MIN_SHRINKFACTOR 0.0039062499 /* if shrinkfactor is between MAX and REAL_MAX, will only check for existence */
+
 #include <gtk/gtk.h>
 #include <gdk-pixbuf/gdk-pixdata.h>
 #include <stdio.h>
@@ -57,6 +59,7 @@
 #include "terraserver.h"
 
 #include "dir.h"
+#include "icons/icons.h"
 
 /****** MAP TYPES ******/
 
@@ -81,7 +84,6 @@ static gdouble __mapzooms_y[] = { 0.0, 0.25, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.
 /**************************/
 
 
-static VikMapsLayer *maps_layer_copy ( VikMapsLayer *vml, VikViewport *vvp );
 static void maps_layer_post_read (VikLayer *vl, VikViewport *vp, gboolean from_file);
 static void maps_layer_marshall( VikMapsLayer *vml, guint8 **data, gint *len );
 static VikMapsLayer *maps_layer_unmarshall( guint8 *data, gint len, VikViewport *vvp );
@@ -115,7 +117,8 @@ enum { PARAM_MAPTYPE=0, PARAM_CACHE_DIR, PARAM_ALPHA, PARAM_AUTODOWNLOAD, PARAM_
 
 static VikToolInterface maps_tools[] = {
   { "Maps Download", (VikToolConstructorFunc) maps_layer_download_create, NULL, NULL, NULL,  
-    (VikToolMouseFunc) maps_layer_download_click, NULL,  (VikToolMouseFunc) maps_layer_download_release },
+    (VikToolMouseFunc) maps_layer_download_click, NULL,  (VikToolMouseFunc) maps_layer_download_release,
+    (VikToolKeyFunc) NULL, &cursor_mapdl },
 };
 
 VikLayerInterface vik_maps_layer_interface = {
@@ -150,7 +153,6 @@ VikLayerInterface vik_maps_layer_interface = {
   (VikLayerFuncSublayerRenameRequest)   NULL,
   (VikLayerFuncSublayerToggleVisible)   NULL,
 
-  (VikLayerFuncCopy)                    maps_layer_copy,
   (VikLayerFuncMarshall)		maps_layer_marshall,
   (VikLayerFuncUnmarshall)		maps_layer_unmarshall,
 
@@ -251,7 +253,7 @@ gchar *vik_maps_layer_get_map_label(VikMapsLayer *vml)
 #define MAPS_CACHE_DIR maps_layer_default_dir()
 #define GLOBAL_MAPS_DIR "/var/cache/maps/"
 
-static gchar *maps_layer_default_dir ()
+gchar *maps_layer_default_dir ()
 {
   static gchar *defaultdir = NULL;
   if ( ! defaultdir )
@@ -456,15 +458,6 @@ static void maps_layer_post_read (VikLayer *vl, VikViewport *vp, gboolean from_f
   }
 }
 
-static VikMapsLayer *maps_layer_copy ( VikMapsLayer *vml, VikViewport *vvp )
-{
-  VikMapsLayer *rv = maps_layer_new ( vvp );
-  *rv = *vml;
-  rv->cache_dir = g_strdup(rv->cache_dir);
-  VIK_LAYER(rv)->name = NULL;
-  return rv;
-}
-
 static void maps_layer_marshall( VikMapsLayer *vml, guint8 **data, gint *len )
 {
   vik_layer_marshall_params ( VIK_LAYER(vml), data, len );
@@ -588,16 +581,21 @@ static void maps_layer_draw_section ( VikMapsLayer *vml, VikViewport *vvp, VikCo
   gdouble xzoom = vik_viewport_get_xmpp ( vvp );
   gdouble yzoom = vik_viewport_get_ympp ( vvp );
   gdouble xshrinkfactor = 1.0, yshrinkfactor = 1.0;
+  gdouble existence_only = FALSE;
 
   if ( vml->xmapzoom && (vml->xmapzoom != xzoom || vml->ymapzoom != yzoom) ) {
     xshrinkfactor = vml->xmapzoom / xzoom;
     yshrinkfactor = vml->ymapzoom / yzoom;
-    if ( xshrinkfactor > MIN_SHRINKFACTOR && xshrinkfactor < MAX_SHRINKFACTOR &&
-         yshrinkfactor > MIN_SHRINKFACTOR && yshrinkfactor < MAX_SHRINKFACTOR ) {
-      xzoom = vml->xmapzoom;
-      yzoom = vml->xmapzoom;
-    } else {
-      g_warning ( "Cowardly refusing to draw tiles at a shrinkfactor more than %.3f (zoomed out) or less than %.3f (zoomed in).", 1/MIN_SHRINKFACTOR, 1/MAX_SHRINKFACTOR );
+    xzoom = vml->xmapzoom;
+    yzoom = vml->xmapzoom;
+    if ( ! (xshrinkfactor > MIN_SHRINKFACTOR && xshrinkfactor < MAX_SHRINKFACTOR &&
+         yshrinkfactor > MIN_SHRINKFACTOR && yshrinkfactor < MAX_SHRINKFACTOR ) ) {
+      if ( xshrinkfactor > REAL_MIN_SHRINKFACTOR && yshrinkfactor > REAL_MIN_SHRINKFACTOR )
+        existence_only = TRUE;
+      else {
+        g_warning ( "Cowardly refusing to draw tiles or existence of tiles beyond %d zoom out factor", (int)( 1.0/REAL_MIN_SHRINKFACTOR));
+        return;
+      }
     }
   }
 
@@ -619,14 +617,14 @@ static void maps_layer_draw_section ( VikMapsLayer *vml, VikViewport *vvp, VikCo
     guint max_path_len = strlen(vml->cache_dir) + 40;
     gchar *path_buf = g_malloc ( max_path_len * sizeof(char) );
 
-    if ( vml->autodownload  && should_start_autodownload(vml, vvp)) {
+    if ( (!existence_only) && vml->autodownload  && should_start_autodownload(vml, vvp)) {
 #ifdef DEBUG
       fputs(stderr, "DEBUG: Starting autodownload\n");
 #endif
       start_download_thread ( vml, vvp, ul, br, REDOWNLOAD_NONE );
     }
 
-    if ( map_type->tilesize_x == 0 ) {
+    if ( map_type->tilesize_x == 0 && !existence_only ) {
       for ( x = xmin; x <= xmax; x++ ) {
         for ( y = ymin; y <= ymax; y++ ) {
           ulm.x = x;
@@ -655,6 +653,9 @@ static void maps_layer_draw_section ( VikMapsLayer *vml, VikViewport *vvp, VikCo
       gint8 yinc = (ulm.y == ymin) ? 1 : -1;
       gdouble xx, yy; gint xx_tmp, yy_tmp;
       gint base_yy, xend, yend;
+
+      GdkGC *black_gc = GTK_WIDGET(vvp)->style->black_gc;
+
       xend = (xinc == 1) ? (xmax+1) : (xmin-1);
       yend = (yinc == 1) ? (ymax+1) : (ymin-1);
 
@@ -671,9 +672,19 @@ static void maps_layer_draw_section ( VikMapsLayer *vml, VikViewport *vvp, VikCo
         for ( y = ((yinc == 1) ? ymin : ymax); y != yend; y+=yinc ) {
           ulm.x = x;
           ulm.y = y;
-          pixbuf = get_pixbuf ( vml, mode, &ulm, path_buf, max_path_len, xshrinkfactor, yshrinkfactor );
-          if ( pixbuf )
-            vik_viewport_draw_pixbuf ( vvp, pixbuf, 0, 0, xx, yy, tilesize_x_ceil, tilesize_y_ceil );
+
+          if ( existence_only ) {
+            g_snprintf ( path_buf, max_path_len, DIRSTRUCTURE,
+                     vml->cache_dir, mode,
+                     ulm.scale, ulm.z, ulm.x, ulm.y );
+            if ( access ( path_buf, F_OK ) == 0 ) {
+              vik_viewport_draw_line ( vvp, black_gc, xx+tilesize_x_ceil, yy, xx, yy+tilesize_y_ceil );
+            }
+          } else {
+            pixbuf = get_pixbuf ( vml, mode, &ulm, path_buf, max_path_len, xshrinkfactor, yshrinkfactor );
+            if ( pixbuf )
+              vik_viewport_draw_pixbuf ( vvp, pixbuf, 0, 0, xx, yy, tilesize_x_ceil, tilesize_y_ceil );
+          }
 
           yy += tilesize_y;
         }

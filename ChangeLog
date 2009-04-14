@@ -1,3 +1,198 @@
+2007-10-20
+Guilhem Bonnefille <guilhem.bonnefille@gmail.com>:
+	* Releasing 0.9.3
+
+2007-10-20
+Evan Battaglia <gtoevan@gmx.net>
+	* Fixing minor typo in vikdemlayer.c which could cause crashes
+
+2007-10-20
+Quy Tonthat <qtonthat@gmail.com>:
+	* Track Properties Dialog no longer blocks interaction of the main
+	window.
+	* Draw position marker on track elev/speed graphs at mouse click.
+	* Diasable buttons on Track Properties Dialog when not needed.
+	* Display track name on title of track property dialog. Now that
+	viking allows multiple dialogs displayed simultaneously.
+
+2007-10-17
+Evan Battaglia <gtoevan@gmx.net>
+	* Fix problem with extraneous waypoints being plotted (wrap around problem). May still be problems in UTM mode.
+
+2007-10-16
+Evan Battaglia <gtoevan@gmx.net>
+	* Fix Google version parsing. Google no longer uses '=' and '&' but hex equivalents to describe the URI. Not sure if this will last :/
+
+2007-10-16
+Quy Tonthat <qtonthat@gmail.com>:
+	* Interpolating DEM data in 3 different methods. Track data,
+	elevation-distance graph and elevation info on status bar now make use
+	of interpolation.
+
+2007-10-15
+Quy Tonthat <qtonthat@gmail.com>:
+	* Add more room to the top of elevation-distance graph.
+
+2007-10-14
+Evan Battaglia <gtoevan@gmx.net>
+	* Fix plotting of DEM elevation data (subtract min altitude)
+
+2007-10-12
+Evan Battaglia <gtoevan@gmx.net>
+	* Fix Esc and Backspace to work only when VikViewport has focus.
+	* VikViewport grabs focus on click or release events, or when a
+	tool move event returns VIK_LAYER_TOOL_ACK_GRAB_FOCUS.
+
+2007-10-12
+Quy Tonthat <qtonthat@gmail.com>:
+	* Make use of DEM elevation data and GPS speed for track graphs.
+
+2007-10-11
+Evan Battaglia
+	* Key press framework for tools. Esc to stop track. Backspace to end track.
+
+2007-10-11
+Guilhem Bonnefille <guilhem.bonnefille@gmail.com>:
+	* Upgrading to API 0.5 of OSM
+
+2007-10-11
+Quy Tonthat <qtonthat@gmail.com>:
+	* Make Realtime Tracking a feature that can be disabled at configure
+	time. Do not quietly disable it beacause libgps is not available
+	at compiling time.
+	* Extra data from GPS in realtime mode are now stored in trackpoints.
+
+2007-10-10
+Quy Tonthat <qtonthat@gmail.com>:
+	* Fix a crash bug caused by operation on variable inside a macro.
+
+2007-10-09
+Evan Battaglia <gtoevan@gmx.net>
+	* Ctrl-shift-scroll to zoom like Google. Just scroll zooms like before.
+	* Show currently edited track in red-dashed line. This makes it easier
+	to tell if we've ended the track.
+	* When using new track tool, draw a line before making a point to
+	preview the new point.
+	* Use $BROWSER environment variable (for viewing geocache pages)
+
+2007-10-08
+Quy Tonthat <qtonthat@gmail.com>:
+	* Fix compiling breakage caused by missing icon file from the list.
+
+2007-10-07
+Guilhem Bonnefille <guilhem.bonnefille@gmail.com>:
+	* libgps is no more mandatory
+
+2007-10-07
+Evan Battaglia <gtoevan@gmx.net>:
+	* Scroll zoom keeps cursor over same spot on map (like Google, QLandKarte)
+	* Cursors for tools.
+	* Undo magic scissors by right-clicking.
+	* Extend a track by right-clicking on it.
+	* Experiment: "Begin track" tool
+
+2007-10-07
+Quy Tonthat <qtonthat@gmail.com>:
+	* Correctly calculate position (based on time instead of distance)
+	when clicking on speed-time graph.
+	* Added km/h to speed entries of the track properties dialog.
+	* The "Selected Time" on track properties dialog is now correct.
+	* Track Properties: now displays track distance/time instead of
+	"Selected Time".
+
+2007-10-06
+Quy Tonthat <qtonthat@gmail.com>:
+	* Fix bugs that caused odd display of time on track properties dialog.
+	* Pop a message when failed to connect to gpsd.
+
+2007-10-05
+Quy Tonthat <qtonthat@gmail.com>:
+	* Fix a segfault caused by (mistakenly) adding a new layer to gps
+	layer.
+	* Be more selective in collecting realtime trackpoints.
+
+2007-10-04
+Quy Tonthat <qtonthat@gmail.com>:
+	* Improvements for GPS layer's "realtime tracking".
+
+2007-10-02
+Quy Tonthat <qtonthat@gmail.com>:
+	* Fix crashes caused by emitting update too early at layer creation.
+	* Add realtime tracking to GPS layer.
+	* fix half-drawn problems for GPS layer.
+
+2007-10-01
+Guilhem Bonnefille <guilhem.bonnefille@gmail.com>:
+	* Relax dependencies about glib by implementing
+	g_hash_table_remove_all ourselves (Evan's patch)
+
+2007-10-01
+Quy Tonthat <qtonthat@gmail.com>:
+	* Disable half-drawn update when the center is moved. Avoid using
+	static "trigger" in viklayer.c which causes problems when viking
+	has more than one windows.
+
+2007-09-28
+Quy Tonthat <qtonthat@gmail.com>:
+	* Fix bug that caused Elevation graph not working properly with some
+	tracks.
+
+2007-09-27
+Evan Battaglia <gtoevan@gmx.net>
+	* GPSD Layer -- draw an arrow.
+	* Minimum elevation for DEM layer.
+	* Half-drawn hack to only draw layers on top of the one that has
+		recently changed. A must for realtime GPS.
+
+2007-09-25
+Quy Tonthat <qtonthat@gmail.com>:
+	* SRTM download now works for regions outside North_America too.
+
+2007-09-23
+Evan Battaglia <gtoevan@gmx.net>
+	* Fix copy & pasting DEM layers -- new serializing string list code.
+	* Don't crash if using tool on wrong type of layer / no layer.
+		Although I really want to know what happened to "use the top visible layer",
+		and return TRUE if the tool "accepts" the use...
+		editing lots of TRWLayers was way easier that way...
+	* Remove unused vik_layer_copy() code
+	* Add Magic Scissors icon (from GIMP)
+	* Add comment when making a Google Route.
+	* Continue a magic scissors route by holding down control. Continue the comment too.
+	* Right-click a route created by google route (multiple or single) to see the Google directions web page which created it. Useful for creating a route w/ Viking, then seeing the verbal directions (left here, right there)
+        * Experimental GPSD support (VikGpsdLayer)
+
+2007-09-22
+Evan Battaglia <gtoevan@gmx.net>
+        * Pan Accelerators (Ctrl+Left, etc)
+        * Ctrl-Scroll and Ctrl-Shift-Scroll to pan, kind of like Gimp.
+        * Add a RADIOGROUP_STATIC properties factory type to make it easy
+                for new layers. Uses an array list (like before)
+                instead of a GList.
+        * DEM US 10m (dem24k) source! Option in DEM Layer & ./configure
+        * (copying & pasting DEM layers is broken, will fix later)
+
+2007-09-21
+Evan Battaglia <gtoevan@gmx.net>
+	* Fix right-click on geocache to work with new geocache names.
+	* Download & import SRTM 90m DEM data (still working on US 10m)
+
+2007-09-17
+Evan Battaglia <gtoevan@gmx.net>
+	* Draw lines to show file existence for MapsLayer for very zoomed out maps. It's faster that actually showing the maps but still gets slow at a certain level.
+
+2007-09-09
+Guilhem Bonnefille <guilhem.bonnefille@gmail.com>:
+	* Removing unused files (*.png.h).
+
+2007-09-08
+Guilhem Bonnefille <guilhem.bonnefille@gmail.com>:
+	* Fix #1789550: define MAX macro if not defined on ALL systems
+
+2007-09-08
+Quy Tonthat <qtonthat@gmail.com>:
+	* AUtomatically fetching google version number.
+
 2007-09-07
 Guilhem Bonnefille <guilhem.bonnefille@gmail.com>:
 	* Fix #1789550: mkdtemp usage is conditioned, so it is possible

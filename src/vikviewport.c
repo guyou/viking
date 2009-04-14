@@ -90,6 +90,11 @@ struct _VikViewport {
   gdouble google_calcy_fact;
   gdouble google_calcx_rev_fact;
   gdouble google_calcy_rev_fact;
+
+  /* trigger stuff */
+  gpointer trigger;
+  GdkPixmap *snapshot_buffer;
+  gboolean half_drawn;
 };
 
 static gdouble
@@ -175,7 +180,14 @@ static void viewport_init ( VikViewport *vvp )
   vvp->scale_bg_gc = NULL;
   vvp->draw_scale = TRUE;
   vvp->draw_centermark = TRUE;
+
+  vvp->trigger = NULL;
+  vvp->snapshot_buffer = NULL;
+  vvp->half_drawn = FALSE;
+
   g_signal_connect (G_OBJECT(vvp), "configure_event", G_CALLBACK(vik_viewport_configure), NULL);
+
+  GTK_WIDGET_SET_FLAGS(vvp, GTK_CAN_FOCUS); /* allow VVP to have focus -- enabling key events, etc */
 }
 
 GdkColor *vik_viewport_get_background_gdkcolor ( VikViewport *vvp )
@@ -237,6 +249,11 @@ void vik_viewport_configure_manually ( VikViewport *vvp, gint width, guint heigh
   if ( vvp->scr_buffer )
     g_object_unref ( G_OBJECT ( vvp->scr_buffer ) );
   vvp->scr_buffer = gdk_pixmap_new ( GTK_WIDGET(vvp)->window, vvp->width, vvp->height, -1 );
+
+  /* TODO trigger: only if this is enabled !!! */
+  if ( vvp->snapshot_buffer )
+    g_object_unref ( G_OBJECT ( vvp->snapshot_buffer ) );
+  vvp->snapshot_buffer = gdk_pixmap_new ( GTK_WIDGET(vvp)->window, vvp->width, vvp->height, -1 );
 }
 
 
@@ -256,6 +273,13 @@ gboolean vik_viewport_configure ( VikViewport *vvp )
     g_object_unref ( G_OBJECT ( vvp->scr_buffer ) );
 
   vvp->scr_buffer = gdk_pixmap_new ( GTK_WIDGET(vvp)->window, vvp->width, vvp->height, -1 );
+
+  /* TODO trigger: only if enabled! */
+  if ( vvp->snapshot_buffer )
+    g_object_unref ( G_OBJECT ( vvp->snapshot_buffer ) );
+
+  vvp->snapshot_buffer = gdk_pixmap_new ( GTK_WIDGET(vvp)->window, vvp->width, vvp->height, -1 );
+  /* TODO trigger */
 
   /* this is down here so it can get a GC (necessary?) */
   if ( ! vvp->background_gc )
@@ -278,6 +302,9 @@ static void viewport_finalize ( GObject *gob )
 
   if ( vvp->scr_buffer )
     g_object_unref ( G_OBJECT ( vvp->scr_buffer ) );
+
+  if ( vvp->snapshot_buffer )
+    g_object_unref ( G_OBJECT ( vvp->snapshot_buffer ) );
 
   if ( vvp->alpha_pixbuf )
     g_object_unref ( G_OBJECT ( vvp->alpha_pixbuf ) );
@@ -1009,9 +1036,40 @@ static void viewport_google_rezoom ( VikViewport *vvp )
   vvp->google_calcy_rev_fact = 1 / vvp->google_calcy_fact;
 }
 
+/******** triggering *******/
+void vik_viewport_set_trigger ( VikViewport *vp, gpointer trigger )
+{
+  vp->trigger = trigger;
+}
+
+gpointer vik_viewport_get_trigger ( VikViewport *vp )
+{
+  return vp->trigger;
+}
+
+void vik_viewport_snapshot_save ( VikViewport *vp )
+{
+  gdk_draw_drawable ( vp->snapshot_buffer, vp->background_gc, vp->scr_buffer, 0, 0, 0, 0, -1, -1 );
+}
+
+void vik_viewport_snapshot_load ( VikViewport *vp )
+{
+  gdk_draw_drawable ( vp->scr_buffer, vp->background_gc, vp->snapshot_buffer, 0, 0, 0, 0, -1, -1 );
+}
+
+void vik_viewport_set_half_drawn(VikViewport *vp, gboolean half_drawn)
+{
+  vp->half_drawn = half_drawn;
+}
+
+gboolean vik_viewport_get_half_drawn( VikViewport *vp )
+{
+  return vp->half_drawn;
+}
+
 
 const gchar *vik_viewport_get_drawmode_name(VikViewport *vv, VikViewportDrawMode mode)
-{
+ {
   const gchar *name = NULL;
   VikWindow *vw = NULL;
   GtkWidget *mode_button;
@@ -1027,4 +1085,22 @@ const gchar *vik_viewport_get_drawmode_name(VikViewport *vv, VikViewportDrawMode
 
 }
 
+void vik_viewport_get_min_max_lat_lon ( VikViewport *vp, gdouble *min_lat, gdouble *max_lat, gdouble *min_lon, gdouble *max_lon )
+{
+  VikCoord tleft, tright, bleft, bright;
 
+  vik_viewport_screen_to_coord ( vp, 0, 0, &tleft );
+  vik_viewport_screen_to_coord ( vp, vik_viewport_get_width(vp), 0, &tright );
+  vik_viewport_screen_to_coord ( vp, 0, vik_viewport_get_height(vp), &bleft );
+  vik_viewport_screen_to_coord ( vp, vp->width, vp->height, &bright );
+
+  vik_coord_convert(&tleft, VIK_COORD_LATLON);
+  vik_coord_convert(&tright, VIK_COORD_LATLON);
+  vik_coord_convert(&bleft, VIK_COORD_LATLON);
+  vik_coord_convert(&bright, VIK_COORD_LATLON);
+
+  *max_lat = MAX(tleft.north_south, tright.north_south);
+  *min_lat = MIN(bleft.north_south, bright.north_south);
+  *max_lon = MAX(tright.east_west, bright.east_west);
+  *min_lon = MIN(tleft.east_west, bleft.east_west);
+}

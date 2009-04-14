@@ -73,12 +73,21 @@ enum {
   VIK_LAYER_NUM_TYPES
 };
 
+/* I think most of these are ignored,
+ * returning GRAB_FOCUS grabs the focus for mouse move,
+ * mouse click, release always grabs focus. Focus allows key presses
+ * to be handled.
+ * It used to be that, if ignored, Viking could look for other layers.
+ * this was useful for clicking a way/trackpoint in any layer,
+ * if no layer was selected (find way/trackpoint)
+ */
 typedef enum { 
   VIK_LAYER_TOOL_IGNORED=0,
   VIK_LAYER_TOOL_ACK,
   VIK_LAYER_TOOL_ACK_REDRAW_ABOVE,
   VIK_LAYER_TOOL_ACK_REDRAW_ALL,
-  VIK_LAYER_TOOL_ACK_REDRAW_IF_VISIBLE 
+  VIK_LAYER_TOOL_ACK_REDRAW_IF_VISIBLE,
+  VIK_LAYER_TOOL_ACK_GRAB_FOCUS, /* only for move */
 } VikLayerToolFuncStatus;
 
 /* gpointer is tool-specific state created in the constructor */
@@ -86,6 +95,7 @@ typedef gpointer (*VikToolConstructorFunc) (VikWindow *, VikViewport *);
 typedef void (*VikToolDestructorFunc) (gpointer);
 typedef VikLayerToolFuncStatus (*VikToolMouseFunc) (VikLayer *, GdkEventButton *, gpointer);
 typedef void (*VikToolActivationFunc) (VikLayer *, gpointer);
+typedef gboolean (*VikToolKeyFunc) (VikLayer *, GdkEventKey *, gpointer);
 
 typedef struct _VikToolInterface VikToolInterface;
 struct _VikToolInterface {
@@ -97,6 +107,8 @@ struct _VikToolInterface {
   VikToolMouseFunc click;
   VikToolMouseFunc move;
   VikToolMouseFunc release;
+  VikToolKeyFunc key_press; /* return FALSE if we don't use the key press -- should return AFLSE most of the time if we want any shortcuts / UI keybindings to work! use sparingly. */
+  const GdkPixdata *cursor;
 };
 
 /* Parameters (for I/O and Properties) */
@@ -129,6 +141,7 @@ VIK_LAYER_GROUP_NONE=-1
 enum {
 VIK_LAYER_WIDGET_CHECKBUTTON=0,
 VIK_LAYER_WIDGET_RADIOGROUP,
+VIK_LAYER_WIDGET_RADIOGROUP_STATIC,
 VIK_LAYER_WIDGET_SPINBUTTON,
 VIK_LAYER_WIDGET_ENTRY,
 VIK_LAYER_WIDGET_FILEENTRY,
@@ -195,7 +208,6 @@ typedef const gchar * (*VikLayerFuncSublayerRenameRequest) (VikLayer *,const gch
                                                             gint,VikViewport *,GtkTreeIter *); /* first gpointer is a VikLayersPanel */
 typedef gboolean      (*VikLayerFuncSublayerToggleVisible) (VikLayer *,gint,gpointer);
 
-typedef VikLayer *    (*VikLayerFuncCopy)                  (VikLayer *,VikViewport *);
 typedef void          (*VikLayerFuncMarshall)              (VikLayer *, guint8 **, gint *);
 typedef VikLayer *    (*VikLayerFuncUnmarshall)            (guint8 *, gint, VikViewport *);
 
@@ -266,7 +278,6 @@ struct _VikLayerInterface {
   VikLayerFuncSublayerRenameRequest sublayer_rename_request;
   VikLayerFuncSublayerToggleVisible sublayer_toggle_visible;
 
-  VikLayerFuncCopy                  copy;
   VikLayerFuncMarshall              marshall;
   VikLayerFuncUnmarshall            unmarshall;
 
@@ -324,5 +335,16 @@ gboolean vik_layer_sublayer_toggle_visible ( VikLayer *l, gint subtype, gpointer
 
 /* TODO: put in layerspanel */
 GdkPixbuf *vik_layer_load_icon ( gint type );
+
+VikLayer *vik_layer_get_and_reset_trigger();
+void vik_layer_emit_update_secondary ( VikLayer *vl ); /* to be called by aggregate layer only. doesn't set the trigger */
+void vik_layer_emit_update_although_invisible ( VikLayer *vl );
+
+GdkCursor *vik_layer_get_tool_cursor ( gint layer_id, gint tool_id );
+void vik_layer_cursors_init();
+void vik_layer_cursors_uninit();
+
+
+
 
 #endif

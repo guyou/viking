@@ -83,8 +83,12 @@ static void open_window ( VikWindow *vw, const gchar **files )
     }
 }
 
+/* Options */
+static gboolean version = FALSE;
+
 static GOptionEntry entries[] = 
 {
+  { "version", 'v', 0, G_OPTION_ARG_NONE, &version, "Show version", NULL },
   { NULL }
 };
 
@@ -119,6 +123,12 @@ int main( int argc, char *argv[] )
     }
     return EXIT_FAILURE;
   }
+   
+  if (version)
+  {
+    g_printf ("%s %s, Copyright (c) 2003-2007 Evan Battaglia\n", PACKAGE_NAME, PACKAGE_VERSION);
+    return EXIT_SUCCESS;
+  }
 
   curl_download_init();
 
@@ -127,6 +137,8 @@ int main( int argc, char *argv[] )
 
   a_mapcache_init ();
   a_background_init ();
+  vik_layer_cursors_init ();
+  vik_window_cursors_init ();
 
   /* Set the icon */
   main_icon = gdk_pixbuf_from_pixdata(&viking_icon, FALSE, NULL);
@@ -148,6 +160,8 @@ int main( int argc, char *argv[] )
 
   a_mapcache_uninit ();
   a_dems_uninit ();
+  vik_layer_cursors_uninit ();
+  vik_window_cursors_uninit ();
 
   return 0;
 }

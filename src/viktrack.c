@@ -62,6 +62,17 @@ void vik_track_ref(VikTrack *tr)
   tr->ref_count++;
 }
 
+void vik_track_set_property_dialog(VikTrack *tr, GtkWidget *dialog)
+{
+  /* Warning: does not check for existing dialog */
+  tr->property_dialog = dialog;
+}
+
+void vik_track_clear_property_dialog(VikTrack *tr)
+{
+  tr->property_dialog = NULL;
+}
+
 void vik_track_free(VikTrack *tr)
 {
   if ( tr->ref_count-- > 1 )
@@ -71,6 +82,8 @@ void vik_track_free(VikTrack *tr)
     g_free ( tr->comment );
   g_list_foreach ( tr->trackpoints, (GFunc) g_free, NULL );
   g_list_free( tr->trackpoints );
+  if (tr->property_dialog)
+    gtk_widget_destroy ( GTK_WIDGET(tr->property_dialog) );
   g_free ( tr );
 }
 
@@ -94,7 +107,11 @@ VikTrack *vik_track_copy ( const VikTrack *tr )
 
 VikTrackpoint *vik_trackpoint_new()
 {
-  return g_malloc0(sizeof(VikTrackpoint));
+  VikTrackpoint *tp = g_malloc0(sizeof(VikTrackpoint));
+  tp->extended = FALSE;
+  tp->speed = NAN;
+  tp->course = NAN;
+  return tp;
 }
 
 void vik_trackpoint_free(VikTrackpoint *tp)
@@ -326,7 +343,7 @@ gdouble *vik_track_make_elevation_map ( const VikTrack *tr, guint16 num_chunks )
 
   GList *iter = tr->trackpoints;
 
-  if (!iter->next) /* one-point track */
+  if (!iter || !iter->next) /* zero- or one-point track */
 	  return NULL;
 
   { /* test if there's anything worth calculating */
@@ -342,7 +359,7 @@ gdouble *vik_track_make_elevation_map ( const VikTrack *tr, guint16 num_chunks )
       return NULL;
   }
 
-
+  iter = tr->trackpoints;
 
   g_assert ( num_chunks < 16000 );
 
@@ -629,7 +646,7 @@ gdouble *vik_track_make_speed_map ( const VikTrack *tr, guint16 num_chunks )
 }
 
 /* by Alex Foobarian */
-VikTrackpoint *vik_track_get_closest_tp_by_percentage_dist ( VikTrack *tr, gdouble reldist )
+VikTrackpoint *vik_track_get_closest_tp_by_percentage_dist ( VikTrack *tr, gdouble reldist, gdouble *meters_from_start )
 {
   gdouble dist = vik_track_get_length_including_gaps(tr) * reldist;
   gdouble current_dist = 0.0;
@@ -638,27 +655,80 @@ VikTrackpoint *vik_track_get_closest_tp_by_percentage_dist ( VikTrack *tr, gdoub
   {
     GList *iter = tr->trackpoints->next;
     GList *last_iter = NULL;
+    gdouble last_dist = 0.0;
     while (iter)
     {
       current_inc = vik_coord_diff ( &(VIK_TRACKPOINT(iter->data)->coord),
                                      &(VIK_TRACKPOINT(iter->prev->data)->coord) );
+      last_dist = current_dist;
       current_dist += current_inc;
       if ( current_dist >= dist )
         break;
       last_iter = iter;
       iter = iter->next;
     }
-    if (!iter) /* passing the end the track */
-      return (last_iter ? last_iter->data : NULL);
+    if (!iter) { /* passing the end the track */
+      if (last_iter) {
+        if (meters_from_start)
+          *meters_from_start = last_dist;
+        return(VIK_TRACKPOINT(last_iter->data));
+      }
+      else
+        return NULL;
+    }
     /* we've gone past the dist already, was prev trackpoint closer? */
     /* should do a vik_coord_average_weighted() thingy. */
-    if ( iter->prev && abs(current_dist-current_inc-dist) < abs(current_dist-dist) )
+    if ( iter->prev && abs(current_dist-current_inc-dist) < abs(current_dist-dist) ) {
+      if (meters_from_start)
+        *meters_from_start = last_dist;
       iter = iter->prev;
+    }
+    else
+      if (meters_from_start)
+        *meters_from_start = current_dist;
 
     return VIK_TRACKPOINT(iter->data);
 
   }
   return NULL;
+}
+
+VikTrackpoint *vik_track_get_closest_tp_by_percentage_time ( VikTrack *tr, gdouble reltime, time_t *seconds_from_start )
+{
+  time_t t_pos, t_start, t_end, t_total;
+  t_start = VIK_TRACKPOINT(tr->trackpoints->data)->timestamp;
+  t_end = VIK_TRACKPOINT(g_list_last(tr->trackpoints)->data)->timestamp;
+  t_total = t_end - t_start;
+
+  t_pos = t_start + t_total * reltime;
+
+  if ( !tr->trackpoints )
+    return NULL;
+
+  GList *iter = tr->trackpoints;
+
+  while (iter) {
+    if (VIK_TRACKPOINT(iter->data)->timestamp == t_pos)
+      break;
+    if (VIK_TRACKPOINT(iter->data)->timestamp > t_pos) {
+      if (iter->prev == NULL)  /* first trackpoint */
+        break;
+      time_t t_before = t_pos - VIK_TRACKPOINT(iter->prev)->timestamp;
+      time_t t_after = VIK_TRACKPOINT(iter->data)->timestamp - t_pos;
+      if (t_before <= t_after)
+        iter = iter->prev;
+      break;
+    }
+    else if ((iter->next == NULL) && (t_pos < (VIK_TRACKPOINT(iter->data)->timestamp + 3))) /* last trackpoint: accommodate for round-off */
+      break;
+    iter = iter->next;
+  }
+
+  if (!iter)
+    return NULL;
+  if (seconds_from_start)
+    *seconds_from_start = VIK_TRACKPOINT(iter->data)->timestamp - VIK_TRACKPOINT(tr->trackpoints->data)->timestamp;
+  return VIK_TRACKPOINT(iter->data);
 }
 
 gboolean vik_track_get_minmax_alt ( const VikTrack *tr, gdouble *min_alt, gdouble *max_alt )
@@ -752,9 +822,68 @@ void vik_track_apply_dem_data ( VikTrack *tr )
     /* TODO: of the 4 possible choices we have for choosing an elevation
      * (trackpoint in between samples), choose the one with the least elevation change
      * as the last */
-    elev = a_dems_get_elev_by_coord ( &(VIK_TRACKPOINT(tp_iter->data)->coord) );
+    elev = a_dems_get_elev_by_coord ( &(VIK_TRACKPOINT(tp_iter->data)->coord), VIK_DEM_INTERPOL_BEST );
     if ( elev != VIK_DEM_INVALID_ELEVATION )
       VIK_TRACKPOINT(tp_iter->data)->altitude = elev;
     tp_iter = tp_iter->next;
   }
 }
+
+/* appends t2 to t1, leaving t2 with no trackpoints */
+void vik_track_steal_and_append_trackpoints ( VikTrack *t1, VikTrack *t2 )
+{
+  if ( t1->trackpoints ) {
+    GList *tpiter = t1->trackpoints;
+    while ( tpiter->next )
+      tpiter = tpiter->next;
+    tpiter->next = t2->trackpoints;
+    t2->trackpoints->prev = tpiter;
+  } else
+    t1->trackpoints = t2->trackpoints;
+  t2->trackpoints = NULL;
+}
+
+/* starting at the end, looks backwards for the last "double point", a duplicate trackpoint.
+ * this is indicative of magic scissors continued use. If there is no double point,
+ * deletes all the trackpoints. Returns the new end of the track (or the start if
+ * there are no double points
+ */
+VikCoord *vik_track_cut_back_to_double_point ( VikTrack *tr )
+{
+  GList *iter = tr->trackpoints;
+  VikCoord *rv;
+
+  if ( !iter )
+    return NULL;
+  while ( iter->next )
+    iter = iter->next;
+
+
+  while ( iter->prev ) {
+    if ( vik_coord_equals((VikCoord *)iter->data, (VikCoord *)iter->prev->data) ) {
+      GList *prev = iter->prev;
+
+      rv = g_malloc(sizeof(VikCoord));
+      *rv = *((VikCoord *) iter->data);
+
+      /* truncate trackpoint list */
+      iter->prev = NULL; /* pretend it's the end */
+      g_list_foreach ( iter, (GFunc) g_free, NULL );
+      g_list_free( iter );
+
+      prev->next = NULL;
+
+      return rv;
+    }
+    iter = iter->prev;
+  }
+
+  /* no double point found! */
+  rv = g_malloc(sizeof(VikCoord));
+  *rv = *((VikCoord *) tr->trackpoints->data);
+  g_list_foreach ( tr->trackpoints, (GFunc) g_free, NULL );
+  g_list_free( tr->trackpoints );
+  tr->trackpoints = NULL;
+  return rv;
+}
+

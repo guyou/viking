@@ -42,7 +42,7 @@ static gchar *get_cookie_file(gboolean init)
     mutex = g_mutex_new();
     static gchar *cookie_fn = "cookies.txt";
     const gchar *viking_dir = a_get_viking_cookies_dir();
-    cookie_file = g_strdup_printf("%s/%s", viking_dir, cookie_fn);
+    cookie_file = g_build_filename(viking_dir, cookie_fn, NULL);
     unlink(cookie_file);
     return NULL;
   }
@@ -96,7 +96,7 @@ int curl_download_uri ( const char *uri, FILE *f, DownloadOptions *options )
           curl_easy_setopt ( curl, CURLOPT_MAXREDIRS, options->follow_location);
         }
       }
-      curl_easy_setopt ( curl, CURLOPT_USERAGENT, "viking/" VERSION " libcurl/7.15.4" );
+      curl_easy_setopt ( curl, CURLOPT_USERAGENT, PACKAGE "/" VERSION " libcurl/7.15.4" );
       if ((cookie_file = get_cookie_file(FALSE)) != NULL)
         curl_easy_setopt(curl, CURLOPT_COOKIEFILE, cookie_file);
       res = curl_easy_perform ( curl );
@@ -105,13 +105,13 @@ int curl_download_uri ( const char *uri, FILE *f, DownloadOptions *options )
   return(res);
 }
 
-int curl_download_get_url ( const char *hostname, const char *uri, FILE *f, DownloadOptions *options )
+int curl_download_get_url ( const char *hostname, const char *uri, FILE *f, DownloadOptions *options, gboolean ftp )
 {
   int ret;
   gchar *full = NULL;
 
   /* Compose the full url */
-  full = g_strdup_printf ( "http://%s%s", hostname, uri );
+  full = g_strdup_printf ( "%s://%s%s", (ftp?"ftp":"http"), hostname, uri );
   ret = curl_download_uri ( full, f, options );
   g_free ( full );
   full = NULL;

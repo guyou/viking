@@ -24,6 +24,7 @@
 
 #include <time.h>
 #include <glib.h>
+#include <gtk/gtk.h>
 
 #include "vikcoord.h"
 
@@ -38,7 +39,17 @@ struct _VikTrackpoint {
   gboolean newsegment;
   gboolean has_timestamp;
   time_t timestamp;
-  gdouble altitude;
+  gdouble altitude;	/* only in 3D fixes */
+  /* Most GPSs provide this in realtime mode (NMEA) but not in data mode */
+  gboolean extended;
+  gdouble speed;  	/* only in 3D fixes */
+  gdouble course;
+  guint nsats;		/* number of satellites used */
+#define VIK_GPS_MODE_NOT_SEEN	0	/* mode update not seen yet */
+#define VIK_GPS_MODE_NO_FIX	1	/* none */
+#define VIK_GPS_MODE_2D  	2	/* good for latitude/longitude */
+#define VIK_GPS_MODE_3D  	3	/* good for altitude/climb too */
+  gint fix_mode;
 };
 
 typedef struct _VikTrack VikTrack;
@@ -47,6 +58,7 @@ struct _VikTrack {
   gboolean visible;
   gchar *comment;
   guint8 ref_count;
+  GtkWidget *property_dialog;
 };
 
 VikTrack *vik_track_new();
@@ -74,7 +86,8 @@ gdouble vik_track_get_average_speed(const VikTrack *tr);
 void vik_track_convert ( VikTrack *tr, VikCoordMode dest_mode );
 gdouble *vik_track_make_elevation_map ( const VikTrack *tr, guint16 num_chunks );
 void vik_track_get_total_elevation_gain(const VikTrack *tr, gdouble *up, gdouble *down);
-VikTrackpoint *vik_track_get_closest_tp_by_percentage_dist ( VikTrack *tr, gdouble reldist );
+VikTrackpoint *vik_track_get_closest_tp_by_percentage_dist ( VikTrack *tr, gdouble reldist, gdouble *meters_from_start );
+VikTrackpoint *vik_track_get_closest_tp_by_percentage_time ( VikTrack *tr, gdouble reldist, time_t *seconds_from_start );
 gdouble *vik_track_make_speed_map ( const VikTrack *tr, guint16 num_chunks );
 gboolean vik_track_get_minmax_alt ( const VikTrack *tr, gdouble *min_alt, gdouble *max_alt );
 void vik_track_marshall ( VikTrack *tr, guint8 **data, guint *len);
@@ -82,5 +95,17 @@ VikTrack *vik_track_unmarshall (guint8 *data, guint datalen);
 
 void vik_track_apply_dem_data ( VikTrack *tr);
 
+/* appends t2 to t1, leaving t2 with no trackpoints */
+void vik_track_steal_and_append_trackpoints ( VikTrack *t1, VikTrack *t2 );
+
+/* starting at the end, looks backwards for the last "double point", a duplicate trackpoint.
+ * this is indicative of magic scissors continued use. If there is no double point,
+ * deletes all the trackpoints. returns new end of the track (or the start if
+ * there are no double points)
+ */
+VikCoord *vik_track_cut_back_to_double_point ( VikTrack *tr );
+
+void vik_track_set_property_dialog(VikTrack *tr, GtkWidget *dialog);
+void vik_track_clear_property_dialog(VikTrack *tr);
 
 #endif

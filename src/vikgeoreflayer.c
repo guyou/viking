@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "icons/icons.h"
+
 VikLayerParam georef_layer_params[] = {
   { "image", VIK_LAYER_PARAM_STRING, VIK_LAYER_NOT_IN_PROPERTIES },
   { "corner_easting", VIK_LAYER_PARAM_DOUBLE, VIK_LAYER_NOT_IN_PROPERTIES },
@@ -36,7 +38,6 @@ enum { PARAM_IMAGE = 0, PARAM_CE, PARAM_CN, PARAM_ME, PARAM_MN, NUM_PARAMS };
 
 static void georef_layer_marshall( VikGeorefLayer *vgl, guint8 **data, gint *len );
 static VikGeorefLayer *georef_layer_unmarshall( guint8 *data, gint len, VikViewport *vvp );
-static VikGeorefLayer *georef_layer_copy ( VikGeorefLayer *vgl, gpointer vp );
 static gboolean georef_layer_set_param ( VikGeorefLayer *vgl, guint16 id, VikLayerParamData data, VikViewport *vp );
 static VikLayerParamData georef_layer_get_param ( VikGeorefLayer *vgl, guint16 id );
 VikGeorefLayer *georef_layer_new ( );
@@ -58,10 +59,12 @@ static gboolean georef_layer_zoom_press ( VikGeorefLayer *vgl, GdkEventButton *e
 
 static VikToolInterface georef_tools[] = {
   { "Georef Move Map", (VikToolConstructorFunc) georef_layer_move_create, NULL, NULL, NULL,
-    (VikToolMouseFunc) georef_layer_move_press, NULL, (VikToolMouseFunc) georef_layer_move_release },
+    (VikToolMouseFunc) georef_layer_move_press, NULL, (VikToolMouseFunc) georef_layer_move_release,
+    (VikToolKeyFunc) NULL, &cursor_geomove },
 
   { "Georef Zoom Tool", (VikToolConstructorFunc) georef_layer_zoom_create, NULL, NULL, NULL,
-    (VikToolMouseFunc) georef_layer_zoom_press, NULL, NULL },
+    (VikToolMouseFunc) georef_layer_zoom_press, NULL, NULL,
+    (VikToolKeyFunc) NULL, &cursor_geozoom },
 };
 
 VikLayerInterface vik_georef_layer_interface = {
@@ -96,7 +99,6 @@ VikLayerInterface vik_georef_layer_interface = {
   (VikLayerFuncSublayerRenameRequest)   NULL,
   (VikLayerFuncSublayerToggleVisible)   NULL,
 
-  (VikLayerFuncCopy)                    georef_layer_copy,
   (VikLayerFuncMarshall)		georef_layer_marshall,
   (VikLayerFuncUnmarshall)		georef_layer_unmarshall,
 
@@ -148,23 +150,6 @@ GType vik_georef_layer_get_type ()
   }
 
   return vgl_type;
-}
-
-static VikGeorefLayer *georef_layer_copy ( VikGeorefLayer *vgl, gpointer vp )
-{
-  VikGeorefLayer *rv = georef_layer_new ();
-  rv->corner = vgl->corner;
-  rv->mpp_easting = vgl->mpp_easting;
-  rv->mpp_northing = vgl->mpp_northing;
-  rv->width = vgl->width;
-  rv->height = vgl->height;
-
-  if ( vgl->image )
-  {
-    rv->image = g_strdup ( vgl->image );
-    georef_layer_load_image ( rv );
-  }
-  return rv;
 }
 
 static void georef_layer_marshall( VikGeorefLayer *vgl, guint8 **data, gint *len )

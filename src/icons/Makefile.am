@@ -83,18 +83,35 @@ WAYPOINT_ICONS = \
 ICONS = \
   viking_icon.png \
   addtr_18.png \
+  begintr_18.png \
   addwp_18.png \
   edtr_18.png \
   edwp_18.png \
   geomove_18.png \
   geozoom_18.png \
   mapdl_18.png \
+  demdl_18.png \
   ruler_18.png \
   showpic_18.png \
-  zoom_18.png
+  zoom_18.png \
+  iscissors_18.png
 
+CURSORS = \
+  cursor_addtr.png \
+  cursor_begintr.png \
+  cursor_edtr.png \
+  cursor_geozoom.png \
+  cursor_ruler.png \
+  cursor_addwp.png \
+  cursor_edwp.png \
+  cursor_iscissors.png \
+  cursor_showpic.png \
+  cursor_demdl.png \
+  cursor_geomove.png \
+  cursor_mapdl.png \
+  cursor_zoom.png
 
-ALL_ICONS = $(ICONS) $(WAYPOINT_ICONS)
+ALL_ICONS = $(ICONS) $(WAYPOINT_ICONS) $(CURSORS)
 EXTRA_DIST = $(ALL_ICONS)
 
 BUILT_SOURCES = $(EXTRA_DIST:%.png=%.png_h) icons.h
