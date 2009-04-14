@@ -19,17 +19,27 @@
  *
  */
 
+#ifdef HAVE_CONFIG
+#include "config.h"
+#endif /* HAVE_CONFIG */
+
 #include "viking.h"
 #include "icons/viking_icon.png_h"
 #include "mapcache.h"
 #include "background.h"
 #include "dems.h"
 #include "curl_download.h"
+#include "preferences.h"
+
+#ifdef VIK_CONFIG_GEOCACHES
+void a_datasource_gc_init();
+#endif
 
 #include <stdlib.h>
 #include <string.h>
 
 #include <glib/gprintf.h>
+#include <glib/gi18n.h>
 
 #include "modules.h"
 
@@ -88,7 +98,7 @@ static gboolean version = FALSE;
 
 static GOptionEntry entries[] = 
 {
-  { "version", 'v', 0, G_OPTION_ARG_NONE, &version, "Show version", NULL },
+  { "version", 'v', 0, G_OPTION_ARG_NONE, &version, N_("Show version"), NULL },
   { NULL }
 };
 
@@ -100,6 +110,10 @@ int main( int argc, char *argv[] )
   int i = 0;
   GError *error = NULL;
   gboolean gui_initialized;
+	
+  bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);  
+  bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+  textdomain (GETTEXT_PACKAGE);
 
   g_thread_init ( NULL );
   gdk_threads_init ();
@@ -137,6 +151,12 @@ int main( int argc, char *argv[] )
 
   a_mapcache_init ();
   a_background_init ();
+  a_preferences_init ();
+
+#ifdef VIK_CONFIG_GEOCACHES
+  a_datasource_gc_init();
+#endif
+
   vik_layer_cursors_init ();
   vik_window_cursors_init ();
 
@@ -160,6 +180,7 @@ int main( int argc, char *argv[] )
 
   a_mapcache_uninit ();
   a_dems_uninit ();
+  a_preferences_uninit ();
   vik_layer_cursors_uninit ();
   vik_window_cursors_uninit ();
 

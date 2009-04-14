@@ -35,18 +35,40 @@ typedef struct _List {
 static List *queue_tail = NULL;
 static int queue_count = 0;
 
-#define VIK_CONFIG_MAPCACHE_MAX_SIZE 50331648 /* 48 meggerbytes */
 static guint32 queue_size = 0;
 
 
 static GHashTable *cache = NULL;
+
+static GMutex *mc_mutex = NULL;
 
 #define HASHKEY_FORMAT_STRING "%d-%d-%d-%d-%d-%d-%.3f-%.3f"
 #define HASHKEY_FORMAT_STRING_NOSHRINK_NOR_ALPHA "%d-%d-%d-%d-%d-"
 
 void a_mapcache_init ()
 {
+  mc_mutex = g_mutex_new();
   cache = g_hash_table_new_full ( g_str_hash, g_str_equal, g_free, g_object_unref );
+}
+
+static void cache_add(gchar *key, GdkPixbuf *pixbuf)
+{
+  /* TODO: Check if already exists */
+  g_hash_table_insert ( cache, key, pixbuf );
+  queue_size += gdk_pixbuf_get_rowstride(pixbuf) * gdk_pixbuf_get_height(pixbuf);
+  queue_size += 100;
+  queue_count++;
+}
+
+static void cache_remove(const gchar *key)
+{
+    GdkPixbuf *buf = g_hash_table_lookup ( cache, key );
+    if (buf) {
+      queue_size -= gdk_pixbuf_get_rowstride(buf) * gdk_pixbuf_get_height(buf);
+      queue_size -= 100;
+      queue_count --;
+      g_hash_table_remove ( cache, key );
+    }
 }
 
 /* returns key from head, adds on newtailkey to tail. */
@@ -87,33 +109,17 @@ void a_mapcache_add ( GdkPixbuf *pixbuf, gint x, gint y, gint z, guint8 type, gu
   gchar *key = g_strdup_printf ( HASHKEY_FORMAT_STRING, x, y, z, type, zoom, alpha, xshrinkfactor, yshrinkfactor );
   static int tmp = 0;
 
-  /* FIXME: what if already exists? problem! */
-  g_hash_table_insert ( cache, key, pixbuf );
-
-  queue_size += gdk_pixbuf_get_rowstride(pixbuf) * gdk_pixbuf_get_height(pixbuf);
-  queue_size += 100;
-  queue_count++;
+  g_mutex_lock(mc_mutex);
+  cache_add(key, pixbuf);
 
   if ( queue_size > VIK_CONFIG_MAPCACHE_SIZE ) {
     gchar *oldkey = list_shift_add_entry ( key );
-    GdkPixbuf *oldbuf = g_hash_table_lookup ( cache, oldkey );
-    queue_size -= gdk_pixbuf_get_rowstride(oldbuf) * gdk_pixbuf_get_height(oldbuf);
-    queue_size -= 100;
-    queue_count --;
-    g_hash_table_remove ( cache, oldkey );
-
-    /* should delete BEFORE adding -- not really possible because don't know size,
-     * but you could guess size (only applic if add big file to full cache) */
-
+    cache_remove(oldkey);
 
     while ( queue_size > VIK_CONFIG_MAPCACHE_SIZE &&
         (queue_tail->next != queue_tail) ) { /* make sure there's more than one thing to delete */
       oldkey = list_shift ();
-      oldbuf = g_hash_table_lookup ( cache, oldkey );
-      queue_size -= gdk_pixbuf_get_rowstride(oldbuf) * gdk_pixbuf_get_height(oldbuf);
-      queue_size -= 100;
-      queue_count --;
-      g_hash_table_remove ( cache, oldkey );
+      cache_remove(oldkey);
     }
 
     /* chop off 'start' etc */
@@ -121,6 +127,7 @@ void a_mapcache_add ( GdkPixbuf *pixbuf, gint x, gint y, gint z, guint8 type, gu
     list_add_entry ( key );
     /* business as usual */
   }
+  g_mutex_unlock(mc_mutex);
 
   if ( (++tmp == 100 ))  { g_print("DEBUG: queue count=%d %u\n", queue_count, queue_size ); tmp=0; }
 }
@@ -145,12 +152,13 @@ void a_mapcache_remove_all_shrinkfactors ( gint x, gint y, gint z, guint8 type, 
   g_snprintf ( key, sizeof(key), HASHKEY_FORMAT_STRING_NOSHRINK_NOR_ALPHA, x, y, z, type, zoom );
   len = strlen(key);
 
+  g_mutex_lock(mc_mutex);
   /* TODO: check logic here */
   do {
     tmp = loop->next;
     if ( strncmp(tmp->key, key, len) == 0 )
     {
-      g_hash_table_remove ( cache, tmp->key );
+      cache_remove(tmp->key);
       if ( tmp == loop ) /* we deleted the last thing in the queue! */
         loop = queue_tail = NULL;
       else {
@@ -167,8 +175,8 @@ void a_mapcache_remove_all_shrinkfactors ( gint x, gint y, gint z, guint8 type, 
   } while ( loop && (loop != queue_tail || tmp == NULL) );
 
   /* loop thru list, looking for the one, compare first whatever chars */
-
-  g_hash_table_remove ( cache, key );
+  cache_remove(key);
+  g_mutex_unlock(mc_mutex);
 }
 
 void a_mapcache_uninit ()

@@ -19,8 +19,14 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <math.h>
+
 #include <gtk/gtk.h>
+#include <glib/gi18n.h>
 #include <time.h>
 #include <string.h>
 #include "coords.h"
@@ -106,7 +112,7 @@ static void minmax_alt(const gdouble *altitudes, gdouble *min, gdouble *max)
   }
 }
 
-#define MARGIN 50
+#define MARGIN 70
 #define LINES 5
 static void set_center_at_graph_position(gdouble event_x, gint img_width, VikLayersPanel *vlp, VikTrack *tr, gboolean time_base)
 {
@@ -266,7 +272,7 @@ static void draw_dem_alt_speed_dist(VikTrack *tr, GdkDrawable *pix, GdkGC *alt_g
       &(VIK_TRACKPOINT(iter->prev->data)->coord) );
     x = (width * dist)/total_length + margin;
     if ( elev != VIK_DEM_INVALID_ELEVATION ) {
-      y_alt = height - (height * elev)/alt_diff;
+      y_alt = height - ((height * elev)/alt_diff);
       gdk_draw_rectangle(GDK_DRAWABLE(pix), alt_gc, TRUE, x-2, y_alt-2, 4, 4);
     }
     if (!isnan(VIK_TRACKPOINT(iter->data)->speed)) {
@@ -309,10 +315,7 @@ GtkWidget *vik_trw_layer_create_profile ( GtkWidget *window, VikTrack *tr, gpoin
 
   minmax_alt(altitudes, min_alt, max_alt);
   mina = *min_alt;
-  maxa = *max_alt * 110 / 100;
-  if  (maxa-mina < MIN_ALT_DIFF) {
-    maxa = mina + MIN_ALT_DIFF;
-  }
+  maxa = *max_alt + ((*max_alt - *min_alt) * 0.25);
   
   /* clear the image */
   gdk_draw_rectangle(GDK_DRAWABLE(pix), window->style->bg_gc[0], 
@@ -321,19 +324,22 @@ GtkWidget *vik_trw_layer_create_profile ( GtkWidget *window, VikTrack *tr, gpoin
 		     TRUE, MARGIN, 0, PROFILE_WIDTH, PROFILE_HEIGHT);
 
   /* draw grid */
-#define LABEL_FONT "Sans 8"
+#define LABEL_FONT "Sans 7"
   for (i=0; i<=LINES; i++) {
     PangoFontDescription *pfd;
     PangoLayout *pl = gtk_widget_create_pango_layout (GTK_WIDGET(image), NULL);
     gchar s[32];
+    int w, h;
 
+    pango_layout_set_alignment (pl, PANGO_ALIGN_RIGHT);
     pfd = pango_font_description_from_string (LABEL_FONT);
     pango_layout_set_font_description (pl, pfd);
     pango_font_description_free (pfd);
     sprintf(s, "%8dm", (int)(mina + (LINES-i)*(maxa-mina)/LINES));
     pango_layout_set_text(pl, s, -1);
-    gdk_draw_layout(GDK_DRAWABLE(pix), window->style->fg_gc[0], 0, 
-		    CLAMP((int)i*PROFILE_HEIGHT/LINES - 5, 0, PROFILE_HEIGHT-15), pl);
+    pango_layout_get_pixel_size (pl, &w, &h);
+    gdk_draw_layout(GDK_DRAWABLE(pix), window->style->fg_gc[0], MARGIN-w-3, 
+		    CLAMP((int)i*PROFILE_HEIGHT/LINES - h/2, 0, PROFILE_HEIGHT-h), pl);
 
     gdk_draw_line (GDK_DRAWABLE(pix), window->style->dark_gc[0], 
 		   MARGIN, PROFILE_HEIGHT/LINES * i, MARGIN + PROFILE_WIDTH, PROFILE_HEIGHT/LINES * i);
@@ -411,8 +417,9 @@ GtkWidget *vik_trw_layer_create_vtdiag ( GtkWidget *window, VikTrack *tr, gpoint
   }
 
   minmax_alt(speeds, &mins, &maxs);
-  mins = 0; /* splines sometimes give negative speeds */
-  maxs = maxs * 110 / 100;
+  if (mins < 0.0)
+    mins = 0; /* splines sometimes give negative speeds */
+  maxs = maxs + ((maxs - mins) * 0.1);
   if  (maxs-mins < MIN_SPEED_DIFF) {
     maxs = mins + MIN_SPEED_DIFF;
   }
@@ -444,12 +451,14 @@ GtkWidget *vik_trw_layer_create_vtdiag ( GtkWidget *window, VikTrack *tr, gpoint
 #else
 
   /* draw grid */
-#define LABEL_FONT "Sans 8"
+#define LABEL_FONT "Sans 7"
   for (i=0; i<=LINES; i++) {
     PangoFontDescription *pfd;
     PangoLayout *pl = gtk_widget_create_pango_layout (GTK_WIDGET(image), NULL);
     gchar s[32];
+    int w, h;
 
+    pango_layout_set_alignment (pl, PANGO_ALIGN_RIGHT);
     pfd = pango_font_description_from_string (LABEL_FONT);
     pango_layout_set_font_description (pl, pfd);
     pango_font_description_free (pfd);
@@ -459,12 +468,14 @@ GtkWidget *vik_trw_layer_create_vtdiag ( GtkWidget *window, VikTrack *tr, gpoint
     sprintf(s, "%8dmph", (int)(mins + (LINES-i)*(maxs-mins)/LINES));
 #endif
     pango_layout_set_text(pl, s, -1);
-    gdk_draw_layout(GDK_DRAWABLE(pix), window->style->fg_gc[0], 0, 
-		    CLAMP((int)i*PROFILE_HEIGHT/LINES - 5, 0, PROFILE_HEIGHT-15), pl);
+    pango_layout_get_pixel_size (pl, &w, &h);
+    gdk_draw_layout(GDK_DRAWABLE(pix), window->style->fg_gc[0], MARGIN-w-3, 
+		    CLAMP((int)i*PROFILE_HEIGHT/LINES - h/2, 0, PROFILE_HEIGHT-h), pl);
 
     gdk_draw_line (GDK_DRAWABLE(pix), window->style->dark_gc[0], 
 		   MARGIN, PROFILE_HEIGHT/LINES * i, MARGIN + PROFILE_WIDTH, PROFILE_HEIGHT/LINES * i);
   }
+  
 
   /* draw speeds */
   for ( i = 0; i < PROFILE_WIDTH; i++ )
@@ -512,13 +523,8 @@ GtkWidget *vik_trw_layer_create_vtdiag ( GtkWidget *window, VikTrack *tr, gpoint
 #undef MARGIN
 #undef LINES
 
-/* Notes: first and third arguments are swapped around compared to the manuals */
-//static void propwin_response_cb( GtkDialog *widgets, gint resp, PropWidgets *widgets)
-static void propwin_response_cb( gpointer p_widgets, gint resp, gpointer p_dialog)
+static void propwin_response_cb( GtkDialog *dialog, gint resp, PropWidgets *widgets)
 {
-  PropWidgets *widgets = (PropWidgets *) p_widgets;
-  GtkDialog * dialog = p_dialog;
-
   VikTrack *tr = widgets->tr;
   VikTrwLayer *vtl = widgets->vtl;
 
@@ -599,18 +605,18 @@ void vik_trw_layer_propwin_run ( GtkWindow *parent, VikTrwLayer *vtl, VikTrack *
   widgets->tr = tr;
   widgets->vlp = vlp;
   widgets->track_name = track_name;
-  gchar *title = g_strdup_printf("%s - Track Properties", track_name);
+  gchar *title = g_strdup_printf(_("%s - Track Properties"), track_name);
   GtkWidget *dialog = gtk_dialog_new_with_buttons (title,
                          parent,
                          GTK_DIALOG_DESTROY_WITH_PARENT | GTK_DIALOG_NO_SEPARATOR,
                          GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT,
-                         "Split Segments", VIK_TRW_LAYER_PROPWIN_SPLIT,
-                         "Reverse",        VIK_TRW_LAYER_PROPWIN_REVERSE,
-                         "Delete Dupl.",   VIK_TRW_LAYER_PROPWIN_DEL_DUP,
+                         _("Split Segments"), VIK_TRW_LAYER_PROPWIN_SPLIT,
+                         _("Reverse"),        VIK_TRW_LAYER_PROPWIN_REVERSE,
+                         _("Delete Dupl."),   VIK_TRW_LAYER_PROPWIN_DEL_DUP,
                          GTK_STOCK_OK,     GTK_RESPONSE_ACCEPT,
                          NULL);
   g_free(title);
-  g_signal_connect_swapped(dialog, "response", G_CALLBACK(propwin_response_cb), widgets);
+  g_signal_connect(dialog, "response", G_CALLBACK(propwin_response_cb), widgets);
   //fprintf(stderr, "DEBUG: dialog=0x%p\n", dialog);
   GtkTable *table;
   gdouble tr_len;
@@ -625,7 +631,7 @@ void vik_trw_layer_propwin_run ( GtkWindow *parent, VikTrwLayer *vtl, VikTrack *
   int cnt;
   int i;
 
-  static gchar *label_texts[] = { "<b>Comment:</b>", "<b>Track Length:</b>", "<b>Trackpoints:</b>", "<b>Segments:</b>", "<b>Duplicate Points:</b>", "<b>Max Speed:</b>", "<b>Avg. Speed:</b>", "<b>Avg. Dist. Between TPs:</b>", "<b>Elevation Range:</b>", "<b>Total Elevation Gain/Loss:</b>", "<b>Start:</b>",  "<b>End:</b>",  "<b>Duration:</b>", "<b>Track Distance/Time:</b>" };
+  static gchar *label_texts[] = { N_("<b>Comment:</b>"), N_("<b>Track Length:</b>"), N_("<b>Trackpoints:</b>"), N_("<b>Segments:</b>"), N_("<b>Duplicate Points:</b>"), N_("<b>Max Speed:</b>"), N_("<b>Avg. Speed:</b>"), N_("<b>Avg. Dist. Between TPs:</b>"), N_("<b>Elevation Range:</b>"), N_("<b>Total Elevation Gain/Loss:</b>"), N_("<b>Start:</b>"), N_("<b>End:</b>"), N_("<b>Duration:</b>"), N_("<b>Track Distance/Time:</b>") };
   static gchar tmp_buf[50];
   gdouble tmp_speed;
 
@@ -653,14 +659,14 @@ void vik_trw_layer_propwin_run ( GtkWindow *parent, VikTrwLayer *vtl, VikTrack *
 
   tmp_speed = vik_track_get_max_speed(tr);
   if ( tmp_speed == 0 )
-    g_snprintf(tmp_buf, sizeof(tmp_buf), "No Data");
+    g_snprintf(tmp_buf, sizeof(tmp_buf), _("No Data"));
   else
     g_snprintf(tmp_buf, sizeof(tmp_buf), "%.2f m/s   (%.0f km/h)", tmp_speed, MTOK(tmp_speed) );
   widgets->w_max_speed = content[cnt++] = gtk_label_new ( tmp_buf );
 
   tmp_speed = vik_track_get_average_speed(tr);
   if ( tmp_speed == 0 )
-    g_snprintf(tmp_buf, sizeof(tmp_buf), "No Data");
+    g_snprintf(tmp_buf, sizeof(tmp_buf), _("No Data"));
   else
     g_snprintf(tmp_buf, sizeof(tmp_buf), "%.2f m/s   (%.0f km/h)", tmp_speed, MTOK(tmp_speed) );
   widgets->w_avg_speed = content[cnt++] = gtk_label_new ( tmp_buf );
@@ -669,14 +675,14 @@ void vik_trw_layer_propwin_run ( GtkWindow *parent, VikTrwLayer *vtl, VikTrack *
   widgets->w_avg_dist = content[cnt++] = gtk_label_new ( tmp_buf );
 
   if ( min_alt == VIK_DEFAULT_ALTITUDE )
-    g_snprintf(tmp_buf, sizeof(tmp_buf), "No Data");
+    g_snprintf(tmp_buf, sizeof(tmp_buf), _("No Data"));
   else
     g_snprintf(tmp_buf, sizeof(tmp_buf), "%.0f m - %.0f m", min_alt, max_alt );
   widgets->w_elev_range = content[cnt++] = gtk_label_new ( tmp_buf );
 
   vik_track_get_total_elevation_gain(tr, &max_alt, &min_alt );
   if ( min_alt == VIK_DEFAULT_ALTITUDE )
-    g_snprintf(tmp_buf, sizeof(tmp_buf), "No Data");
+    g_snprintf(tmp_buf, sizeof(tmp_buf), _("No Data"));
   else
     g_snprintf(tmp_buf, sizeof(tmp_buf), "%.0f m / %.0f m", max_alt, min_alt );
   widgets->w_elev_gain = content[cnt++] = gtk_label_new ( tmp_buf );
@@ -712,14 +718,14 @@ void vik_trw_layer_propwin_run ( GtkWindow *parent, VikTrwLayer *vtl, VikTrack *
     g_strchomp(tmp_buf);
     widgets->w_time_end = content[cnt++] = gtk_label_new(tmp_buf);
 
-    g_snprintf(tmp_buf, sizeof(tmp_buf), "%d minutes", (int)(t2-t1)/60);
+    g_snprintf(tmp_buf, sizeof(tmp_buf), _("%d minutes"), (int)(t2-t1)/60);
     widgets->w_time_dur = content[cnt++] = gtk_label_new(tmp_buf);
   } else {
-    widgets->w_time_start = content[cnt++] = gtk_label_new("No Data");
-    widgets->w_time_end = content[cnt++] = gtk_label_new("No Data");
-    widgets->w_time_dur = content[cnt++] = gtk_label_new("No Data");
+    widgets->w_time_start = content[cnt++] = gtk_label_new(_("No Data"));
+    widgets->w_time_end = content[cnt++] = gtk_label_new(_("No Data"));
+    widgets->w_time_dur = content[cnt++] = gtk_label_new(_("No Data"));
   }
-  widgets->w_dist_time = content[cnt++] = gtk_label_new("No Data");
+  widgets->w_dist_time = content[cnt++] = gtk_label_new(_("No Data"));
 
   table = GTK_TABLE(gtk_table_new (cnt, 2, FALSE));
   gtk_table_set_col_spacing (table, 0, 10);
@@ -728,7 +734,7 @@ void vik_trw_layer_propwin_run ( GtkWindow *parent, VikTrwLayer *vtl, VikTrack *
 
     label = gtk_label_new(NULL);
     gtk_misc_set_alignment ( GTK_MISC(label), 1, 0 );
-    gtk_label_set_markup ( GTK_LABEL(label), label_texts[i] );
+    gtk_label_set_markup ( GTK_LABEL(label), _(label_texts[i]) );
     gtk_table_attach_defaults ( table, label, 0, 1, i, i+1 );
     if (GTK_IS_MISC(content[i])) {
       gtk_misc_set_alignment ( GTK_MISC(content[i]), 0, 0 );
@@ -739,17 +745,17 @@ void vik_trw_layer_propwin_run ( GtkWindow *parent, VikTrwLayer *vtl, VikTrack *
   gtk_box_pack_start (GTK_BOX(GTK_DIALOG(dialog)->vbox), GTK_WIDGET(table), FALSE, FALSE, 0);
 
   if ( profile )
-    gtk_notebook_append_page(GTK_NOTEBOOK(graphs), profile, gtk_label_new("Elevation-distance"));
+    gtk_notebook_append_page(GTK_NOTEBOOK(graphs), profile, gtk_label_new(_("Elevation-distance")));
 
   if ( vtdiag )
-    gtk_notebook_append_page(GTK_NOTEBOOK(graphs), vtdiag, gtk_label_new("Speed-time"));
+    gtk_notebook_append_page(GTK_NOTEBOOK(graphs), vtdiag, gtk_label_new(_("Speed-time")));
 
   gtk_box_pack_start (GTK_BOX(GTK_DIALOG(dialog)->vbox), graphs, FALSE, FALSE, 0);
 
   if (seg_count <= 1)
-    gtk_dialog_set_response_sensitive(dialog, VIK_TRW_LAYER_PROPWIN_SPLIT, FALSE);
+    gtk_dialog_set_response_sensitive(GTK_DIALOG(dialog), VIK_TRW_LAYER_PROPWIN_SPLIT, FALSE);
   if (vik_track_get_dup_point_count(tr) <= 0)
-    gtk_dialog_set_response_sensitive(dialog, VIK_TRW_LAYER_PROPWIN_DEL_DUP, FALSE);
+    gtk_dialog_set_response_sensitive(GTK_DIALOG(dialog), VIK_TRW_LAYER_PROPWIN_DEL_DUP, FALSE);
 
   vik_track_set_property_dialog(tr, dialog);
   gtk_widget_show_all ( dialog );

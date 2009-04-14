@@ -9,7 +9,7 @@ authors.h: ../AUTHORS
 	rm -f $@
 	echo "/* Generated file. */" >> $@
 	echo "#define AUTHORS {\\" >> $@
-	sed -e "s/ \*\*.*//" -e 's/^/"/' -e 's/$$/",\\/' -e '$$s/\\$$//' $< >> $@
+	sed -e "s/ \*\*.*//" -e 's/^/"/' -e 's/$$/",\\/' $< >> $@
 	echo "NULL}" >> $@
 
 BUILT_SOURCES = authors.h
@@ -30,6 +30,7 @@ viking_SOURCES = main.c \
 	dir.c dir.h \
 	authors.h \
 	dialog.c dialog.h \
+	util.c util.h \
 	download.c download.h \
 	viktreeview.c viktreeview.h \
 	viktrwlayer.c viktrwlayer.h viktrwlayer_pixmap.h \
@@ -59,6 +60,7 @@ viking_SOURCES = main.c \
 	datasource_gps.c \
 	datasource_google.c \
 	datasource_gc.c \
+	datasource_bfilter.c \
 	datasources.h \
 	googlesearch.c googlesearch.h \
 	dem.c dem.h \
@@ -66,7 +68,11 @@ viking_SOURCES = main.c \
 	vikdemlayer_pixmap.h \
 	vikfilelist.c vikfilelist.h \
 	dems.c dems.h \
-	srtm_continent.c
+	srtm_continent.c \
+	uibuilder.c uibuilder.h \
+	print-preview.c print-preview.h \
+	print.c print.h \
+	preferences.c preferences.h
 
 if GOOGLE
 viking_SOURCES += \

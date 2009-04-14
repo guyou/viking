@@ -36,6 +36,7 @@ static void osm_mapcoord_to_center_coord ( MapCoord *src, VikCoord *dest );
 static int osm_maplint_download ( MapCoord *src, const gchar *dest_fn );
 static int osm_mapnik_download ( MapCoord *src, const gchar *dest_fn );
 static int osm_osmarender_download ( MapCoord *src, const gchar *dest_fn );
+static int bluemarble_download ( MapCoord *src, const gchar *dest_fn );
 
 static DownloadOptions osm_options = { NULL, 0 };
 
@@ -44,9 +45,13 @@ void osm_init () {
   VikMapsLayer_MapType osmarender_type = { 12, 256, 256, VIK_VIEWPORT_DRAWMODE_MERCATOR, osm_coord_to_mapcoord, osm_mapcoord_to_center_coord, osm_osmarender_download };
   VikMapsLayer_MapType mapnik_type = { 13, 256, 256, VIK_VIEWPORT_DRAWMODE_MERCATOR, osm_coord_to_mapcoord, osm_mapcoord_to_center_coord, osm_mapnik_download };  VikMapsLayer_MapType maplint_type = { 14, 256, 256, VIK_VIEWPORT_DRAWMODE_MERCATOR, osm_coord_to_mapcoord, osm_mapcoord_to_center_coord, osm_maplint_download };
 
+  VikMapsLayer_MapType bluemarble_type = { 15, 256, 256, VIK_VIEWPORT_DRAWMODE_MERCATOR, osm_coord_to_mapcoord, osm_mapcoord_to_center_coord, bluemarble_download };
+
   maps_layer_register_type("OpenStreetMap (Osmarender)", 12, &osmarender_type);
   maps_layer_register_type("OpenStreetMap (Mapnik)", 13, &mapnik_type);
   maps_layer_register_type("OpenStreetMap (Maplint)", 14, &maplint_type);
+
+  maps_layer_register_type("BlueMarble", 15, &bluemarble_type);
 }
 
 /* 1 << (x) is like a 2**(x) */
@@ -98,8 +103,8 @@ static void osm_mapcoord_to_center_coord ( MapCoord *src, VikCoord *dest )
 static int osm_maplint_download ( MapCoord *src, const gchar *dest_fn )
 {
    int res = -1;
-   gchar *uri = g_strdup_printf ( "/~ojw/Tiles/maplint.php/%d/%d/%d.png", 17-src->scale, src->x, src->y );
-   res = a_http_download_get_url ( "dev.openstreetmap.org", uri, dest_fn, &osm_options );
+   gchar *uri = g_strdup_printf ( "/Tiles/maplint.php/%d/%d/%d.png", 17-src->scale, src->x, src->y );
+   res = a_http_download_get_url ( "tah.openstreetmap.org", uri, dest_fn, &osm_options );
    g_free ( uri );
    return res;
 }
@@ -107,7 +112,7 @@ static int osm_maplint_download ( MapCoord *src, const gchar *dest_fn )
 static int osm_mapnik_download ( MapCoord *src, const gchar *dest_fn )
 {
    int res = -1;
-   gchar *uri = g_strdup_printf ( "/osamrender/%d/%d/%d.png", 17-src->scale, src->x, src->y );
+   gchar *uri = g_strdup_printf ( "/%d/%d/%d.png", 17-src->scale, src->x, src->y );
    res = a_http_download_get_url ( "tile.openstreetmap.org", uri, dest_fn, &osm_options );
    g_free ( uri );
    return res;
@@ -116,8 +121,18 @@ static int osm_mapnik_download ( MapCoord *src, const gchar *dest_fn )
 static int osm_osmarender_download ( MapCoord *src, const gchar *dest_fn )
 {
    int res = -1;
-   gchar *uri = g_strdup_printf ( "/~ojw/Tiles/tile.php/%d/%d/%d.png", 17-src->scale, src->x, src->y );
-   res = a_http_download_get_url ( "dev.openstreetmap.org", uri, dest_fn, &osm_options );
+   gchar *uri = g_strdup_printf ( "/Tiles/tile/%d/%d/%d.png", 17-src->scale, src->x, src->y );
+   res = a_http_download_get_url ( "tah.openstreetmap.org", uri, dest_fn, &osm_options );
+   g_free ( uri );
+   return res;
+}
+
+static int bluemarble_download ( MapCoord *src, const gchar *dest_fn )
+{
+   int res = -1;
+   gchar *uri = g_strdup_printf ( "/com.modestmaps.bluemarble/%d-r%d-c%d.jpg", 17-src->scale, src->y, src->x );
+   res = a_http_download_get_url ( "s3.amazonaws.com", uri, dest_fn, &osm_options );
+
    g_free ( uri );
    return res;
 }

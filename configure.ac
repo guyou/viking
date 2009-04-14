@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(viking, 0.9.3)
+AC_INIT(viking, 0.9.4)
 AM_INIT_AUTOMAKE()
 dnl AC_CONFIG_SRCDIR([src/main.c])
 AC_CONFIG_HEADERS([src/config.h])
@@ -10,6 +10,23 @@ AC_CONFIG_HEADERS([src/config.h])
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_MAKE_SET
+
+# I18N
+GETTEXT_PACKAGE=viking
+AC_SUBST(GETTEXT_PACKAGE)
+AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE",[Gettext package name])
+
+AM_GLIB_DEFINE_LOCALEDIR(LOCALEDIR)
+
+AM_GLIB_GNU_GETTEXT
+IT_PROG_INTLTOOL([0.35.0])
+
+AC_SUBST([CONFIG_STATUS_DEPENDENCIES],['$(top_srcdir)/po/LINGUAS'])
+
+dnl This will cause the automake generated makefiles to pass the
+dnl correct flags to aclocal.
+ACLOCAL_AMFLAGS="\${ACLOCAL_FLAGS}"
+AC_SUBST(ACLOCAL_AMFLAGS)
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -29,10 +46,6 @@ AM_WITH_EXPAT
 
 # Curl
 LIBCURL_CHECK_CONFIG([yes],[],[],[AC_MSG_ERROR([libcurl is needed but not found])])
-
-# libgps
-#AC_CHECK_LIB(gps,gps_poll,AC_DEFINE(HAVE_LIBGPS,[],[libgps to connect to gpsd]),)
-#AM_CONDITIONAL([LIBGPS], [test x$ac_cv_lib_gps_gps_poll = xyes])
 
 AC_CHECK_PROG([GDK_PIXBUF_CSOURCE],gdk-pixbuf-csource,[yes])
 if test $GDK_PIXBUF_CSOURCE != "yes"
@@ -75,7 +88,7 @@ AC_ARG_ENABLE(oldgoogle, AC_HELP_STRING([--enable-old-google],
               [ac_cv_enable_old_google=no])
 AC_CACHE_CHECK([whether to enable Old Google stuff],
                [ac_cv_enable_old_google], [ac_cv_enable_old_google=yes])
-case $ac_cv_enable_google in
+case $ac_cv_enable_old_google in
   yes)
     AC_DEFINE(VIK_CONFIG_OLD_GOOGLE, [], [OLD GOOGLE STUFF])
     ;;
@@ -123,7 +136,7 @@ esac
 AM_CONDITIONAL([OPENSTREETMAP], [test x$ac_cv_enable_openstreetmap = xyes])
 
 AC_ARG_ENABLE(geocaches, AC_HELP_STRING([--enable-geocaches],
-	      [enable Geocaches Acquire (default is disable). WARNING: Broken, do not enable]),
+	      [enable Geocaches Acquire (default is disable).]),
               [ac_cv_enable_geocaches=$enableval],
               [ac_cv_enable_geocaches=no])
 AC_CACHE_CHECK([whether to enable Geocaches Acquire],
@@ -178,10 +191,16 @@ AC_ARG_WITH(mapcache,
 AC_DEFINE_UNQUOTED(VIK_CONFIG_MAPCACHE_SIZE, ${VIK_CONFIG_MAPCACHE_SIZE},
                    [Size of the map cache])
 
+dnl This will cause the automake generated makefiles to pass the
+dnl correct flags to aclocal.
+ACLOCAL_AMFLAGS="\${ACLOCAL_FLAGS}"
+AC_SUBST(ACLOCAL_AMFLAGS)
+
 # Configuration
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/icons/Makefile
+		 po/Makefile.in
                  test/Makefile
                  doc/Makefile
                  doc/dev/Makefile])

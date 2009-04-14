@@ -18,8 +18,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include <string.h>
+
 #include <glib/gprintf.h>
+#include <glib/gi18n.h>
 
 #include "viking.h"
 #include "babel.h"
@@ -37,14 +42,16 @@ static gchar *last_to_str = NULL;
 
 static gpointer datasource_google_init( );
 static void datasource_google_add_setup_widgets ( GtkWidget *dialog, VikViewport *vvp, gpointer user_data );
-static void datasource_google_get_cmd_string ( datasource_google_widgets_t *widgets, gchar **cmd, gchar **input_type );	
+static void datasource_google_get_cmd_string ( datasource_google_widgets_t *widgets, gchar **cmd, gchar **input_file_type );	
 static void datasource_google_cleanup ( gpointer data );
 
 VikDataSourceInterface vik_datasource_google_interface = {
-  "Google Directions",
-  "Google Directions",
+  N_("Google Directions"),
+  N_("Google Directions"),
   VIK_DATASOURCE_SHELL_CMD,
   VIK_DATASOURCE_ADDTOLAYER,
+  VIK_DATASOURCE_INPUTTYPE_NONE,
+  TRUE,
   (VikDataSourceInitFunc)		datasource_google_init,
   (VikDataSourceCheckExistenceFunc)	NULL,
   (VikDataSourceAddSetupWidgetsFunc)	datasource_google_add_setup_widgets,
@@ -64,9 +71,9 @@ static void datasource_google_add_setup_widgets ( GtkWidget *dialog, VikViewport
 {
   datasource_google_widgets_t *widgets = (datasource_google_widgets_t *)user_data;
   GtkWidget *from_label, *to_label;
-  from_label = gtk_label_new ("From:");
+  from_label = gtk_label_new (_("From:"));
   widgets->from_entry = gtk_entry_new();
-  to_label = gtk_label_new ("To:");
+  to_label = gtk_label_new (_("To:"));
   widgets->to_entry = gtk_entry_new();
   if (last_from_str)
     gtk_entry_set_text(GTK_ENTRY(widgets->from_entry), last_from_str);
@@ -79,7 +86,7 @@ static void datasource_google_add_setup_widgets ( GtkWidget *dialog, VikViewport
   gtk_widget_show_all(dialog);
 }
 
-static void datasource_google_get_cmd_string ( datasource_google_widgets_t *widgets, gchar **cmd, gchar **input_type )
+static void datasource_google_get_cmd_string ( datasource_google_widgets_t *widgets, gchar **cmd, gchar **input_file_type )
 {
   /* TODO: special characters handling!!! */
   gchar *from_quoted, *to_quoted;
@@ -87,7 +94,7 @@ static void datasource_google_get_cmd_string ( datasource_google_widgets_t *widg
   to_quoted = g_shell_quote ( gtk_entry_get_text ( GTK_ENTRY(widgets->to_entry) ) );
 
   *cmd = g_strdup_printf( GOOGLE_DIRECTIONS_STRING, from_quoted, to_quoted );
-  *input_type = g_strdup("google");
+  *input_file_type = g_strdup("google");
 
   g_free(last_from_str);
   g_free(last_to_str);

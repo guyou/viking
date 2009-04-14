@@ -1,3 +1,162 @@
+2008-02-25:
+Guilhem Bonnefille <guilhem.bonnefille@gmail.com>:
+	* po/ChangeLog: needed file for distribution
+
+2008-02-25:
+Rob Norris <robbieonsea@users.sourceforge.net>:
+	* Fix: autogen can generate broken configure file (SF#1881475)
+	* Fix some compiler warnings (SF#1888407)
+
+2008-02-24:
+Guilhem Bonnefille <guilhem.bonnefille@gmail.com>:
+	* Change OSM's tiles URL
+
+2008-02-22:
+Michael A. Peter <mpeters@mac.com>:
+	* viking.spec: Correct license, required packages and local.
+
+2008-02-20:
+Guilhem Bonnefille <guilhem.bonnefille@gmail.com>:
+	* Update translations
+
+2008-02-16:
+Guilhem Bonnefille <guilhem.bonnefille@gmail.com>:
+	* main.c: I18N improvements
+	* French translation update
+
+2008-02-16:
+Jocelyn Jaubert <jocelyn.jaubert@gmail.com>
+	* I18N improvements
+	* French translation update
+	(both submitted the 2008-01-12 on mailing-list)
+
+2008-01-22:
+Alex Foobarian <foobarian@gmail.com>:
+	* Fix a crash bug in merge-by-time reported by Evan <gtoevan@gmx.net>
+
+2008-01-18
+Qut Tonthat <qtonthat@gmail.com>:
+	* Fix a crash bug in mapcache reported by Jocelyn <jocelyn.jaubert@gmail.com>
+	* Added mutex to protect mapcache from being corrupted by threads.
+
+2008-01-04:
+Alex Foobarian <foobarian@gmail.com>:
+	* Tuned the v-t diagram drawing
+	
+2007-12-27:
+Evan Battaglia <gtoevan@gmx.net>
+	* Minor fixes/debugging to gcget. Add gcget-perl
+	* Full screen mode.
+	* Bugfix for prefernces -- don't cut off last character of password
+
+2007-12-27:
+Guilhem Bonnefille <guilhem.bonnefille@gmail.com>:
+	* Add GpxWritingOptions to control GPX file writing
+
+2007-12-23
+Oddgeir Kvien <oddgeir@oddgeirkvien.com>
+	* Add default values to ele and time fields (due to OSM)
+
+2007-12-21
+Evan Battaglia <gtoevan@gmx.net>
+	* Preferences groups/tabs
+	* Fix gcget to accept username and password. Pass this in to gcget.
+	* Oops! Reading preferences from the file wasn't working. Fixed.
+
+2007-12-21:
+Jocelyn Jaubert <jocelyn.jaubert@gmail.com>
+	* Update French translation
+
+2007-12-21:
+Christoph Eckert <ce@christeck.de>
+	* Update source for OSM/Osmarender tiles
+
+2007-12-20:
+Evan Battaglia <gtoevan@gmx.net>
+	* Preferences in ~/.viking/viking.prefs, this will soon allow geocaching support to go mainstream, (hopefully)
+
+2007-12-20
+Qut Tonthat <qtonthat@gmail.com>:
+	* Revert a previous change that disabled realtime tracking if libgps
+	does not exist.
+
+2007-12-17:
+Jocelyn Jaubert <jocelyn.jaubert@gmail.com>
+	* Use specific gettext call for plural form
+
+2007-12-16:
+Evan Battaglia <gtoevan@gmx.net>
+	* Sort waypoints in GPX output.
+	* Use the "next unused" (not really) waypoint number as default.
+
+2007-12-15:
+Guilhem Bonnefille <guilhem.bonnefille@gmail.com>:
+	* Fix compilation under HURD (missing MAXPATHLEN macro)
+	* Fix: if libgps is missing, Realtime GPS Tracking is disabled
+
+2007-12-15:
+Jocelyn Jaubert <jocelyn.jaubert@gmail.com>
+	* Make menu entries translatable
+	* Mark many strings translatable
+	* Update french translation
+
+2007-12-12:
+Guilhem Bonnefille <guilhem.bonnefille@gmail.com>:
+	* Marking translatable strings
+	* First french translation (incomplete)
+
+2007-12-12:
+Guilhem Bonnefille <guilhem.bonnefille@gmail.com>:
+	* Fix warning: underquoted definition of AM_WITH_EXPAT
+	* Fix bug: "config.status: error: cannot find input file: Makefile.in"
+
+2007-12-07
+Qut Tonthat <qtonthat@gmail.com>:
+	* Fix autogen.sh to remove the assumption that version 1.9 of automake
+	is available on all systems.
+	* Now that autogen.sh runs configure, "make full" should not.
+
+2007-12-07
+Evan Battaglia <gtoevan@gmx.net>:
+	* BlueMarble tiles: http://mike.teczno.com/notes/blue-marble-tiles.html
+	* Google Terrain maps
+	* Disable printing to make Viking compile for GTK < 2.10
+
+2007-11-27:
+Guilhem Bonnefille <guilhem.bonnefille@gmail.com>:
+	* util.c: Use a list of possible browsers.
+
+2007-11-20:
+Qut Tonthat <qtonthat@gmail.com>:
+	* Fix a bug that can potentially cause segfault.
+
+2007-11-19:
+Qut Tonthat <qtonthat@gmail.com>:
+	* Improve track graphs. Some tracks looked too flat.
+
+2007-11-09:
+Evan Battaglia <gtoevan@gmx.net>
+	* GPSBabel filter work I've been sitting on for a while now.
+	* Draw circle for downloading geocaches. Constrain by maximum distance.
+
+2007-11-08:
+Qut Tonthat <qtonthat@gmail.com>:
+	* Printing support
+
+2007-11-01
+Quy Tonthat <qtonthat@gmail.com>:
+	* Fix bug that caused Old Google maps not being disabled by default.
+
+2007-10-24
+Quy Tonthat <qtonthat@gmail.com>:
+	* Fix crashes on elev graph for some tracks.
+	* Make low alt tracks look more visible on elev graph.
+	* Fix "incompatible pointer type" warnings.
+
+2007-10-23
+Quy Tonthat <qtonthat@gmail.com>:
+	* Missing declaration. Thanks to Bernd Zeimetz <bernd@bzed.de>
+
 2007-10-20
 Guilhem Bonnefille <guilhem.bonnefille@gmail.com>:
 	* Releasing 0.9.3

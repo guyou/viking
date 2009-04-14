@@ -10,6 +10,8 @@
 #include <sys/mman.h>
 
 
+#include <glib/gi18n.h>
+
 #include "dem.h"
 #include "file.h"
 
@@ -22,7 +24,7 @@ static gboolean get_double_and_continue ( gchar **buffer, gdouble *tmp, gboolean
   *tmp = g_strtod(*buffer, &endptr);
   if ( endptr == NULL|| endptr == *buffer ) {
     if ( warn )
-      g_warning("Invalid DEM");
+      g_warning(_("Invalid DEM"));
     return FALSE;
   }
   *buffer=endptr;
@@ -36,7 +38,7 @@ static gboolean get_int_and_continue ( gchar **buffer, gint *tmp, gboolean warn 
   *tmp = strtol(*buffer, &endptr, 10);
   if ( endptr == NULL|| endptr == *buffer ) {
     if ( warn )
-      g_warning("Invalid DEM");
+      g_warning(_("Invalid DEM"));
     return FALSE;
   }
   *buffer=endptr;
@@ -78,7 +80,7 @@ static gboolean dem_parse_header ( gchar *buffer, VikDEM *dem )
   /* skip numbers 5-19  */
   for ( i = 0; i < 15; i++ ) {
     if ( ! get_double_and_continue(&buffer, &val, FALSE) ) {
-      g_warning ("Invalid DEM header");
+      g_warning (_("Invalid DEM header"));
       return FALSE;
     }
   }
@@ -147,7 +149,7 @@ static void dem_parse_block_as_header ( gchar *buffer, VikDEM *dem, gint *cur_co
   /* 1 x n_rows 1 east_west south x x x DATA */
 
   if ( (!get_double_and_continue(&buffer, &tmp, TRUE)) || tmp != 1 ) {
-    g_warning("Incorrect DEM Class B record: expected 1");
+    g_warning(_("Incorrect DEM Class B record: expected 1"));
     return;
   }
 
@@ -160,7 +162,7 @@ static void dem_parse_block_as_header ( gchar *buffer, VikDEM *dem, gint *cur_co
   n_rows = (guint) tmp;
 
   if ( (!get_double_and_continue(&buffer, &tmp, TRUE)) || tmp != 1 ) {
-    g_warning("Incorrect DEM Class B record: expected 1");
+    g_warning(_("Incorrect DEM Class B record: expected 1"));
     return;
   }
   
@@ -264,7 +266,7 @@ static void *unzip_hgt_file(gchar *zip_file, gulong *unzip_size)
 
 	local_file_header = (struct _lfh *) zip_file;
 	if (local_file_header->sig != 0x04034b50) {
-		g_warning("%s(): wrong format\n", __PRETTY_FUNCTION__);
+		g_warning("%s(): wrong format", __PRETTY_FUNCTION__);
 		g_free(unzip_data);
 		goto end;
 	}
@@ -343,7 +345,7 @@ static VikDEM *vik_dem_read_srtm_hgt(FILE *f, const gchar *basename, gboolean zi
   else if (file_size == (num_rows_1sec * num_rows_1sec * sizeof(gint16)))
     arcsec = 1;
   else {
-    g_warning("%s(): file %s does not have right size\n", __PRETTY_FUNCTION__, basename);
+    g_warning("%s(): file %s does not have right size", __PRETTY_FUNCTION__, basename);
     munmap(dem_file, file_size);
     g_ptr_array_free(dem->columns, TRUE);
     g_free(dem);
