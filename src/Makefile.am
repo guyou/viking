@@ -70,6 +70,10 @@ libviking_a_SOURCES = \
 	dem.c dem.h \
 	vikdemlayer.h vikdemlayer.c \
 	vikfilelist.c vikfilelist.h \
+	vikexttool.c vikexttool.h \
+	vikexttools.c vikexttools.h \
+	vikwebtool.c vikwebtool.h \
+	vikwebtoolcenter.c vikwebtoolcenter.h \
 	dems.c dems.h \
 	srtm_continent.c \
 	uibuilder.c uibuilder.h \
@@ -80,12 +84,6 @@ libviking_a_SOURCES = \
 if GOOGLE
 libviking_a_SOURCES += \
 	google.c google.h
-endif
-
-if OLDGOOGLE
-libviking_a_SOURCES += \
-	khmaps.c khmaps.h \
-	googlemaps.c googlemaps.h
 endif
 
 if TERRASERVER
@@ -102,6 +100,11 @@ if OPENSTREETMAP
 libviking_a_SOURCES += \
 	osm.c osm.h \
 	osm-traces.c osm-traces.h
+endif
+
+if GEONAMES
+libviking_a_SOURCES += \
+	geonamessearch.c geonamessearch.h
 endif
 
 viking_SOURCES = main.c

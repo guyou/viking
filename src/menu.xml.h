@@ -42,13 +42,9 @@ static const char *menu_xml =
 #ifdef VIK_CONFIG_EXPEDIA
 	"      <menuitem action='ModeExpedia'/>"
 #endif
-#ifdef VIK_CONFIG_OLD_GOOGLE
-	"      <menuitem action='ModeGoogle'/>"
-	"      <menuitem action='ModeKH'/>"
-#endif
 	"      <menuitem action='ModeMercator'/>"
 	"      <separator/>"
-	"      <menuitem action='GoogleMapsSearch'/>"
+	"      <menuitem action='GotoSearch'/>"
 	"      <menuitem action='GotoLL'/>"
 	"      <menuitem action='GotoUTM'/>"
 	"      <separator/>"
@@ -87,6 +83,7 @@ static const char *menu_xml =
 	"      <separator/>"
 	"    </menu>"
 	"    <menu action='Tools'>"
+	"      <menu action='Exttools'/>"
 	"      <menuitem action='Pan'/>"
 	"      <menuitem action='Zoom'/>"
 	"      <menuitem action='Ruler'/>"
@@ -112,7 +109,7 @@ static const char *menu_xml =
 	"      <separator/>"
 	"    </placeholder>"
 	"    <placeholder name='ViewToolItems'>"
-	"      <toolitem action='GoogleMapsSearch'/>"
+	"      <toolitem action='GotoSearch'/>"
 	"      <separator/>"
 	"    </placeholder>"
 	"    <placeholder name='ToolItems'>"

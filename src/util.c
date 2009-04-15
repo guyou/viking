@@ -81,6 +81,7 @@ static gboolean spawn_command_line_async(const gchar * cmd,
 
   g_free(cmdline);
  
+  return status;
 }
 
 void open_url(GtkWindow *parent, const gchar * url)
@@ -96,3 +97,25 @@ void new_email(GtkWindow *parent, const gchar *email)
   show_url (GTK_WIDGET (parent), address);
   g_free (address);
 }
+
+gchar *uri_escape(gchar *str)
+{
+  gchar *esc_str = g_malloc(3*strlen(str));
+  gchar *dst = esc_str;
+  gchar *src;
+
+  for (src = str; *src; src++) {
+    if (*src == ' ')
+     *dst++ = '+';
+    else if (g_ascii_isalnum(*src))
+     *dst++ = *src;
+    else {
+      g_sprintf(dst, "%%%02X", *src);
+      dst += 3;
+    }
+  }
+  *dst = '\0';
+
+  return(esc_str);
+}
+

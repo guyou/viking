@@ -26,19 +26,13 @@
 #include "modules.h"
 
 #include "google.h"
-#include "googlemaps.h"
 #include "terraserver.h"
-#include "khmaps.h"
 #include "expedia.h"
 #include "osm.h"
 #include "osm-traces.h"
 
 void modules_init()
 {
-#ifdef VIK_CONFIG_OLD_GOOGLE 
-  googlemaps_init();
-  khmaps_init();
-#endif
 #ifdef VIK_CONFIG_GOOGLE 
   google_init();
 #endif

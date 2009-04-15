@@ -27,15 +27,27 @@
 #include "background.h"
 #include "acquire.h"
 #include "datasources.h"
+#ifdef VIK_CONFIG_GOOGLE
 #include "googlesearch.h"
+#endif
+#ifdef VIK_CONFIG_GEONAMES
+#include "geonamessearch.h"
+#endif
 #include "dems.h"
 #include "print.h"
 #include "preferences.h"
 #include "icons/icons.h"
+#include "vikexttools.h"
 
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+#ifdef HAVE_MATH_H
 #include <math.h>
+#endif
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
 #include <ctype.h>
 #include <glib.h>
 #include <glib/gstdio.h>
@@ -288,6 +300,7 @@ static void window_init ( VikWindow *vw )
   gtk_toolbar_set_icon_size(GTK_TOOLBAR(gtk_ui_manager_get_widget (vw->uim, "/MainToolbar")), GTK_ICON_SIZE_SMALL_TOOLBAR);
   gtk_toolbar_set_style (GTK_TOOLBAR(gtk_ui_manager_get_widget (vw->uim, "/MainToolbar")), GTK_TOOLBAR_ICONS);
 
+  vik_ext_tools_add_menu_items ( vw, vw->uim );
 
   g_signal_connect (G_OBJECT (vw), "delete_event", G_CALLBACK (delete_event), NULL);
 
@@ -1318,10 +1331,6 @@ GtkWidget *vik_window_get_drawmode_button ( VikWindow *vw, VikViewportDrawMode m
 #ifdef VIK_CONFIG_EXPEDIA
     case VIK_VIEWPORT_DRAWMODE_EXPEDIA: buttonname = "/ui/MainMenu/View/ModeExpedia"; break;
 #endif
-#ifdef VIK_CONFIG_OLD_GOOGLE
-    case VIK_VIEWPORT_DRAWMODE_GOOGLE: buttonname = "/ui/MainMenu/View/ModeGoogle"; break;
-    case VIK_VIEWPORT_DRAWMODE_KH: buttonname = "/ui/MainMenu/View/ModeKH"; break;
-#endif
     case VIK_VIEWPORT_DRAWMODE_MERCATOR: buttonname = "/ui/MainMenu/View/ModeMercator"; break;
     default: buttonname = "/ui/MainMenu/View/ModeUTM";
   }
@@ -1487,7 +1496,13 @@ static void acquire_from_gc ( GtkAction *a, VikWindow *vw )
 
 static void goto_address( GtkAction *a, VikWindow *vw)
 {
+#if defined(VIK_CONFIG_GOOGLE) && VIK_CONFIG_SEARCH==VIK_CONFIG_SEARCH_GOOGLE
   a_google_search(vw, vw->viking_vlp, vw->viking_vvp);
+#endif
+#if defined(VIK_CONFIG_GEONAMES) && VIK_CONFIG_SEARCH==VIK_CONFIG_SEARCH_GEONAMES
+  a_geonames_search(vw, vw->viking_vlp, vw->viking_vvp);
+#endif
+
 }
 
 static void preferences_cb ( GtkAction *a, VikWindow *vw )
@@ -1857,12 +1872,6 @@ static void window_change_coord_mode_cb ( GtkAction *old_a, GtkAction *a, VikWin
   else if (!strcmp(gtk_action_get_name(a), "ModeExpedia")) {
     drawmode = VIK_VIEWPORT_DRAWMODE_EXPEDIA;
   }
-  else if (!strcmp(gtk_action_get_name(a), "ModeGoogle")) {
-    drawmode = VIK_VIEWPORT_DRAWMODE_GOOGLE;
-  }
-  else if (!strcmp(gtk_action_get_name(a), "ModeKH")) {
-    drawmode = VIK_VIEWPORT_DRAWMODE_KH;
-  }
   else if (!strcmp(gtk_action_get_name(a), "ModeMercator")) {
     drawmode = VIK_VIEWPORT_DRAWMODE_MERCATOR;
   }
@@ -1936,6 +1945,7 @@ static GtkActionEntry entries[] = {
   { "SetPan", NULL, N_("_Pan"), 0, 0, 0 },
   { "Layers", NULL, N_("_Layers"), 0, 0, 0 },
   { "Tools", NULL, N_("_Tools"), 0, 0, 0 },
+  { "Exttools", NULL, N_("_Webtools"), 0, 0, 0 },
   { "Help", NULL, N_("_Help"), 0, 0, 0 },
 
   { "New",       GTK_STOCK_NEW,          N_("_New"),                          "<control>N", N_("New file"),                                     (GCallback)newwindow_cb          },
@@ -1959,7 +1969,7 @@ static GtkActionEntry entries[] = {
   { "Exit",      GTK_STOCK_QUIT,         N_("E_xit"),                         "<control>W", N_("Exit the program"),                             (GCallback)window_close          },
   { "SaveExit",  GTK_STOCK_QUIT,         N_("Save and Exit"),                 NULL, N_("Save and Exit the program"),                             (GCallback)save_file_and_exit          },
 
-  { "GoogleMapsSearch",   GTK_STOCK_JUMP_TO,                 N_("Go To Google Maps location"),    	  	  NULL,         N_("Go to address/place using Google Maps search"),            (GCallback)goto_address       },
+  { "GotoSearch",   GTK_STOCK_JUMP_TO,                 N_("Go To location"),    	  	  NULL,         N_("Go to address/place using text search"),            (GCallback)goto_address       },
   { "GotoLL",    GTK_STOCK_QUIT,         N_("_Go to Lat\\/Lon..."),           NULL,         N_("Go to arbitrary lat\\/lon coordinate"),         (GCallback)draw_goto_cb          },
   { "GotoUTM",   GTK_STOCK_QUIT,         N_("Go to UTM..."),                  NULL,         N_("Go to arbitrary UTM coordinate"),               (GCallback)draw_goto_cb          },
   { "SetBGColor",GTK_STOCK_SELECT_COLOR, N_("Set Background Color..."),       NULL,         NULL,                                           (GCallback)set_bg_color          },
@@ -1997,9 +2007,7 @@ static GtkActionEntry entries[] = {
 static GtkRadioActionEntry mode_entries[] = {
   { "ModeUTM",         NULL,         N_("_UTM Mode"),               "<control>u", NULL, 0 },
   { "ModeExpedia",     NULL,         N_("_Expedia Mode"),           "<control>e", NULL, 1 },
-  { "ModeGoogle",      NULL,         N_("_Old Google Mode"),        "<control>o", NULL, 2 },
-  { "ModeKH",          NULL,         N_("Old _KH Mode"),            "<control>k", NULL, 3 },
-  { "ModeMercator",    NULL,         N_("_Google Mode"),            "<control>g", NULL, 4 }
+  { "ModeMercator",    NULL,         N_("_Mercator Mode"),            "<control>g", NULL, 4 }
 };
 
 static GtkRadioActionEntry tool_entries[] = {

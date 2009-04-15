@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(viking, 0.9.7)
+AC_INIT(viking, 0.9.8)
 AM_INIT_AUTOMAKE()
 dnl AC_CONFIG_SRCDIR([src/main.c])
 AC_CONFIG_HEADERS([src/config.h])
@@ -83,19 +83,6 @@ case $ac_cv_enable_google in
 esac
 AM_CONDITIONAL([GOOGLE], [test x$ac_cv_enable_google = xyes])
 
-AC_ARG_ENABLE(oldgoogle, AC_HELP_STRING([--enable-old-google],
-              [enable old Google stuff (default is disable)]),
-              [ac_cv_enable_old_google=$enableval],
-              [ac_cv_enable_old_google=no])
-AC_CACHE_CHECK([whether to enable Old Google stuff],
-               [ac_cv_enable_old_google], [ac_cv_enable_old_google=yes])
-case $ac_cv_enable_old_google in
-  yes)
-    AC_DEFINE(VIK_CONFIG_OLD_GOOGLE, [], [OLD GOOGLE STUFF])
-    ;;
-esac
-AM_CONDITIONAL([OLDGOOGLE], [test x$ac_cv_enable_old_google = xyes])
-
 AC_ARG_ENABLE(terraserver, AC_HELP_STRING([--enable-terraserver],
               [enable Terraserver stuff (default is enable)]),
               [ac_cv_enable_terraserver=$enableval],
@@ -135,6 +122,48 @@ case $ac_cv_enable_openstreetmap in
     ;;
 esac
 AM_CONDITIONAL([OPENSTREETMAP], [test x$ac_cv_enable_openstreetmap = xyes])
+
+# BlueMarble
+AC_ARG_ENABLE(bluemarble, AC_HELP_STRING([--enable-bluemarble],
+              [enable BlueMarble stuff (default is enable)]),
+              [ac_cv_enable_bluemarble=$enableval],
+              [ac_cv_enable_bluemarble=yes])
+AC_CACHE_CHECK([whether to enable BlueMarble stuff],
+               [ac_cv_enable_bluemarble], [ac_cv_enable_bluemarble=yes])
+case $ac_cv_enable_bluemarble in
+  yes)
+    AC_DEFINE(VIK_CONFIG_BLUEMARBLE, [], [BLUEMARBLE STUFF])
+    ;;
+esac
+AM_CONDITIONAL([BLUEMARBLE], [test x$ac_cv_enable_bluemarble = xyes])
+
+# OpenAerial
+AC_ARG_ENABLE(openaerial, AC_HELP_STRING([--enable-openaerial],
+              [enable OpenAerial stuff (default is enable)]),
+              [ac_cv_enable_openaerial=$enableval],
+              [ac_cv_enable_openaerial=yes])
+AC_CACHE_CHECK([whether to enable OpenAerial stuff],
+               [ac_cv_enable_openaerial], [ac_cv_enable_openaerial=yes])
+case $ac_cv_enable_openaerial in
+  yes)
+    AC_DEFINE(VIK_CONFIG_OPENAERIAL, [], [OPENAERIAL STUFF])
+    ;;
+esac
+AM_CONDITIONAL([OPENAERIAL], [test x$ac_cv_enable_openaerial = xyes])
+
+# GeoNames http://www.geonames.org/
+AC_ARG_ENABLE(geonames, AC_HELP_STRING([--enable-geonames],
+              [enable Geonames stuff (default is enable)]),
+              [ac_cv_enable_geonames=$enableval],
+              [ac_cv_enable_geonames=yes])
+AC_CACHE_CHECK([whether to enable Geonames stuff],
+               [ac_cv_enable_geonames], [ac_cv_enable_geonames=yes])
+case $ac_cv_enable_geonames in
+  yes)
+    AC_DEFINE(VIK_CONFIG_GEONAMES, [], [GEONAMES STUFF])
+    ;;
+esac
+AM_CONDITIONAL([GEONAMES], [test x$ac_cv_enable_geonames = xyes])
 
 AC_ARG_ENABLE(geocaches, AC_HELP_STRING([--enable-geocaches],
 	      [enable Geocaches Acquire (default is disable).]),
@@ -177,6 +206,28 @@ case $ac_cv_enable_realtimegpstracking in
     ;;
 esac
 AM_CONDITIONAL([REALTIME_GPS_TRACKING], [test x$ac_cv_enable_realtimegpstracking = xyes])
+
+AC_ARG_WITH(search,
+            [AC_HELP_STRING([--with-search],
+                            [specify google or geonames for searching (default is google)])],
+            [case "x$withval" in
+               "xgoogle")
+                 VIK_CONFIG_SEARCH=VIK_CONFIG_SEARCH_GOOGLE
+                 ;;
+               "xgeonames")
+                 VIK_CONFIG_SEARCH=VIK_CONFIG_SEARCH_GEONAMES
+                 ;;
+               *)
+                AC_MSG_ERROR([Please, set a value for search method])
+             esac],
+             [VIK_CONFIG_SEARCH=VIK_CONFIG_SEARCH_GOOGLE])
+AC_DEFINE_UNQUOTED(VIK_CONFIG_SEARCH_GOOGLE, 1,
+                   [Id. for searching via GOOGLE])
+AC_DEFINE_UNQUOTED(VIK_CONFIG_SEARCH_GEONAMES, 2,
+                   [Id. for searching via GEONAMES])
+AC_DEFINE_UNQUOTED(VIK_CONFIG_SEARCH, ${VIK_CONFIG_SEARCH},
+                   [Method for the search])
+
 
 AC_ARG_WITH(mapcache,
             [AC_HELP_STRING([--with-mapcache],
@@ -222,10 +273,10 @@ echo "$PACKAGE $VERSION"
 echo "-------------------------------------------"
 echo "Alphabetized track & waypoints   : $ac_cv_enable_alpha_trw"
 echo "Google Maps                      : $ac_cv_enable_google"
-#echo "Old Google Maps                  : $ac_cv_enable_old_google"
 echo "Terraserver Maps                 : $ac_cv_enable_terraserver"
 #echo "Expedia Maps                     : $ac_cv_enable_expedia"
 echo "Open Street Map                  : $ac_cv_enable_openstreetmap"
+echo "Geonames                         : $ac_cv_enable_geonames"
 #echo "Geocaches Acquire                : $ac_cv_enable_geocaches"
 echo "USGS 24k DEM                     : $ac_cv_enable_dem24k"
 echo "Realtime GPS Tracking            : $ac_cv_enable_realtimegpstracking"
