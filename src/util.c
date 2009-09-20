@@ -27,6 +27,7 @@
 #endif
 
 #include <glib/gi18n.h>
+#include <glib/gprintf.h>
 
 
 #include "dialog.h"
