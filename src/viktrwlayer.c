@@ -132,6 +132,7 @@ struct _VikTrwLayer {
   guint16 track_gc_iter;
   GdkGC *current_track_gc;
   GdkGC *track_bg_gc;
+  GdkGC *route_tracks_gc;
   GdkGC *waypoint_gc;
   GdkGC *waypoint_text_gc;
   GdkGC *waypoint_bg_gc;
@@ -230,6 +231,7 @@ static void trw_layer_goto_track_endpoint ( gpointer pass_along[6] );
 static void trw_layer_merge_by_timestamp ( gpointer pass_along[6] );
 static void trw_layer_split_by_timestamp ( gpointer pass_along[6] );
 static void trw_layer_download_map_along_track_cb(gpointer pass_along[6]);
+static void trw_layer_switch_route_property ( gpointer pass_along[6] );
 static void trw_layer_centerize ( gpointer layer_and_vlp[2] );
 static void trw_layer_export ( gpointer layer_and_vlp[2], const gchar* title, const gchar* default_name, const gchar* trackname, guint file_type );
 static void trw_layer_goto_wp ( gpointer layer_and_vlp[2] );
@@ -376,6 +378,7 @@ VikLayerParam trw_layer_params[] = {
   { "line_thickness", VIK_LAYER_PARAM_UINT, GROUP_TRACKS, N_("Track Thickness:"), VIK_LAYER_WIDGET_SPINBUTTON, params_scales + 0 },
   { "bg_line_thickness", VIK_LAYER_PARAM_UINT, GROUP_TRACKS, N_("Track BG Thickness:"), VIK_LAYER_WIDGET_SPINBUTTON, params_scales + 6 },
   { "trackbgcolor", VIK_LAYER_PARAM_COLOR, GROUP_TRACKS, N_("Track Background Color"), VIK_LAYER_WIDGET_COLOR, 0 },
+  { "routerrackcolor", VIK_LAYER_PARAM_COLOR, GROUP_TRACKS, N_("Route Color"), VIK_LAYER_WIDGET_COLOR, 0 },
   { "velocity_min", VIK_LAYER_PARAM_DOUBLE, GROUP_TRACKS, N_("Min Track Velocity:"), VIK_LAYER_WIDGET_SPINBUTTON, params_scales + 1 },
   { "velocity_max", VIK_LAYER_PARAM_DOUBLE, GROUP_TRACKS, N_("Max Track Velocity:"), VIK_LAYER_WIDGET_SPINBUTTON, params_scales + 2 },
 
@@ -394,7 +397,7 @@ VikLayerParam trw_layer_params[] = {
   { "image_cache_size", VIK_LAYER_PARAM_UINT, GROUP_IMAGES, N_("Image Memory Cache Size:"), VIK_LAYER_WIDGET_HSCALE, params_scales + 5 },
 };
 
-enum { PARAM_TV, PARAM_WV, PARAM_DM, PARAM_DL, PARAM_DP, PARAM_DE, PARAM_EF, PARAM_DS, PARAM_SL, PARAM_LT, PARAM_BLT, PARAM_TBGC, PARAM_VMIN, PARAM_VMAX, PARAM_DLA, PARAM_WPC, PARAM_WPTC, PARAM_WPBC, PARAM_WPBA, PARAM_WPSYM, PARAM_WPSIZE, PARAM_WPSYMS, PARAM_DI, PARAM_IS, PARAM_IA, PARAM_ICS, NUM_PARAMS };
+enum { PARAM_TV, PARAM_WV, PARAM_DM, PARAM_DL, PARAM_DP, PARAM_DE, PARAM_EF, PARAM_DS, PARAM_SL, PARAM_LT, PARAM_BLT, PARAM_TBGC, PARAM_RTGC, PARAM_VMIN, PARAM_VMAX, PARAM_DLA, PARAM_WPC, PARAM_WPTC, PARAM_WPBC, PARAM_WPBA, PARAM_WPSYM, PARAM_WPSIZE, PARAM_WPSYMS, PARAM_DI, PARAM_IS, PARAM_IA, PARAM_ICS, NUM_PARAMS };
 
 /*** TO ADD A PARAM:
  *** 1) Add to trw_layer_params and enumeration
@@ -652,6 +655,9 @@ static gboolean trw_layer_set_param ( VikTrwLayer *vtl, guint16 id, VikLayerPara
       break;
     }
     case PARAM_TBGC: gdk_gc_set_rgb_fg_color(vtl->track_bg_gc, &(data.c)); break;
+    case PARAM_RTGC:
+      if (GTK_WIDGET(vp)->window != NULL)
+	gdk_gc_set_rgb_fg_color(vtl->route_tracks_gc, &(data.c)); break;
     case PARAM_DLA: vtl->drawlabels = data.b; break;
     case PARAM_DI: vtl->drawimages = data.b; break;
     case PARAM_IS: if ( data.u != vtl->image_size )
@@ -729,6 +735,7 @@ static VikLayerParamData trw_layer_get_param ( VikTrwLayer *vtl, guint16 id, gbo
     case PARAM_DLA: rv.b = vtl->drawlabels; break;
     case PARAM_DI: rv.b = vtl->drawimages; break;
     case PARAM_TBGC: vik_gc_get_fg_color(vtl->track_bg_gc, &(rv.c)); break;
+    case PARAM_RTGC: vik_gc_get_fg_color(vtl->route_tracks_gc, &(rv.c)); break;
     case PARAM_IS: rv.u = vtl->image_size; break;
     case PARAM_IA: rv.u = vtl->image_alpha; break;
     case PARAM_ICS: rv.u = vtl->image_cache_size; break;
@@ -1043,6 +1050,8 @@ static void trw_layer_draw_track ( const gchar *name, VikTrack *track, struct Dr
 
   if ( track == dp->vtl->current_track )
     main_gc = dp->vtl->current_track_gc;
+  else if ( track->is_route )
+    main_gc = dp->vtl->route_tracks_gc;
   else
     main_gc = g_array_index(dp->vtl->track_gc, GdkGC *, dp->track_gc_iter);
 
@@ -1340,6 +1349,11 @@ static void trw_layer_free_track_gcs ( VikTrwLayer *vtl )
     vtl->current_track_gc = NULL;
   }
 
+  if ( vtl->route_tracks_gc )
+  {
+    g_object_unref ( vtl->route_tracks_gc );
+    vtl->route_tracks_gc = NULL;
+  }
   if ( ! vtl->track_gc )
     return;
   for ( i = vtl->track_gc->len - 1; i >= 0; i-- )
@@ -1364,6 +1378,11 @@ static void trw_layer_new_track_gcs ( VikTrwLayer *vtl, VikViewport *vp )
     g_object_unref ( vtl->current_track_gc );
   vtl->current_track_gc = vik_viewport_new_gc ( vp, "#FF0000", 2 );
   gdk_gc_set_line_attributes ( vtl->current_track_gc, 2, GDK_LINE_ON_OFF_DASH, GDK_CAP_ROUND, GDK_JOIN_ROUND );
+
+  /* Default all routes colour to red, similar to the current track above */
+  if ( vtl->route_tracks_gc )
+    g_object_unref ( vtl->route_tracks_gc );
+  vtl->route_tracks_gc = vik_viewport_new_gc ( vp, "#FF0000", width );
 
   vtl->track_gc = g_array_sized_new ( FALSE, FALSE, sizeof ( GdkGC * ), VIK_TRW_LAYER_TRACK_GC );
 
@@ -2262,6 +2281,18 @@ static void trw_layer_goto_track_endpoint ( gpointer pass_along[6] )
   goto_coord ( VIK_LAYERS_PANEL(pass_along[1]), &(((VikTrackpoint *) trps->data)->coord));
 }
 
+/*
+ * Simple function to toggle the is_route property of the specified track
+ */
+static void trw_layer_switch_route_property ( gpointer pass_along[6] )
+{
+  VikTrack *track = (VikTrack *) g_hash_table_lookup ( VIK_TRW_LAYER(pass_along[0])->tracks, pass_along[3] );
+  if (track) {
+    track->is_route = !track->is_route;
+    /* Now redraw - as colour of the tracks probably changes */
+    vik_layer_emit_update( VIK_LAYER(pass_along[0]));
+  }
+}
 
 /*************************************
  * merge/split by time routines 
@@ -2860,6 +2891,14 @@ gboolean vik_trw_layer_sublayer_add_menu_items ( VikTrwLayer *l, GtkMenu *menu, 
     gtk_menu_shell_append ( GTK_MENU_SHELL(menu), item );
     gtk_widget_show ( item );
 #endif
+
+    VikTrack *tr = g_hash_table_lookup ( l->tracks, sublayer );
+    if (tr) {
+      item = gtk_menu_item_new_with_mnemonic ( _(tr->is_route ? ("Convert to a T_rack") : ("Convert to a _Route") ) );
+      g_signal_connect_swapped ( G_OBJECT(item), "activate", G_CALLBACK(trw_layer_switch_route_property), pass_along );
+      gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+      gtk_widget_show ( item );
+    }
 
     if ( is_valid_google_route ( l, (gchar *) sublayer ) )
     {

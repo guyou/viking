@@ -57,6 +57,7 @@ typedef struct _VikTrack VikTrack;
 struct _VikTrack {
   GList *trackpoints;
   gboolean visible;
+  gboolean is_route;
   gchar *comment;
   guint8 ref_count;
   GtkWidget *property_dialog;

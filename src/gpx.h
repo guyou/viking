@@ -30,6 +30,7 @@
 typedef struct {
 	gboolean force_ele; /// Force ele field
 	gboolean force_time; /// Force time field
+        gboolean is_route; /// For Convience
 } GpxWritingOptions;
 
 void a_gpx_read_file ( VikTrwLayer *trw, FILE *f );

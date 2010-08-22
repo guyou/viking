@@ -42,6 +42,7 @@ VikTrack *vik_track_new()
 {
   VikTrack *tr = g_malloc0 ( sizeof ( VikTrack ) );
   tr->ref_count = 1;
+  tr->is_route = FALSE;
   return tr;
 }
 
@@ -100,6 +101,7 @@ VikTrack *vik_track_copy ( const VikTrack *tr )
   VikTrackpoint *new_tp;
   GList *tp_iter = tr->trackpoints;
   new_tr->visible = tr->visible;
+  new_tr->is_route = tr->is_route;
   new_tr->trackpoints = NULL;
   while ( tp_iter )
   {
@@ -255,6 +257,7 @@ VikTrack **vik_track_split_into_segments(VikTrack *t, guint *ret_len)
       if ( tr->comment )
         vik_track_set_comment ( rv[i], tr->comment );
       rv[i]->visible = tr->visible;
+      rv[i]->is_route = tr->is_route;
       rv[i]->trackpoints = iter;
       i++;
     }
@@ -710,8 +713,9 @@ VikTrack *vik_track_unmarshall (guint8 *data, guint datalen)
   guint ntp;
   gint i;
 
-  /* only the visibility is needed */
+  /* only these basic properties can be directly copied */
   new_tr->visible = ((VikTrack *)data)->visible;
+  new_tr->is_route = ((VikTrack *)data)->is_route;
   data += sizeof(*new_tr);
 
   ntp = *(guint *)data;

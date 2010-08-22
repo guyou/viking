@@ -249,7 +249,8 @@ void osm_traces_upload_file(const char *user,
 static void osm_traces_upload_thread ( OsmTracesInfo *oti, gpointer threaddata )
 {
   /* Due to OSM limits, we have to enforce ele and time fields */
-  static GpxWritingOptions options = { TRUE, TRUE };
+  /* NB A trace should be not a route */
+  static GpxWritingOptions options = { TRUE, TRUE, FALSE };
   FILE *file = NULL;
   gchar *filename = NULL;
   int fd;

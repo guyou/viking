@@ -71,6 +71,7 @@ VikDataSourceInterface vik_datasource_gps_interface = {
 /*********************************************************
  * Definitions and routines for acquiring data from GPS
  *********************************************************/
+typedef enum {WPT=0, TRK=1, RTE=2} xfer_type;
 
 /* widgets in setup dialog specific to GPS */
 /* widgets in progress dialog specific to GPS */
@@ -90,7 +91,9 @@ typedef struct {
   GtkWidget *id_label;
   GtkWidget *wp_label;
   GtkWidget *trk_label;
+  GtkWidget *rte_label;
   GtkWidget *progress_label;
+  xfer_type progress_type;
 
   /* state */
   int total_count;
@@ -135,7 +138,7 @@ static void datasource_gps_get_cmd_string ( gpointer user_data, gchar **babelarg
     device = "navilink";
   }
 
-  *babelargs = g_strdup_printf("-D 9 -t -w -i %s", device);
+  *babelargs = g_strdup_printf("-D 9 -r -t -w -i %s", device);
   /* device points to static content => no free */
   device = NULL;
   
@@ -212,10 +215,12 @@ static void set_total_count(gint cnt, acq_dialog_widgets_t *w)
   if (w->ok) {
     gps_user_data_t *gps_data = (gps_user_data_t *)w->user_data;
     const gchar *tmp_str;
-    if (gps_data->progress_label == gps_data->wp_label)
-      tmp_str = ngettext("Downloading %d waypoint...", "Downloading %d waypoints...", cnt);
-    else
-      tmp_str = ngettext("Downloading %d trackpoint...", "Downloading %d trackpoints...", cnt);
+    switch (gps_data->progress_type) {
+    case WPT: tmp_str = ngettext("Downloading %d waypoint...", "Downloading %d waypoints...", cnt); break;
+    case TRK: tmp_str = ngettext("Downloading %d trackpoint...", "Downloading %d trackpoints...", cnt); break;
+    case RTE: tmp_str = ngettext("Downloading %d routepoint...", "Downloading %d routepoints...", cnt); break;
+    default: break;
+    }
     s = g_strdup_printf(tmp_str, cnt);
     gtk_label_set_text ( GTK_LABEL(gps_data->progress_label), s );
     gtk_widget_show ( gps_data->progress_label );
@@ -233,10 +238,20 @@ static void set_current_count(gint cnt, acq_dialog_widgets_t *w)
     gps_user_data_t *gps_data = (gps_user_data_t *)w->user_data;
 
     if (cnt < gps_data->total_count) {
-      s = g_strdup_printf(_("Downloaded %d out of %d %s..."), cnt, gps_data->total_count, (gps_data->progress_label == gps_data->wp_label) ? "waypoints" : "trackpoints");
+      switch (gps_data->progress_type) {
+      case WPT: s = g_strdup_printf(_("Downloaded %d out of %d %s..."), cnt, gps_data->total_count, "waypoints"); break;
+      case TRK: s = g_strdup_printf(_("Downloaded %d out of %d %s..."), cnt, gps_data->total_count, "trackpoints"); break;
+      case RTE: s = g_strdup_printf(_("Downloaded %d out of %d %s..."), cnt, gps_data->total_count, "routepoints"); break;
+      default: break;
+      }
     } else {
-      s = g_strdup_printf(_("Downloaded %d %s."), cnt, (gps_data->progress_label == gps_data->wp_label) ? "waypoints" : "trackpoints");
-    }	  
+      switch (gps_data->progress_type) {
+      case WPT: s = g_strdup_printf(_("Downloaded %d %s."), cnt, "waypoints"); break;
+      case TRK: s = g_strdup_printf(_("Downloaded %d %s."), cnt, "trackpoints"); break;
+      case RTE: s = g_strdup_printf(_("Downloaded %d %s."), cnt, "routepoints"); break;
+      default: break;
+      }
+    }
     gtk_label_set_text ( GTK_LABEL(gps_data->progress_label), s );
   }
   g_free(s); s = NULL;
@@ -269,13 +284,20 @@ static void datasource_gps_progress ( BabelProgressCode c, gpointer data, acq_di
   case BABEL_DIAG_OUTPUT:
     line = (gchar *)data;
 
-    /* tells us how many items there will be */
-    if (strstr(line, "Xfer Wpt")) { 
+    /* tells us the type of items that will follow */
+    if (strstr(line, "Xfer Wpt")) {
       gps_data->progress_label = gps_data->wp_label;
+      gps_data->progress_type = WPT;
     }
-    if (strstr(line, "Xfer Trk")) { 
+    if (strstr(line, "Xfer Trk")) {
       gps_data->progress_label = gps_data->trk_label;
+      gps_data->progress_type = TRK;
     }
+    if (strstr(line, "Xfer Rte")) {
+      gps_data->progress_label = gps_data->rte_label;
+      gps_data->progress_type = RTE;
+    }
+
     if (strstr(line, "PRDDAT")) {
       gchar **tokens = g_strsplit(line, " ", 0);
       gchar info[128];
@@ -309,6 +331,7 @@ static void datasource_gps_progress ( BabelProgressCode c, gpointer data, acq_di
       }
       g_strfreev(tokens);
     }
+    /* tells us how many items there will be */
     if (strstr(line, "RECORD")) { 
       int lsb, msb, cnt;
 
@@ -320,7 +343,7 @@ static void datasource_gps_progress ( BabelProgressCode c, gpointer data, acq_di
        gps_data->count = 0;
       }
     }
-    if ( strstr(line, "WPTDAT") || strstr(line, "TRKHDR") || strstr(line, "TRKDAT") ) {
+    if ( strstr(line, "WPTDAT") || strstr(line, "TRKHDR") || strstr(line, "TRKDAT") || strstr(line, "RTEHDR") || strstr(line, "RTEWPT") ) {
       gps_data->count++;
       set_current_count(gps_data->count, w);
     }
@@ -384,7 +407,7 @@ void datasource_gps_add_setup_widgets ( GtkWidget *dialog, VikViewport *vvp, gpo
 
 void datasource_gps_add_progress_widgets ( GtkWidget *dialog, gpointer user_data )
 {
-  GtkWidget *gpslabel, *verlabel, *idlabel, *wplabel, *trklabel;
+  GtkWidget *gpslabel, *verlabel, *idlabel, *wplabel, *trklabel, *rtelabel;
 
   gps_user_data_t *w_gps = (gps_user_data_t *)user_data;
 
@@ -393,10 +416,12 @@ void datasource_gps_add_progress_widgets ( GtkWidget *dialog, gpointer user_data
   idlabel = gtk_label_new ("");
   wplabel = gtk_label_new ("");
   trklabel = gtk_label_new ("");
+  rtelabel = gtk_label_new ("");
 
   gtk_box_pack_start ( GTK_BOX(GTK_DIALOG(dialog)->vbox), gpslabel, FALSE, FALSE, 5 );
   gtk_box_pack_start ( GTK_BOX(GTK_DIALOG(dialog)->vbox), wplabel, FALSE, FALSE, 5 );
   gtk_box_pack_start ( GTK_BOX(GTK_DIALOG(dialog)->vbox), trklabel, FALSE, FALSE, 5 );
+  gtk_box_pack_start ( GTK_BOX(GTK_DIALOG(dialog)->vbox), rtelabel, FALSE, FALSE, 5 );
 
   gtk_widget_show_all ( dialog );
 
@@ -405,5 +430,6 @@ void datasource_gps_add_progress_widgets ( GtkWidget *dialog, gpointer user_data
   w_gps->ver_label = verlabel;
   w_gps->progress_label = w_gps->wp_label = wplabel;
   w_gps->trk_label = trklabel;
+  w_gps->rte_label = rtelabel;
   w_gps->total_count = -1;
 }

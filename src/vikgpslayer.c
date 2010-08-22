@@ -97,6 +97,7 @@ static gchar * old_params_ports[] = {"/dev/ttyS0", "/dev/ttyS1", "/dev/ttyUSB0",
 #endif
 #define OLD_NUM_PORTS (sizeof(old_params_ports)/sizeof(old_params_ports[0]) - 1)
 typedef enum {GPS_DOWN=0, GPS_UP} gps_dir;
+typedef enum {WPT=0, TRK=1, RTE=2} xfer_type;
 
 typedef struct {
   GMutex *mutex;
@@ -114,8 +115,10 @@ typedef struct {
   GtkWidget *ver_label;
   GtkWidget *id_label;
   GtkWidget *wp_label;
+  xfer_type progress_type;
   GtkWidget *progress_label;
   GtkWidget *trk_label;
+  GtkWidget *rte_label;
 } GpsSession;
 static void gps_session_delete(GpsSession *sess);
 
@@ -758,17 +761,21 @@ static void set_total_count(gint cnt, GpsSession *sess)
     const gchar *tmp_str;
     if (sess->direction == GPS_DOWN)
     {
-      if (sess->progress_label == sess->wp_label)
-        tmp_str = ngettext("Downloading %d waypoint...", "Downloading %d waypoints...", cnt);
-      else
-        tmp_str = ngettext("Downloading %d trackpoint...", "Downloading %d trackpoints...", cnt);
+      switch (sess->progress_type) {
+      case WPT: tmp_str = ngettext("Downloading %d waypoint...", "Downloading %d waypoints...", cnt); break;
+      case TRK: tmp_str = ngettext("Downloading %d trackpoint...", "Downloading %d trackpoints...", cnt); break;
+      case RTE: tmp_str = ngettext("Downloading %d routepoint...", "Downloading %d routepoints...", cnt); break;
+      default: break;
+      }
     }
-    else 
+    else
     {
-      if (sess->progress_label == sess->wp_label)
-        tmp_str = ngettext("Uploading %d waypoint...", "Uploading %d waypoints...", cnt);
-      else
-        tmp_str = ngettext("Uploading %d trackpoint...", "Uploading %d trackpoints...", cnt);
+      switch (sess->progress_type) {
+      case WPT: tmp_str = ngettext("Uploading %d waypoint...", "Uploading %d waypoints...", cnt); break;
+      case TRK: tmp_str = ngettext("Uploading %d trackpoint...", "Uploading %d trackpoints...", cnt); break;
+      case RTE: tmp_str = ngettext("Uploading %d routepoint...", "Uploading %d routepoints...", cnt); break;
+      default: break;
+      }
     }
 
     g_snprintf(s, 128, tmp_str, cnt);
@@ -791,31 +798,39 @@ static void set_current_count(gint cnt, GpsSession *sess)
     if (cnt < sess->total_count) {
       if (sess->direction == GPS_DOWN)
       {
-        if (sess->progress_label == sess->wp_label)
-          tmp_str = ngettext("Downloaded %d out of %d waypoint...", "Downloaded %d out of %d waypoints...", sess->total_count);
-        else
-          tmp_str = ngettext("Downloaded %d out of %d trackpoint...", "Downloaded %d out of %d trackpoints...", sess->total_count);
+	switch (sess->progress_type) {
+	case WPT: tmp_str = ngettext("Downloaded %d out of %d waypoint...", "Downloaded %d out of %d waypoints...", sess->total_count); break;
+	case TRK: tmp_str = ngettext("Downloaded %d out of %d trackpoint...", "Downloaded %d out of %d trackpoints...", sess->total_count); break;
+	case RTE: tmp_str = ngettext("Downloaded %d out of %d routepoint...", "Downloaded %d out of %d routepoints...", sess->total_count); break;
+	default: break;
+	}
       }
       else {
-        if (sess->progress_label == sess->wp_label)
-          tmp_str = ngettext("Uploaded %d out of %d waypoint...", "Uploaded %d out of %d waypoints...", sess->total_count);
-        else
-          tmp_str = ngettext("Uploaded %d out of %d trackpoint...", "Uploaded %d out of %d trackpoints...", sess->total_count);
+	switch (sess->progress_type) {
+	case WPT: tmp_str = ngettext("Uploaded %d out of %d waypoint...", "Uploaded %d out of %d waypoints...", sess->total_count); break;
+        case TRK: tmp_str = ngettext("Uploaded %d out of %d trackpoint...", "Uploaded %d out of %d trackpoints...", sess->total_count); break;
+        case RTE: tmp_str = ngettext("Uploaded %d out of %d routepoint...", "Uploaded %d out of %d routepoints...", sess->total_count); break;
+	default: break;
+	}
       }
       g_snprintf(s, 128, tmp_str, cnt, sess->total_count);
     } else {
       if (sess->direction == GPS_DOWN)
       {
-        if (sess->progress_label == sess->wp_label)
-          tmp_str = ngettext("Downloaded %d waypoint", "Downloaded %d waypoints", cnt);
-        else
-          tmp_str = ngettext("Downloaded %d trackpoint", "Downloaded %d trackpoints", cnt);
+	switch (sess->progress_type) {
+	case WPT: tmp_str = ngettext("Downloaded %d waypoint", "Downloaded %d waypoints", cnt); break;
+	case TRK: tmp_str = ngettext("Downloaded %d trackpoint", "Downloaded %d trackpoints", cnt); break;
+	case RTE: tmp_str = ngettext("Downloaded %d routepoint", "Downloaded %d routepoints", cnt); break;
+	default: break;
+	}
       }
       else {
-        if (sess->progress_label == sess->wp_label)
-          tmp_str = ngettext("Uploaded %d waypoint", "Uploaded %d waypoints", cnt);
-        else
-          tmp_str = ngettext("Uploaded %d trackpoint", "Uploaded %d trackpoints", cnt);
+	switch (sess->progress_type) {
+	case WPT: tmp_str = ngettext("Uploaded %d waypoint", "Uploaded %d waypoints", cnt); break;
+        case TRK: tmp_str = ngettext("Uploaded %d trackpoint", "Uploaded %d trackpoints", cnt); break;
+        case RTE: tmp_str = ngettext("Uploaded %d routepoint", "Uploaded %d routepoints", cnt); break;
+	default: break;
+	}
       }
       g_snprintf(s, 128, tmp_str, cnt);
     }	  
@@ -857,13 +872,20 @@ static void gps_download_progress_func(BabelProgressCode c, gpointer data, GpsSe
   case BABEL_DIAG_OUTPUT:
     line = (gchar *)data;
 
-    /* tells us how many items there will be */
-    if (strstr(line, "Xfer Wpt")) { 
+    /* tells us the type of items that will follow */
+    if (strstr(line, "Xfer Wpt")) {
       sess->progress_label = sess->wp_label;
+      sess->progress_type = WPT;
     }
-    if (strstr(line, "Xfer Trk")) { 
+    if (strstr(line, "Xfer Trk")) {
       sess->progress_label = sess->trk_label;
+      sess->progress_type = TRK;
     }
+    if (strstr(line, "Xfer Rte")) {
+      sess->progress_label = sess->rte_label;
+      sess->progress_type = RTE;
+    }
+
     if (strstr(line, "PRDDAT")) {
       gchar **tokens = g_strsplit(line, " ", 0);
       gchar info[128];
@@ -897,6 +919,7 @@ static void gps_download_progress_func(BabelProgressCode c, gpointer data, GpsSe
       }
       g_strfreev(tokens);
     }
+    /* tells us how many items there will be */
     if (strstr(line, "RECORD")) { 
       int lsb, msb, cnt;
 
@@ -908,7 +931,7 @@ static void gps_download_progress_func(BabelProgressCode c, gpointer data, GpsSe
         sess->count = 0;
       }
     }
-    if ( strstr(line, "WPTDAT") || strstr(line, "TRKHDR") || strstr(line, "TRKDAT") ) {
+    if ( strstr(line, "WPTDAT") || strstr(line, "TRKHDR") || strstr(line, "TRKDAT") || strstr(line, "RTEHDR") || strstr(line, "RTEWPT") ) {
       sess->count++;
       set_current_count(sess->count, sess);
     }
@@ -976,15 +999,25 @@ static void gps_upload_progress_func(BabelProgressCode c, gpointer data, GpsSess
     if ( strstr(line, "WPTDAT")) {
       if (sess->count == 0) {
         sess->progress_label = sess->wp_label;
+        sess->progress_type = WPT;
         set_total_count(cnt, sess);
       }
       sess->count++;
       set_current_count(sess->count, sess);
-
+    }
+    if ( strstr(line, "RTEHDR") || strstr(line, "RTEWPT") ) {
+      if (sess->count == 0) {
+        sess->progress_label = sess->rte_label;
+        sess->progress_type = RTE;
+        set_total_count(cnt, sess);
+      }
+      sess->count++;
+      set_current_count(sess->count, sess);
     }
     if ( strstr(line, "TRKHDR") || strstr(line, "TRKDAT") ) {
       if (sess->count == 0) {
         sess->progress_label = sess->trk_label;
+        sess->progress_type = TRK;
         set_total_count(cnt, sess);
       }
       sess->count++;
@@ -1047,7 +1080,7 @@ static gint gps_comm(VikTrwLayer *vtl, gps_dir dir, vik_gps_proto proto, gchar *
   sess->vtl = vtl;
   sess->port = g_strdup(port);
   sess->ok = TRUE;
-  sess->cmd_args = g_strdup_printf("-D 9 -t -w -%c %s",
+  sess->cmd_args = g_strdup_printf("-D 9 -r -t -w -%c %s",
       (dir == GPS_DOWN) ? 'i' : 'o', protocols_args[proto]);
   sess->window_title = (dir == GPS_DOWN) ? _("GPS Download") : _("GPS Upload");
 
@@ -1066,10 +1099,12 @@ static gint gps_comm(VikTrwLayer *vtl, gps_dir dir, vik_gps_proto proto, gchar *
   sess->id_label = gtk_label_new ("");
   sess->wp_label = gtk_label_new ("");
   sess->trk_label = gtk_label_new ("");
+  sess->rte_label = gtk_label_new ("");
 
   gtk_box_pack_start ( GTK_BOX(GTK_DIALOG(sess->dialog)->vbox), sess->gps_label, FALSE, FALSE, 5 );
   gtk_box_pack_start ( GTK_BOX(GTK_DIALOG(sess->dialog)->vbox), sess->wp_label, FALSE, FALSE, 5 );
   gtk_box_pack_start ( GTK_BOX(GTK_DIALOG(sess->dialog)->vbox), sess->trk_label, FALSE, FALSE, 5 );
+  gtk_box_pack_start ( GTK_BOX(GTK_DIALOG(sess->dialog)->vbox), sess->rte_label, FALSE, FALSE, 5 );
 
   gtk_widget_show_all(sess->dialog);
 
