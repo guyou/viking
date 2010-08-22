@@ -105,19 +105,18 @@ variety of tasks. Some of the things you can use &appname; for are:
 </para>
 <itemizedlist mark="opencircle"><listitem>
 <para>
-Uploading and downloading waypoints, tracks to/from GPS.
+Uploading and downloading waypoints, tracks and routes to/from GPS devices.
 </para>
 </listitem>
 <listitem>
-<para>Preparing tracks and waypoints for trips using maps from services
+<para>Preparing tracks, routes and waypoints for trips using maps from services
 such as OpenStreetMap (OSM) and/or Terrasever. The data is only needed to be uploaded to
-your GPS before you leave. The maps together with your tracks and
-waypoints can also be printed and used during the trip.
+your GPS before you leave. The maps together with your data can also be printed and used during the trip.
 </para>
 </listitem>
 <listitem>
 <para>
-After trips, tracks and waypoints from GPS can be downloaded, stored, managed and reused in your (or your friends') later trips.
+After trips, tracks, routes and waypoints from GPS can be downloaded, stored, managed and reused in your (or your friends') later trips.
 </para>
 </listitem>
 <listitem>
@@ -126,7 +125,7 @@ Analyzing Off Highway Vehicle (OHV) and hiking trips, understanding where you we
 </para>
 </listitem>
 <listitem>
-<para>Making waypoints and tracks to follow to easily get someplace
+<para>Making waypoints, routes and tracks to follow to easily get someplace
 you've never been before or don't have GPS data for but online
 maps exist for it.
 </para>
@@ -153,7 +152,7 @@ Downloading and storing OSM and/or Terraserver maps on your hard drive and looki
 </listitem>
 <listitem>
 <para>
-Editing tracks and trackpoints, joining and splitting up tracks 
+Editing routes, tracks and trackpoints, joining and splitting up tracks.
 </para>
 </listitem>
 <listitem>
@@ -231,7 +230,12 @@ The main &appname; area where the layer data is drawn, is called the <emphasis r
 <section><title>Layers</title>
 <section><title>TrackWaypoint Layer</title>
 <para>
-TrackWaypoint layers display GPS data (tracks and waypoints).
+TrackWaypoint layers display GPS data (tracks (including routes) and waypoints).
+</para>
+<para>
+Routes are shown as differently coloured tracks, by default red.
+This colour can be changed in the TrackWaypoint layer's properties.
+Most operations that apply to tracks can be applied to routes.
 </para>
 <para>One way to create new waypoints is to copy a
 latitude/longitude coordinate pair, such as the one shown on most
@@ -340,6 +344,13 @@ Useful if you are an OSM contributor. &appname;
 allows you to import a track, edit it if you so wish to remove
 duplicate points, perhaps track points leading to your home, and then
 directly export the track to OSM.
+</para>
+
+</section>
+<section><title>Convert to Track/Route</title>
+<para>
+When the track is a route, it can be converted into a 'normal' track.
+Conversely, a normal track can be converted into a route.
 </para>
 
 </section>
