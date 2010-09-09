@@ -278,18 +278,19 @@ void vik_aggregate_layer_draw ( VikAggregateLayer *val, gpointer data )
 {
   GList *iter = val->children;
   VikLayer *vl;
-  VikLayer *trigger = VIK_LAYER(vik_viewport_get_trigger( VIK_VIEWPORT(data) ));
+  VikViewport *viewport = VIK_VIEWPORT(data);
+  VikLayer *trigger = VIK_LAYER(vik_viewport_get_trigger( viewport ));
   while ( iter ) {
     vl = VIK_LAYER(iter->data);
     if ( vl == trigger ) {
-      if ( vik_viewport_get_half_drawn ( VIK_VIEWPORT(data) ) ) {
-        vik_viewport_set_half_drawn ( VIK_VIEWPORT(data), FALSE );
-        vik_viewport_snapshot_load( VIK_VIEWPORT(data) );
+      if ( vik_viewport_get_half_drawn ( viewport ) ) {
+        vik_viewport_set_half_drawn ( viewport, FALSE );
+        vik_viewport_snapshot_load( viewport );
       } else {
-        vik_viewport_snapshot_save( VIK_VIEWPORT(data) );
+        vik_viewport_snapshot_save( viewport );
       }
     }
-    if ( vl->type == VIK_LAYER_AGGREGATE || vl->type == VIK_LAYER_GPS || ! vik_viewport_get_half_drawn( VIK_VIEWPORT(data) ) )
+    if ( vl->type == VIK_LAYER_AGGREGATE || vl->type == VIK_LAYER_GPS || ! vik_viewport_get_half_drawn( viewport ) )
       vik_layer_draw ( vl, data );
     iter = iter->next;
   }
@@ -393,11 +394,12 @@ VikLayer *vik_aggregate_layer_get_top_visible_layer_of_type ( VikAggregateLayer 
 
   while ( ls )
   {
-    if ( VIK_LAYER(ls->data)->visible && VIK_LAYER(ls->data)->type == type )
-      return VIK_LAYER(ls->data);
-    else if ( VIK_LAYER(ls->data)->visible && VIK_LAYER(ls->data)->type == VIK_LAYER_AGGREGATE )
+    VikLayer *vl = VIK_LAYER(ls->data);
+    if ( vl->visible && vl->type == type )
+      return vl;
+    else if ( vl->visible && vl->type == VIK_LAYER_AGGREGATE )
     {
-      rv = vik_aggregate_layer_get_top_visible_layer_of_type(VIK_AGGREGATE_LAYER(ls->data), type);
+      rv = vik_aggregate_layer_get_top_visible_layer_of_type(VIK_AGGREGATE_LAYER(vl), type);
       if ( rv )
         return rv;
     }
