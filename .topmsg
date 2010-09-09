@@ -1,0 +1,6 @@
+From: Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
+Subject: [PATCH] Reduce GObject cast
+
+GObject cast is more than a C cast. So it is CPU consuming.
+
+Signed-off-by: Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
