@@ -32,5 +32,7 @@ void new_email(GtkWindow *parent, const gchar * address);
 
 gchar *uri_escape(gchar *str);
 
+gchar *strdup_replace(const gchar *src, const gchar *pat, const gchar *repl);
+
 #endif
 

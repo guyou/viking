@@ -112,3 +112,21 @@ gchar *uri_escape(gchar *str)
   return(esc_str);
 }
 
+gchar *strdup_replace(const gchar *src, const gchar *pat, const gchar *repl)
+{
+  gchar *ch;
+  if (ch = strstr(src, pat))
+  {
+    size_t repl_len = strlen(repl);
+    size_t pat_len = strlen(pat);
+    gchar *buffer = g_malloc(sizeof(gchar)*(strlen(src)+repl_len-pat_len+1));
+    strncpy(buffer, src, ch-src);  
+    buffer[ch-src] = 0;
+    strcpy(buffer+(ch-src), repl);
+    strcpy(buffer+(ch-src+repl_len), src+(ch-src+pat_len));
+    return buffer;
+  }
+  else
+    return NULL;
+}
+
