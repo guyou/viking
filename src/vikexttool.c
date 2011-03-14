@@ -29,11 +29,6 @@
 
 #include <glib/gi18n.h>
 
-static void ext_tool_class_init ( VikExtToolClass *klass );
-static void ext_tool_init ( VikExtTool *vlp );
-
-static GObjectClass *parent_class;
-
 static void ext_tool_finalize ( GObject *gob );
 static gchar *ext_tool_get_label ( VikExtTool *vw );
 
@@ -49,29 +44,7 @@ struct _VikExtToolPrivate
                                 VIK_EXT_TOOL_TYPE,          \
                                 VikExtToolPrivate))
 
-GType vik_ext_tool_get_type()
-{
-  static GType w_type = 0;
-
-  if (!w_type)
-  {
-    static const GTypeInfo w_info = 
-    {
-      sizeof (VikExtToolClass),
-      NULL, /* base_init */
-      NULL, /* base_finalize */
-      (GClassInitFunc) ext_tool_class_init,
-      NULL, /* class_finalize */
-      NULL, /* class_data */
-      sizeof (VikExtTool),
-      0,
-      (GInstanceInitFunc) ext_tool_init,
-    };
-    w_type = g_type_register_static ( G_TYPE_OBJECT, "VikExtTool", &w_info, G_TYPE_FLAG_ABSTRACT );
-  }
-
-  return w_type;
-}
+G_DEFINE_ABSTRACT_TYPE (VikExtTool, vik_ext_tool, G_TYPE_OBJECT);
 
 enum
 {
@@ -136,7 +109,8 @@ ext_tool_get_property (GObject    *object,
     }
 }
 
-static void ext_tool_class_init ( VikExtToolClass *klass )
+static void
+vik_ext_tool_class_init ( VikExtToolClass *klass )
 {
   GObjectClass *gobject_class;
   GParamSpec *pspec;
@@ -168,8 +142,6 @@ static void ext_tool_class_init ( VikExtToolClass *klass )
 
   klass->get_label = ext_tool_get_label;
 
-  parent_class = g_type_class_peek_parent (klass);
-
   g_type_class_add_private (klass, sizeof (VikExtToolPrivate));
 }
 
@@ -178,7 +150,8 @@ VikExtTool *vik_ext_tool_new ()
   return VIK_EXT_TOOL ( g_object_new ( VIK_EXT_TOOL_TYPE, NULL ) );
 }
 
-static void ext_tool_init ( VikExtTool *self )
+static void
+vik_ext_tool_init ( VikExtTool *self )
 {
   VikExtToolPrivate *priv = EXT_TOOL_GET_PRIVATE (self);
   priv->label = NULL;
@@ -188,7 +161,7 @@ static void ext_tool_finalize ( GObject *gob )
 {
   VikExtToolPrivate *priv = EXT_TOOL_GET_PRIVATE ( gob );
   g_free ( priv->label ); priv->label = NULL;
-  G_OBJECT_CLASS(parent_class)->finalize(gob);
+  G_OBJECT_CLASS(vik_ext_tool_parent_class)->finalize(gob);
 }
 
 static gchar *ext_tool_get_label ( VikExtTool *self )
