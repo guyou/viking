@@ -38,8 +38,8 @@
 #include "vikgotoxmltool.h"
 
 
-static void _goto_xml_tool_class_init ( VikGotoXmlToolClass *klass );
-static void _goto_xml_tool_init ( VikGotoXmlTool *self );
+static void vik_goto_xml_tool_class_init ( VikGotoXmlToolClass *klass );
+static void vik_goto_xml_tool_init ( VikGotoXmlTool *self );
 
 static void _goto_xml_tool_finalize ( GObject *gob );
 
@@ -63,29 +63,7 @@ struct _VikGotoXmlToolPrivate
                                         VIK_GOTO_XML_TOOL_TYPE,          \
                                         VikGotoXmlToolPrivate))
 
-GType vik_goto_xml_tool_get_type()
-{
-  static GType w_type = 0;
-
-  if (!w_type)
-  {
-    static const GTypeInfo w_info = 
-    {
-      sizeof (VikGotoXmlToolClass),
-      NULL, /* base_init */
-      NULL, /* base_finalize */
-      (GClassInitFunc) _goto_xml_tool_class_init,
-      NULL, /* class_finalize */
-      NULL, /* class_data */
-      sizeof (VikGotoXmlTool),
-      0,
-      (GInstanceInitFunc) _goto_xml_tool_init,
-    };
-    w_type = g_type_register_static ( VIK_GOTO_TOOL_TYPE, "VikGotoXmlTool", &w_info, 0 );
-  }
-
-  return w_type;
-}
+G_DEFINE_TYPE (VikGotoXmlTool, vik_goto_xml_tool, VIK_GOTO_TOOL_TYPE);
 
 enum
 {
@@ -210,7 +188,8 @@ _goto_xml_tool_get_property (GObject    *object,
     }
 }
 
-static void _goto_xml_tool_class_init ( VikGotoXmlToolClass *klass )
+static void
+vik_goto_xml_tool_class_init ( VikGotoXmlToolClass *klass )
 {
   GObjectClass *object_class;
   VikGotoToolClass *parent_class;
@@ -281,7 +260,8 @@ VikGotoXmlTool *vik_goto_xml_tool_new ()
   return VIK_GOTO_XML_TOOL ( g_object_new ( VIK_GOTO_XML_TOOL_TYPE, "label", "Google", NULL ) );
 }
 
-static void _goto_xml_tool_init ( VikGotoXmlTool *self )
+static void
+vik_goto_xml_tool_init ( VikGotoXmlTool *self )
 {
   VikGotoXmlToolPrivate *priv = GOTO_XML_TOOL_GET_PRIVATE (self);
   priv->url_format = NULL;
