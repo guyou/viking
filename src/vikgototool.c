@@ -33,10 +33,8 @@
 #include <glib/gi18n.h>
 #include <glib/gstdio.h>
 
-static void goto_tool_class_init ( VikGotoToolClass *klass );
-static void goto_tool_init ( VikGotoTool *vlp );
-
-static GObjectClass *parent_class;
+static void vik_goto_tool_class_init ( VikGotoToolClass *klass );
+static void vik_goto_tool_init ( VikGotoTool *vlp );
 
 static void goto_tool_finalize ( GObject *gob );
 static gchar *goto_tool_get_label ( VikGotoTool *vw );
@@ -54,29 +52,7 @@ struct _VikGotoToolPrivate
                                     VIK_GOTO_TOOL_TYPE,          \
                                     VikGotoToolPrivate))
 
-GType vik_goto_tool_get_type()
-{
-  static GType w_type = 0;
-
-  if (!w_type)
-  {
-    static const GTypeInfo w_info = 
-    {
-      sizeof (VikGotoToolClass),
-      NULL, /* base_init */
-      NULL, /* base_finalize */
-      (GClassInitFunc) goto_tool_class_init,
-      NULL, /* class_finalize */
-      NULL, /* class_data */
-      sizeof (VikGotoTool),
-      0,
-      (GInstanceInitFunc) goto_tool_init,
-    };
-    w_type = g_type_register_static ( G_TYPE_OBJECT, "VikGotoTool", &w_info, G_TYPE_FLAG_ABSTRACT );
-  }
-
-  return w_type;
-}
+G_DEFINE_ABSTRACT_TYPE (VikGotoTool, vik_goto_tool, G_TYPE_OBJECT);
 
 enum
 {
@@ -141,7 +117,8 @@ goto_tool_get_property (GObject    *object,
     }
 }
 
-static void goto_tool_class_init ( VikGotoToolClass *klass )
+static void
+vik_goto_tool_class_init ( VikGotoToolClass *klass )
 {
   GObjectClass *gobject_class;
   GParamSpec *pspec;
@@ -174,8 +151,6 @@ static void goto_tool_class_init ( VikGotoToolClass *klass )
   klass->get_label = goto_tool_get_label;
   klass->get_download_options = goto_tool_get_download_options;
 
-  parent_class = g_type_class_peek_parent (klass);
-
   g_type_class_add_private (klass, sizeof (VikGotoToolPrivate));
 }
 
@@ -184,7 +159,8 @@ VikGotoTool *vik_goto_tool_new ()
   return VIK_GOTO_TOOL ( g_object_new ( VIK_GOTO_TOOL_TYPE, NULL ) );
 }
 
-static void goto_tool_init ( VikGotoTool *self )
+static void
+vik_goto_tool_init ( VikGotoTool *self )
 {
   VikGotoToolPrivate *priv = GOTO_TOOL_GET_PRIVATE (self);
   priv->label = NULL;
@@ -194,7 +170,7 @@ static void goto_tool_finalize ( GObject *gob )
 {
   VikGotoToolPrivate *priv = GOTO_TOOL_GET_PRIVATE ( gob );
   g_free ( priv->label ); priv->label = NULL;
-  G_OBJECT_CLASS(parent_class)->finalize(gob);
+  G_OBJECT_CLASS(vik_goto_tool_parent_class)->finalize(gob);
 }
 
 static gchar *goto_tool_get_label ( VikGotoTool *self )
