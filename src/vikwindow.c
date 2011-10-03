@@ -66,6 +66,7 @@ static GObjectClass *parent_class;
 static void window_init ( VikWindow *vw );
 static void window_class_init ( VikWindowClass *klass );
 static void window_set_filename ( VikWindow *vw, const gchar *filename );
+static void window_set_modified ( VikWindow *vw, gboolean modified );
 
 static void draw_update ( VikWindow *vw );
 
@@ -316,7 +317,7 @@ static void window_init ( VikWindow *vw )
   vw->filename = NULL;
   vw->item_factory = NULL;
 
-  vw->modified = FALSE;
+  window_set_modified (vw, FALSE);
   vw->only_updating_coord_mode_ui = FALSE;
  
   vw->pan_move = FALSE; 
@@ -1037,7 +1038,7 @@ static gpointer zoomtool_create (VikWindow *vw, VikViewport *vvp)
 
 static VikLayerToolFuncStatus zoomtool_click (VikLayer *vl, GdkEventButton *event, VikWindow *vw)
 {
-  vw->modified = TRUE;
+  window_set_modified (vw, TRUE);
   vik_viewport_set_center_screen ( vw->viking_vvp, (gint) event->x, (gint) event->y );
   if ( event->button == 1 )
     vik_viewport_zoom_in (vw->viking_vvp);
@@ -1081,7 +1082,7 @@ static gpointer pantool_create (VikWindow *vw, VikViewport *vvp)
 
 static VikLayerToolFuncStatus pantool_click (VikLayer *vl, GdkEventButton *event, VikWindow *vw)
 {
-  vw->modified = TRUE;
+  window_set_modified (vw, TRUE);
   if ( event->button == 1 )
     vik_window_pan_click ( vw, event );
   draw_update ( vw );
@@ -1325,7 +1326,7 @@ static void menu_addlayer_cb ( GtkAction *a, VikWindow *vw )
     if (!strcmp(vik_layer_get_interface(type)->name, gtk_action_get_name(a))) {
       if ( vik_layers_panel_new_layer ( vw->viking_vlp, type ) ) {
 	draw_update ( vw );
-	vw->modified = TRUE;
+	window_set_modified (vw, TRUE);
       }
     }
   }
@@ -1340,7 +1341,7 @@ static void menu_cut_layer_cb ( GtkAction *a, VikWindow *vw )
 {
   vik_layers_panel_cut_selected ( vw->viking_vlp );
   draw_update ( vw );
-  vw->modified = TRUE;
+  window_set_modified (vw, TRUE);
 }
 
 static void menu_paste_layer_cb ( GtkAction *a, VikWindow *vw )
@@ -1348,7 +1349,7 @@ static void menu_paste_layer_cb ( GtkAction *a, VikWindow *vw )
   if ( a_clipboard_paste ( vw->viking_vlp ) )
   {
     draw_update ( vw );
-    vw->modified = TRUE;
+    window_set_modified (vw, TRUE);
   }
 }
 
@@ -1382,7 +1383,7 @@ static void menu_delete_layer_cb ( GtkAction *a, VikWindow *vw )
   if ( vik_layers_panel_get_selected ( vw->viking_vlp ) )
   {
     vik_layers_panel_delete_selected ( vw->viking_vlp );
-    vw->modified = TRUE;
+    window_set_modified (vw, TRUE);
   }
   else
     a_dialog_info_msg ( GTK_WINDOW(vw), _("You must select a layer to delete.") );
@@ -1619,6 +1620,12 @@ static void window_set_filename ( VikWindow *vw, const gchar *filename )
   title = g_strdup_printf( "%s - Viking", file );
   gtk_window_set_title ( GTK_WINDOW(vw), title );
   g_free ( title );
+}
+
+static void window_set_modified ( VikWindow *vw, gboolean modified )
+{
+  g_debug ("%s: %d", __FUNCTION__, modified);
+  vw->modified = modified;
 }
 
 GtkWidget *vik_window_get_drawmode_button ( VikWindow *vw, VikViewportDrawMode mode )
@@ -1886,7 +1893,7 @@ static gboolean save_file_as ( GtkAction *a, VikWindow *vw )
     {
       window_set_filename ( vw, fn );
       rv = window_save ( vw );
-      vw->modified = FALSE;
+      window_set_modified (vw, FALSE);
       break;
     }
   }
@@ -1914,7 +1921,7 @@ static gboolean save_file ( GtkAction *a, VikWindow *vw )
     return save_file_as ( NULL, vw );
   else
   {
-    vw->modified = FALSE;
+    window_set_modified (vw, FALSE);
     return window_save ( vw );
   }
 }
