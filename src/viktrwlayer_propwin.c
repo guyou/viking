@@ -70,6 +70,7 @@ typedef struct _propwidgets {
   gchar *track_name;
   GtkWidget *dialog;
   GtkWidget *w_comment;
+  GtkWidget *w_is_route;
   GtkWidget *w_track_length;
   GtkWidget *w_tp_count;
   GtkWidget *w_segment_count;
@@ -626,6 +627,9 @@ static void propwin_response_cb( GtkDialog *dialog, gint resp, PropWidgets *widg
       break;
     case GTK_RESPONSE_ACCEPT:
       vik_track_set_comment(tr, gtk_entry_get_text(GTK_ENTRY(widgets->w_comment)));
+      tr->is_route = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widgets->w_is_route));
+      /* Now redraw - as colour of the tracks can have be changed */
+      vik_layer_emit_update ( VIK_LAYER(vtl) );
       break;
     case VIK_TRW_LAYER_PROPWIN_REVERSE:
       vik_track_reverse(tr);
@@ -791,6 +795,9 @@ void vik_trw_layer_propwin_run ( GtkWindow *parent, VikTrwLayer *vtl, VikTrack *
   static gchar *label_texts[] = { N_("<b>Comment:</b>"), N_("<b>Track Length:</b>"), N_("<b>Trackpoints:</b>"), N_("<b>Segments:</b>"), N_("<b>Duplicate Points:</b>"), N_("<b>Max Speed:</b>"), N_("<b>Avg. Speed:</b>"), N_("<b>Avg. Dist. Between TPs:</b>"), N_("<b>Elevation Range:</b>"), N_("<b>Total Elevation Gain/Loss:</b>"), N_("<b>Start:</b>"), N_("<b>End:</b>"), N_("<b>Duration:</b>") };
   static gchar tmp_buf[50];
   gdouble tmp_speed;
+
+  widgets->w_is_route = gtk_check_button_new_with_label (_("Is route"));
+  gtk_toggle_button_set_active ( GTK_TOGGLE_BUTTON(widgets->w_is_route), tr->is_route );
 
   cnt = 0;
   widgets->w_comment = gtk_entry_new ();
@@ -977,7 +984,10 @@ void vik_trw_layer_propwin_run ( GtkWindow *parent, VikTrwLayer *vtl, VikTrack *
     gtk_table_attach_defaults ( table, content[i], 1, 2, i, i+1 );
   }
 
-  gtk_notebook_append_page(GTK_NOTEBOOK(graphs), GTK_WIDGET(table), gtk_label_new(_("Statistics")));
+  GtkWidget *vbox = gtk_vbox_new ( FALSE, 3 );
+  gtk_box_pack_start (GTK_BOX(vbox), widgets->w_is_route,  FALSE, FALSE, 0);
+  gtk_box_pack_start (GTK_BOX(vbox), GTK_WIDGET(table),  FALSE, FALSE, 0);
+  gtk_notebook_append_page(GTK_NOTEBOOK(graphs), vbox, gtk_label_new(_("Statistics")));
 
   if ( profile ) {
     GtkWidget *page = NULL;
