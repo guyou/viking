@@ -713,6 +713,7 @@ static void propwin_response_cb( GtkDialog *dialog, gint resp, PropWidgets *widg
         if ( tr->comment )
           vik_track_set_comment ( tr_right, tr->comment );
         tr_right->visible = tr->visible;
+        tr_right->is_route = tr->is_route;
         tr_right->trackpoints = iter;
 
         vik_trw_layer_add_track(vtl, r_name, tr_right);
