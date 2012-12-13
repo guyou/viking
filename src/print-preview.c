@@ -240,7 +240,7 @@ vik_print_preview_set_image_dpi (VikPrintPreview *preview,
                                   gdouble           yres)
 {
   g_return_if_fail (VIK_IS_PRINT_PREVIEW (preview));
-
+  
   if (preview->image_xres != xres || preview->image_yres != yres)
     {
       preview->image_xres = xres;
@@ -262,6 +262,8 @@ vik_print_preview_set_page_setup (VikPrintPreview *preview,
                                    GtkPageSetup     *page)
 {
   gfloat ratio;
+
+  g_return_if_fail (VIK_IS_PRINT_PREVIEW (preview));  
 
   if (preview->page)
     g_object_unref (preview->page);
