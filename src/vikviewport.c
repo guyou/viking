@@ -305,7 +305,7 @@ GdkPixmap *vik_viewport_get_pixmap ( VikViewport *vvp )
 
 gboolean vik_viewport_configure ( VikViewport *vvp )
 {
-  g_return_val_if_fail ( vvp != NULL, TRUE );
+  g_return_val_if_fail ( VIK_IS_VIEWPORT (vvp), TRUE );
 
   vvp->width = GTK_WIDGET(vvp)->allocation.width;
   vvp->height = GTK_WIDGET(vvp)->allocation.height;
@@ -377,7 +377,7 @@ static void viewport_finalize ( GObject *gob )
  */
 void vik_viewport_clear ( VikViewport *vvp )
 {
-  g_return_if_fail ( vvp != NULL );
+  g_return_if_fail ( VIK_IS_VIEWPORT (vvp) );
   gdk_draw_rectangle(GDK_DRAWABLE(vvp->scr_buffer), vvp->background_gc, TRUE, 0, 0, vvp->width, vvp->height);
   vik_viewport_reset_copyrights ( vvp );
   vik_viewport_reset_logos ( vvp );
@@ -402,7 +402,7 @@ gboolean vik_viewport_get_draw_scale ( VikViewport *vvp )
 
 void vik_viewport_draw_scale ( VikViewport *vvp )
 {
-  g_return_if_fail ( vvp != NULL );
+  g_return_if_fail ( VIK_IS_VIEWPORT (vvp) );
 
   if ( vvp->draw_scale ) {
     VikCoord left, right;
@@ -511,7 +511,7 @@ void vik_viewport_draw_scale ( VikViewport *vvp )
 
 void vik_viewport_draw_copyright ( VikViewport *vvp )
 {
-  g_return_if_fail ( vvp != NULL );
+  g_return_if_fail ( VIK_IS_VIEWPORT (vvp) );
 
   PangoLayout *pl;
   PangoRectangle ink_rect, logical_rect;
@@ -579,7 +579,7 @@ gboolean vik_viewport_get_draw_centermark ( VikViewport *vvp )
 
 void vik_viewport_draw_centermark ( VikViewport *vvp )
 {
-  g_return_if_fail ( vvp != NULL );
+  g_return_if_fail ( VIK_IS_VIEWPORT (vvp) );
 
   if ( !vvp->draw_centermark )
     return;
@@ -605,7 +605,7 @@ void vik_viewport_draw_centermark ( VikViewport *vvp )
 
 void vik_viewport_draw_logo ( VikViewport *vvp )
 {
-  g_return_if_fail ( vvp != NULL );
+  g_return_if_fail ( VIK_IS_VIEWPORT (vvp) );
 
   guint len = g_slist_length ( vvp->logos );
   gint x = vvp->width - PAD;
@@ -633,7 +633,7 @@ gboolean vik_viewport_get_draw_highlight ( VikViewport *vvp )
 
 void vik_viewport_sync ( VikViewport *vvp )
 {
-  g_return_if_fail ( vvp != NULL );
+  g_return_if_fail ( VIK_IS_VIEWPORT (vvp) );
   gdk_draw_drawable(GTK_WIDGET(vvp)->window, GTK_WIDGET(vvp)->style->bg_gc[0], GDK_DRAWABLE(vvp->scr_buffer), 0, 0, 0, 0, vvp->width, vvp->height);
 }
 
@@ -641,7 +641,8 @@ void vik_viewport_pan_sync ( VikViewport *vvp, gint x_off, gint y_off )
 {
   gint x, y, wid, hei;
 
-  g_return_if_fail ( vvp != NULL );
+  g_return_if_fail ( VIK_IS_VIEWPORT (vvp) );
+  
   gdk_draw_drawable(GTK_WIDGET(vvp)->window, GTK_WIDGET(vvp)->style->bg_gc[0], GDK_DRAWABLE(vvp->scr_buffer), 0, 0, x_off, y_off, vvp->width, vvp->height);
 
   if (x_off >= 0) {
@@ -664,7 +665,8 @@ void vik_viewport_pan_sync ( VikViewport *vvp, gint x_off, gint y_off )
 
 void vik_viewport_set_zoom ( VikViewport *vvp, gdouble xympp )
 {
-  g_return_if_fail ( vvp != NULL );
+  g_return_if_fail ( VIK_IS_VIEWPORT (vvp) );
+  
   if ( xympp >= VIK_VIEWPORT_MIN_ZOOM && xympp <= VIK_VIEWPORT_MAX_ZOOM )
     vvp->xmpp = vvp->ympp = xympp;
 
@@ -675,7 +677,8 @@ void vik_viewport_set_zoom ( VikViewport *vvp, gdouble xympp )
 /* or could do factor */
 void vik_viewport_zoom_in ( VikViewport *vvp )
 {
-  g_return_if_fail ( vvp != NULL );
+  g_return_if_fail ( VIK_IS_VIEWPORT (vvp) );
+  
   if ( vvp->xmpp >= (VIK_VIEWPORT_MIN_ZOOM*2) && vvp->ympp >= (VIK_VIEWPORT_MIN_ZOOM*2) )
   {
     vvp->xmpp /= 2;
@@ -687,7 +690,7 @@ void vik_viewport_zoom_in ( VikViewport *vvp )
 
 void vik_viewport_zoom_out ( VikViewport *vvp )
 {
-  g_return_if_fail ( vvp != NULL );
+  g_return_if_fail ( VIK_IS_VIEWPORT (vvp) );
   if ( vvp->xmpp <= (VIK_VIEWPORT_MAX_ZOOM/2) && vvp->ympp <= (VIK_VIEWPORT_MAX_ZOOM/2) )
   {
     vvp->xmpp *= 2;
@@ -735,7 +738,8 @@ void vik_viewport_set_ympp ( VikViewport *vvp, gdouble ympp )
 
 const VikCoord *vik_viewport_get_center ( VikViewport *vvp )
 {
-  g_return_val_if_fail ( vvp != NULL, NULL );
+  g_return_val_if_fail ( VIK_IS_VIEWPORT (vvp), NULL );
+  
   return &(vvp->center);
 }
 
@@ -780,6 +784,7 @@ void vik_viewport_set_center_coord ( VikViewport *vvp, const VikCoord *coord )
 
 void vik_viewport_corners_for_zonen ( VikViewport *vvp, int zone, VikCoord *ul, VikCoord *br )
 {
+  g_return_if_fail ( VIK_IS_VIEWPORT (vvp) );
   g_return_if_fail ( vvp->coord_mode == VIK_COORD_UTM );
 
   /* get center, then just offset */
@@ -827,7 +832,8 @@ gchar vik_viewport_rightmost_zone ( VikViewport *vvp )
 
 void vik_viewport_set_center_screen ( VikViewport *vvp, int x, int y )
 {
-  g_return_if_fail ( vvp != NULL );
+  g_return_if_fail ( VIK_IS_VIEWPORT (vvp) );
+  
   if ( vvp->coord_mode == VIK_COORD_UTM ) {
     /* slightly optimized */
     vvp->center.east_west += vvp->xmpp * (x - (vvp->width/2));
@@ -842,19 +848,19 @@ void vik_viewport_set_center_screen ( VikViewport *vvp, int x, int y )
 
 gint vik_viewport_get_width( VikViewport *vvp )
 {
-  g_return_val_if_fail ( vvp != NULL, 0 );
+  g_return_val_if_fail ( VIK_IS_VIEWPORT (vvp), 0 );
   return vvp->width;
 }
 
 gint vik_viewport_get_height( VikViewport *vvp )
 {
-  g_return_val_if_fail ( vvp != NULL, 0 );
+  g_return_val_if_fail ( VIK_IS_VIEWPORT (vvp), 0 );
   return vvp->height;
 }
 
 void vik_viewport_screen_to_coord ( VikViewport *vvp, int x, int y, VikCoord *coord )
 {
-  g_return_if_fail ( vvp != NULL );
+  g_return_if_fail ( VIK_IS_VIEWPORT (vvp) );
 
   if ( vvp->coord_mode == VIK_COORD_UTM ) {
     int zone_delta;
@@ -894,7 +900,7 @@ void vik_viewport_screen_to_coord ( VikViewport *vvp, int x, int y, VikCoord *co
 void vik_viewport_coord_to_screen ( VikViewport *vvp, const VikCoord *coord, int *x, int *y )
 {
   static VikCoord tmp;
-  g_return_if_fail ( vvp != NULL );
+  g_return_if_fail ( VIK_IS_VIEWPORT (vvp) );
 
   if ( coord->mode != vvp->coord_mode )
   {
@@ -1046,7 +1052,7 @@ VikCoordMode vik_viewport_get_coord_mode ( const VikViewport *vvp )
 
 static void viewport_set_coord_mode ( VikViewport *vvp, VikCoordMode mode )
 {
-  g_return_if_fail ( vvp != NULL );
+  g_return_if_fail ( VIK_IS_VIEWPORT (vvp) );
   vvp->coord_mode = mode;
   vik_coord_convert ( &(vvp->center), mode );
 }
@@ -1258,7 +1264,8 @@ void vik_viewport_get_min_max_lat_lon ( VikViewport *vp, gdouble *min_lat, gdoub
 
 void vik_viewport_reset_copyrights ( VikViewport *vp ) 
 {
-  g_return_if_fail ( vp != NULL );
+  g_return_if_fail ( VIK_IS_VIEWPORT (vp) );
+  
   g_slist_foreach ( vp->copyrights, (GFunc)g_free, NULL );
   g_slist_free ( vp->copyrights );
   vp->copyrights = NULL;
@@ -1273,7 +1280,8 @@ void vik_viewport_reset_copyrights ( VikViewport *vp )
  */
 void vik_viewport_add_copyright ( VikViewport *vp, const gchar *copyright ) 
 {
-  g_return_if_fail ( vp != NULL );
+  g_return_if_fail ( VIK_IS_VIEWPORT (vp) );
+  
   if ( copyright )
   {
     GSList *found = g_slist_find_custom ( vp->copyrights, copyright, (GCompareFunc)strcmp );
@@ -1287,7 +1295,8 @@ void vik_viewport_add_copyright ( VikViewport *vp, const gchar *copyright )
 
 void vik_viewport_reset_logos ( VikViewport *vp )
 {
-  g_return_if_fail ( vp != NULL );
+  g_return_if_fail ( VIK_IS_VIEWPORT (vp) );
+  
   /* do not free elem */
   g_slist_free ( vp->logos );
   vp->logos = NULL;
@@ -1295,7 +1304,8 @@ void vik_viewport_reset_logos ( VikViewport *vp )
 
 void vik_viewport_add_logo ( VikViewport *vp, const GdkPixbuf *logo )
 {
-  g_return_if_fail ( vp != NULL );
+  g_return_if_fail ( VIK_IS_VIEWPORT (vp) );
+  
   if ( logo )
   {
     GdkPixbuf *found = NULL; /* FIXME (GdkPixbuf*)g_slist_find_custom ( vp->logos, logo, (GCompareFunc)== ); */
