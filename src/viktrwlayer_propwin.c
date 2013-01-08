@@ -2761,6 +2761,31 @@ static GtkWidget *create_graph_page ( GtkWidget *graph,
   return vbox;
 }
 
+static GtkWidget *create_table (int cnt, char *labels[], GtkWidget *contents[])
+{
+  GtkTable *table;
+  int i;
+
+  table = GTK_TABLE(gtk_table_new (cnt, 2, FALSE));
+  gtk_table_set_col_spacing (table, 0, 10);
+  for (i=0; i<cnt; i++) {
+    GtkWidget *label;
+
+    // Settings so the text positioning only moves around vertically when the dialog is resized
+    // This also gives more room to see the track comment
+    label = gtk_label_new(NULL);
+    gtk_misc_set_alignment ( GTK_MISC(label), 1, 0.5 ); // Position text centrally in vertical plane
+    gtk_label_set_markup ( GTK_LABEL(label), _(labels[i]) );
+    gtk_table_attach ( table, label, 0, 1, i, i+1, GTK_FILL, GTK_EXPAND, 0, 0 );
+    if (GTK_IS_MISC(contents[i])) {
+      gtk_misc_set_alignment ( GTK_MISC(contents[i]), 0, 0.5 );
+    }
+    gtk_table_attach_defaults ( table, contents[i], 1, 2, i, i+1 );
+  }
+
+  return GTK_WIDGET (table);
+}
+
 void vik_trw_layer_propwin_run ( GtkWindow *parent,
                                  VikTrwLayer *vtl,
                                  VikTrack *tr,
@@ -2791,7 +2816,7 @@ void vik_trw_layer_propwin_run ( GtkWindow *parent,
   g_signal_connect( G_OBJECT(dialog), "response", G_CALLBACK(propwin_response_cb), widgets);
 
   g_free(title);
-  GtkTable *table;
+  GtkWidget *table;
   gdouble tr_len;
   gulong tp_count;
   guint seg_count;
@@ -2805,13 +2830,16 @@ void vik_trw_layer_propwin_run ( GtkWindow *parent,
   widgets->speed_dist_box = vik_trw_layer_create_sddiag(GTK_WIDGET(parent), widgets);
   GtkWidget *graphs = gtk_notebook_new();
 
+  GtkWidget *content_prop[20];
   GtkWidget *content[20];
-  int cnt;
-  int i;
+  int cnt_prop = 0;
+  int cnt = 0;
 
   static gchar *label_texts[] = {
     N_("<b>Comment:</b>"),
     N_("<b>Description:</b>"),
+    N_("<b>Color:</b>") };
+  static gchar *stats_texts[] = {
     N_("<b>Track Length:</b>"),
     N_("<b>Trackpoints:</b>"),
     N_("<b>Segments:</b>"),
@@ -2824,23 +2852,31 @@ void vik_trw_layer_propwin_run ( GtkWindow *parent,
     N_("<b>Total Elevation Gain/Loss:</b>"),
     N_("<b>Start:</b>"),
     N_("<b>End:</b>"),
-    N_("<b>Duration:</b>"),
-    N_("<b>Color:</b>") };
+    N_("<b>Duration:</b>") };
   static gchar tmp_buf[50];
   gdouble tmp_speed;
 
-  cnt = 0;
+  // Properties
+  
   widgets->w_comment = gtk_entry_new ();
   if ( tr->comment )
     gtk_entry_set_text ( GTK_ENTRY(widgets->w_comment), tr->comment );
   g_signal_connect_swapped ( widgets->w_comment, "activate", G_CALLBACK(a_dialog_response_accept), GTK_DIALOG(dialog) );
-  content[cnt++] = widgets->w_comment;
+  content_prop[cnt_prop++] = widgets->w_comment;
 
   widgets->w_description = gtk_entry_new ();
   if ( tr->description )
     gtk_entry_set_text ( GTK_ENTRY(widgets->w_description), tr->description );
   g_signal_connect_swapped ( widgets->w_description, "activate", G_CALLBACK(a_dialog_response_accept), GTK_DIALOG(dialog) );
-  content[cnt++] = widgets->w_description;
+  content_prop[cnt_prop++] = widgets->w_description;
+
+  widgets->w_color = content_prop[cnt_prop++] = gtk_color_button_new_with_color ( &(tr->color) );
+
+  table = create_table (cnt_prop, label_texts, content_prop);
+
+  gtk_notebook_append_page(GTK_NOTEBOOK(graphs), GTK_WIDGET(table), gtk_label_new(_("Properties")));
+
+  // Statistics
 
   vik_units_distance_t dist_units = a_vik_get_units_distance ();
 
@@ -3036,24 +3072,7 @@ void vik_trw_layer_propwin_run ( GtkWindow *parent,
     widgets->w_time_dur = content[cnt++] = gtk_label_new(_("No Data"));
   }
 
-  widgets->w_color = content[cnt++] = gtk_color_button_new_with_color ( &(tr->color) );
-
-  table = GTK_TABLE(gtk_table_new (cnt, 2, FALSE));
-  gtk_table_set_col_spacing (table, 0, 10);
-  for (i=0; i<cnt; i++) {
-    GtkWidget *label;
-
-    // Settings so the text positioning only moves around vertically when the dialog is resized
-    // This also gives more room to see the track comment
-    label = gtk_label_new(NULL);
-    gtk_misc_set_alignment ( GTK_MISC(label), 1, 0.5 ); // Position text centrally in vertical plane
-    gtk_label_set_markup ( GTK_LABEL(label), _(label_texts[i]) );
-    gtk_table_attach ( table, label, 0, 1, i, i+1, GTK_FILL, GTK_SHRINK, 0, 0 );
-    if (GTK_IS_MISC(content[i])) {
-      gtk_misc_set_alignment ( GTK_MISC(content[i]), 0, 0.5 );
-    }
-    gtk_table_attach_defaults ( table, content[i], 1, 2, i, i+1 );
-  }
+  table = create_table (cnt, stats_texts, content);
 
   gtk_notebook_append_page(GTK_NOTEBOOK(graphs), GTK_WIDGET(table), gtk_label_new(_("Statistics")));
 
@@ -3143,7 +3162,7 @@ void vik_trw_layer_propwin_run ( GtkWindow *parent,
     gtk_notebook_append_page(GTK_NOTEBOOK(graphs), page, gtk_label_new(_("Speed-distance")));
   }
 
-  gtk_box_pack_start (GTK_BOX(GTK_DIALOG(dialog)->vbox), graphs, FALSE, FALSE, 0);
+  gtk_box_pack_start (GTK_BOX(GTK_DIALOG(dialog)->vbox), graphs, TRUE, TRUE, 0);
 
   gtk_dialog_set_response_sensitive(GTK_DIALOG(dialog), VIK_TRW_LAYER_PROPWIN_SPLIT_MARKER, FALSE);
   if (seg_count <= 1)
