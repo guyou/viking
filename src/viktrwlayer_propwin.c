@@ -3162,7 +3162,7 @@ void vik_trw_layer_propwin_run ( GtkWindow *parent,
     gtk_notebook_append_page(GTK_NOTEBOOK(graphs), page, gtk_label_new(_("Speed-distance")));
   }
 
-  gtk_box_pack_start (GTK_BOX(GTK_DIALOG(dialog)->vbox), graphs, TRUE, TRUE, 0);
+  gtk_box_pack_start (GTK_BOX(GTK_DIALOG(dialog)->vbox), graphs, FALSE, FALSE, 0);
 
   gtk_dialog_set_response_sensitive(GTK_DIALOG(dialog), VIK_TRW_LAYER_PROPWIN_SPLIT_MARKER, FALSE);
   if (seg_count <= 1)
