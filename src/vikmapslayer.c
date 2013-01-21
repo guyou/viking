@@ -121,11 +121,13 @@ static VikLayerParamScale params_scales[] = {
 };
 
 VikLayerParam maps_layer_params[] = {
-  { "mode", VIK_LAYER_PARAM_UINT, VIK_LAYER_GROUP_NONE, N_("Map Type:"), VIK_LAYER_WIDGET_COMBOBOX, NULL, NULL },
-  { "directory", VIK_LAYER_PARAM_STRING, VIK_LAYER_GROUP_NONE, N_("Maps Directory:"), VIK_LAYER_WIDGET_FOLDERENTRY },
-  { "alpha", VIK_LAYER_PARAM_UINT, VIK_LAYER_GROUP_NONE, N_("Alpha:"), VIK_LAYER_WIDGET_HSCALE, params_scales },
-  { "autodownload", VIK_LAYER_PARAM_BOOLEAN, VIK_LAYER_GROUP_NONE, N_("Autodownload maps:"), VIK_LAYER_WIDGET_CHECKBUTTON },
-  { "mapzoom", VIK_LAYER_PARAM_UINT, VIK_LAYER_GROUP_NONE, N_("Zoom Level:"), VIK_LAYER_WIDGET_COMBOBOX, params_mapzooms, NULL },
+  { "mode", VIK_LAYER_PARAM_UINT, VIK_LAYER_GROUP_NONE, N_("Map Type:"), VIK_LAYER_WIDGET_COMBOBOX, NULL, NULL, NULL },
+  { "directory", VIK_LAYER_PARAM_STRING, VIK_LAYER_GROUP_NONE, N_("Maps Directory:"), VIK_LAYER_WIDGET_FOLDERENTRY, NULL, NULL, NULL },
+  { "alpha", VIK_LAYER_PARAM_UINT, VIK_LAYER_GROUP_NONE, N_("Alpha:"), VIK_LAYER_WIDGET_HSCALE, params_scales, NULL,
+    N_("Control the Alpha value for transparency effects") },
+  { "autodownload", VIK_LAYER_PARAM_BOOLEAN, VIK_LAYER_GROUP_NONE, N_("Autodownload maps:"), VIK_LAYER_WIDGET_CHECKBUTTON, NULL, NULL, NULL },
+  { "mapzoom", VIK_LAYER_PARAM_UINT, VIK_LAYER_GROUP_NONE, N_("Zoom Level:"), VIK_LAYER_WIDGET_COMBOBOX, params_mapzooms, NULL,
+    N_("Determines the method of displaying map tiles for the current zoom level. 'Viking Zoom Level' uses the best matching level, otherwise setting a fixed value will always use map tiles of the specified value regardless of the actual zoom level.") },
 };
 
 enum { PARAM_MAPTYPE=0, PARAM_CACHE_DIR, PARAM_ALPHA, PARAM_AUTODOWNLOAD, PARAM_MAPZOOM, NUM_PARAMS };
@@ -233,7 +235,7 @@ enum { REDOWNLOAD_NONE = 0,    /* download only missing maps */
        DOWNLOAD_OR_REFRESH };  /* download missing maps and refresh cache */
 
 static VikLayerParam prefs[] = {
-  { VIKING_PREFERENCES_NAMESPACE "maplayer_default_dir", VIK_LAYER_PARAM_STRING, VIK_LAYER_GROUP_NONE, N_("Default maplayer directory:"), VIK_LAYER_WIDGET_FOLDERENTRY, NULL, NULL },
+  { VIKING_PREFERENCES_NAMESPACE "maplayer_default_dir", VIK_LAYER_PARAM_STRING, VIK_LAYER_GROUP_NONE, N_("Default maplayer directory:"), VIK_LAYER_WIDGET_FOLDERENTRY, NULL, NULL, N_("Choose a directory to store cached Map tiles for this layer") },
 };
 
 void maps_layer_init ()
@@ -1042,7 +1044,7 @@ static int map_download_thread ( MapDownloadInfo *mdi, gpointer threaddata )
           a_mapcache_remove_all_shrinkfactors ( x, y, mdi->mapcoord.z, vik_map_source_get_uniq_id(MAPS_LAYER_NTH_TYPE(mdi->maptype)), mdi->mapcoord.scale );
       if (mdi->refresh_display && mdi->map_layer_alive) {
         /* TODO: check if it's on visible area */
-        vik_layer_emit_update ( VIK_LAYER(mdi->vml), TRUE ); // Yes update display from background
+        vik_layer_emit_update ( VIK_LAYER(mdi->vml) ); // NB update display from background
       }
       g_mutex_unlock(mdi->mutex);
       mdi->mapcoord.x = mdi->mapcoord.y = 0; /* we're temporarily between downloads */

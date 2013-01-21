@@ -98,12 +98,6 @@ struct _VikViewport {
   /* subset of coord types. lat lon can be plotted in 2 ways, google or exp. */
   VikViewportDrawMode drawmode;
 
-  /* handy conversion factors which make google plotting extremely fast */
-  gdouble google_calcx_fact;
-  gdouble google_calcy_fact;
-  gdouble google_calcx_rev_fact;
-  gdouble google_calcy_rev_fact;
-
   /* trigger stuff */
   gpointer trigger;
   GdkPixmap *snapshot_buffer;
@@ -1072,14 +1066,14 @@ static gboolean calcxy_rev(double *lg, double *lt, gint x, gint y, double zero_l
   lon =
     zero_long -
     px / (Ra *
-         cos (lat * DEG2RAD));
+         cos (DEG2RAD(lat)));
 
-  dif = lat * (1 - (cos ((fabs (lon - zero_long)) * DEG2RAD)));
+  dif = lat * (1 - (cos (DEG2RAD(fabs (lon - zero_long)))));
   lat = lat - dif / 1.5;
   lon =
     zero_long -
     px / (Ra *
-              cos (lat * DEG2RAD));
+              cos (DEG2RAD(lat)));
 
   *lt = lat;
   *lg = lon;
@@ -1099,9 +1093,9 @@ static gboolean calcxy(double *x, double *y, double lg, double lt, double zero_l
 //    lt *= rad2deg;
     Ra = Radius[90+(gint)lt];
     *x = Ra *
-         cos (lt*DEG2RAD) * (lg - zero_long);
+         cos (DEG2RAD(lt)) * (lg - zero_long);
     *y = Ra * (lt - zero_lat);
-    dif = Ra * RAD2DEG * (1 - (cos ((DEG2RAD * (lg - zero_long)))));
+    dif = Ra * RAD2DEG(1 - (cos ((DEG2RAD(lg - zero_long)))));
     *y = *y + dif / 1.85;
     *x = *x / pixelfact_x;
     *y = *y / pixelfact_y;
@@ -1119,7 +1113,7 @@ static void viewport_init_ra()
   {
     gint i;
     for ( i = -90; i <= 90; i++)
-      Radius[i+90] = calcR ( (double)i ) * DEG2RAD;
+      Radius[i+90] = calcR ( DEG2RAD((double)i) );
     done_before = TRUE;
   }
 }
@@ -1143,7 +1137,7 @@ double calcR (double lat)
      * = 0.081082 Eccentricity
      */
 
-    lat = lat * DEG2RAD;
+    lat = DEG2RAD(lat);
     sc = sin (lat);
     x = a * (1.0 - e2);
     z = 1.0 - e2 * sc * sc;
@@ -1310,4 +1304,47 @@ void vik_viewport_add_logo ( VikViewport *vp, const GdkPixbuf *logo )
       vp->logos = g_slist_prepend ( vp->logos, (gpointer)logo );
     }
   }
+}
+
+/**
+ * vik_viewport_compute_bearing:
+ * @vp: self object
+ * @x1: screen coord
+ * @y1: screen coord
+ * @x2: screen coord
+ * @y2: screen coord
+ * @angle: bearing in Radian (output)
+ * @baseangle: UTM base angle in Radian (output)
+ * 
+ * Compute bearing.
+ */
+void vik_viewport_compute_bearing ( VikViewport *vp, gint x1, gint y1, gint x2, gint y2, gdouble *angle, gdouble *baseangle )
+{
+  gdouble len = sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
+  gdouble dx = (x2-x1)/len*10;
+  gdouble dy = (y2-y1)/len*10;
+
+  *angle = atan2(dy, dx) + M_PI_2;
+
+  if ( vik_viewport_get_drawmode ( vp ) == VIK_VIEWPORT_DRAWMODE_UTM) {
+    VikCoord test;
+    struct LatLon ll;
+    struct UTM u;
+    gint tx, ty;
+
+    vik_viewport_screen_to_coord ( vp, x1, y1, &test );
+    vik_coord_to_latlon ( &test, &ll );
+    ll.lat += vik_viewport_get_ympp ( vp ) * vik_viewport_get_height ( vp ) / 11000.0; // about 11km per degree latitude
+    a_coords_latlon_to_utm ( &ll, &u );
+    vik_coord_load_from_utm ( &test, VIK_VIEWPORT_DRAWMODE_UTM, &u );
+    vik_viewport_coord_to_screen ( vp, &test, &tx, &ty );
+
+    *baseangle = M_PI - atan2(tx-x1, ty-y1);
+    *angle -= *baseangle;
+  }
+
+  if (*angle < 0)
+    *angle += 2*M_PI;
+  if (*angle > 2*M_PI)
+    *angle -= 2*M_PI;
 }

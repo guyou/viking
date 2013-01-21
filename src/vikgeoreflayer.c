@@ -34,11 +34,11 @@
 #include "icons/icons.h"
 
 VikLayerParam georef_layer_params[] = {
-  { "image", VIK_LAYER_PARAM_STRING, VIK_LAYER_NOT_IN_PROPERTIES },
-  { "corner_easting", VIK_LAYER_PARAM_DOUBLE, VIK_LAYER_NOT_IN_PROPERTIES },
-  { "corner_northing", VIK_LAYER_PARAM_DOUBLE, VIK_LAYER_NOT_IN_PROPERTIES },
-  { "mpp_easting", VIK_LAYER_PARAM_DOUBLE, VIK_LAYER_NOT_IN_PROPERTIES },
-  { "mpp_northing", VIK_LAYER_PARAM_DOUBLE, VIK_LAYER_NOT_IN_PROPERTIES },
+  { "image", VIK_LAYER_PARAM_STRING, VIK_LAYER_NOT_IN_PROPERTIES, NULL, 0, NULL, NULL, },
+  { "corner_easting", VIK_LAYER_PARAM_DOUBLE, VIK_LAYER_NOT_IN_PROPERTIES, NULL, 0, NULL, NULL, NULL  },
+  { "corner_northing", VIK_LAYER_PARAM_DOUBLE, VIK_LAYER_NOT_IN_PROPERTIES, NULL, 0, NULL, NULL, NULL  },
+  { "mpp_easting", VIK_LAYER_PARAM_DOUBLE, VIK_LAYER_NOT_IN_PROPERTIES, NULL, 0, NULL, NULL, NULL },
+  { "mpp_northing", VIK_LAYER_PARAM_DOUBLE, VIK_LAYER_NOT_IN_PROPERTIES, NULL, 0, NULL, NULL, NULL  },
 };
 
 enum { PARAM_IMAGE = 0, PARAM_CE, PARAM_CN, PARAM_ME, PARAM_MN, NUM_PARAMS };
@@ -639,7 +639,7 @@ static gboolean georef_layer_move_release ( VikGeorefLayer *vgl, GdkEventButton 
   {
     vgl->corner.easting += (event->x - vgl->click_x) * vik_viewport_get_xmpp (vvp);
     vgl->corner.northing -= (event->y - vgl->click_y) * vik_viewport_get_ympp (vvp);
-    vik_layer_emit_update ( VIK_LAYER(vgl), FALSE );
+    vik_layer_emit_update ( VIK_LAYER(vgl) );
     return TRUE;
   }
   return FALSE; /* I didn't move anything on this layer! */
@@ -672,7 +672,7 @@ static gboolean georef_layer_zoom_press ( VikGeorefLayer *vgl, GdkEventButton *e
   }
   vik_viewport_set_xmpp ( vvp, vgl->mpp_easting );
   vik_viewport_set_ympp ( vvp, vgl->mpp_northing );
-  vik_layer_emit_update ( VIK_LAYER(vgl), FALSE );
+  vik_layer_emit_update ( VIK_LAYER(vgl) );
   return TRUE;
 }
 

@@ -115,12 +115,12 @@ enum { DEM_TYPE_HEIGHT = 0,
 };
 
 static VikLayerParam dem_layer_params[] = {
-  { "files", VIK_LAYER_PARAM_STRING_LIST, VIK_LAYER_GROUP_NONE, N_("DEM Files:"), VIK_LAYER_WIDGET_FILELIST },
+  { "files", VIK_LAYER_PARAM_STRING_LIST, VIK_LAYER_GROUP_NONE, N_("DEM Files:"), VIK_LAYER_WIDGET_FILELIST, NULL, NULL, NULL },
   { "source", VIK_LAYER_PARAM_UINT, VIK_LAYER_GROUP_NONE, N_("Download Source:"), VIK_LAYER_WIDGET_RADIOGROUP_STATIC, params_source, NULL },
-  { "color", VIK_LAYER_PARAM_COLOR, VIK_LAYER_GROUP_NONE, N_("Min Elev Color:"), VIK_LAYER_WIDGET_COLOR, 0 },
-  { "type", VIK_LAYER_PARAM_UINT, VIK_LAYER_GROUP_NONE, N_("Type:"), VIK_LAYER_WIDGET_RADIOGROUP_STATIC, params_type, NULL },
-  { "min_elev", VIK_LAYER_PARAM_DOUBLE, VIK_LAYER_GROUP_NONE, N_("Min Elev:"), VIK_LAYER_WIDGET_SPINBUTTON, param_scales + 0 },
-  { "max_elev", VIK_LAYER_PARAM_DOUBLE, VIK_LAYER_GROUP_NONE, N_("Max Elev:"), VIK_LAYER_WIDGET_SPINBUTTON, param_scales + 0 },
+  { "color", VIK_LAYER_PARAM_COLOR, VIK_LAYER_GROUP_NONE, N_("Min Elev Color:"), VIK_LAYER_WIDGET_COLOR, NULL, NULL, NULL  },
+  { "type", VIK_LAYER_PARAM_UINT, VIK_LAYER_GROUP_NONE, N_("Type:"), VIK_LAYER_WIDGET_RADIOGROUP_STATIC, params_type, NULL, NULL },
+  { "min_elev", VIK_LAYER_PARAM_DOUBLE, VIK_LAYER_GROUP_NONE, N_("Min Elev:"), VIK_LAYER_WIDGET_SPINBUTTON, &param_scales[0], NULL, NULL },
+  { "max_elev", VIK_LAYER_PARAM_DOUBLE, VIK_LAYER_GROUP_NONE, N_("Max Elev:"), VIK_LAYER_WIDGET_SPINBUTTON, &param_scales[0], NULL, NULL },
 };
 
 
@@ -328,7 +328,7 @@ static int dem_layer_load_list_thread ( dem_load_thread_data *dltd, gpointer thr
   //gdk_threads_enter();
   // Test is helpful to prevent Gtk-CRITICAL warnings if the program is exitted whilst loading
   if ( IS_VIK_LAYER(dltd->vdl) )
-    vik_layer_emit_update ( VIK_LAYER(dltd->vdl), TRUE ); // Yes update from background thread
+    vik_layer_emit_update ( VIK_LAYER(dltd->vdl) ); // NB update from background thread
   //gdk_threads_leave();
 
   return result;
@@ -1097,7 +1097,7 @@ static void dem_download_thread ( DEMDownloadParams *p, gpointer threaddata )
     g_object_weak_unref ( G_OBJECT(p->vdl), weak_ref_cb, p );
 
     if ( dem_layer_add_file ( p->vdl, p->dest ) )
-      vik_layer_emit_update ( VIK_LAYER(p->vdl), TRUE ); // Yes update from background thread
+      vik_layer_emit_update ( VIK_LAYER(p->vdl) ); // NB update from background thread
   }
   g_mutex_unlock ( p->mutex );
   //gdk_threads_leave();
@@ -1163,7 +1163,7 @@ static gboolean dem_layer_download_release ( VikDEMLayer *vdl, GdkEventButton *e
     g_free ( tmp );
   }
   else
-    vik_layer_emit_update ( VIK_LAYER(vdl), FALSE );
+    vik_layer_emit_update ( VIK_LAYER(vdl) );
 
   g_free ( dem_file );
   g_free ( full_path );

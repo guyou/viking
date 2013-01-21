@@ -56,7 +56,7 @@ typedef struct {
 
 static gpointer datasource_gc_init ( );
 static void datasource_gc_add_setup_widgets ( GtkWidget *dialog, VikViewport *vvp, gpointer user_data );
-static void datasource_gc_get_cmd_string ( datasource_gc_widgets_t *widgets, gchar **cmd, gchar **input_file_type );	
+static void datasource_gc_get_cmd_string ( datasource_gc_widgets_t *widgets, gchar **cmd, gchar **input_file_type, gpointer not_used );
 static void datasource_gc_cleanup ( datasource_gc_widgets_t *widgets );
 static gchar *datasource_gc_check_existence ();
 
@@ -65,7 +65,6 @@ static gchar *datasource_gc_check_existence ();
 VikDataSourceInterface vik_datasource_gc_interface = {
   N_("Download Geocaches"),
   N_("Geocaching.com Caches"),
-  VIK_DATASOURCE_SHELL_CMD,
   VIK_DATASOURCE_ADDTOLAYER,
   VIK_DATASOURCE_INPUTTYPE_NONE,
   TRUE, // Yes automatically update the display - otherwise we won't see the geocache waypoints!
@@ -74,7 +73,7 @@ VikDataSourceInterface vik_datasource_gc_interface = {
   (VikDataSourceCheckExistenceFunc)	datasource_gc_check_existence,
   (VikDataSourceAddSetupWidgetsFunc)	datasource_gc_add_setup_widgets,
   (VikDataSourceGetCmdStringFunc)	datasource_gc_get_cmd_string,
-  (VikDataSourceProcessFunc)		NULL,
+  (VikDataSourceProcessFunc)		a_babel_convert_from_shellcommand,
   (VikDataSourceProgressFunc)		NULL,
   (VikDataSourceAddProgressWidgetsFunc)	NULL,
   (VikDataSourceCleanupFunc)		datasource_gc_cleanup,
@@ -82,8 +81,8 @@ VikDataSourceInterface vik_datasource_gc_interface = {
 };
 
 static VikLayerParam prefs[] = {
-  { VIKING_GC_PARAMS_NAMESPACE "username", VIK_LAYER_PARAM_STRING, VIK_LAYER_GROUP_NONE, N_("geocaching.com username:"), VIK_LAYER_WIDGET_ENTRY },
-  { VIKING_GC_PARAMS_NAMESPACE "password", VIK_LAYER_PARAM_STRING, VIK_LAYER_GROUP_NONE, N_("geocaching.com password:"), VIK_LAYER_WIDGET_ENTRY },
+  { VIKING_GC_PARAMS_NAMESPACE "username", VIK_LAYER_PARAM_STRING, VIK_LAYER_GROUP_NONE, N_("geocaching.com username:"), VIK_LAYER_WIDGET_ENTRY, NULL, NULL, NULL },
+  { VIKING_GC_PARAMS_NAMESPACE "password", VIK_LAYER_PARAM_STRING, VIK_LAYER_GROUP_NONE, N_("geocaching.com password:"), VIK_LAYER_WIDGET_ENTRY, NULL, NULL, NULL },
 };
 
 void a_datasource_gc_init()
@@ -217,7 +216,7 @@ static void datasource_gc_add_setup_widgets ( GtkWidget *dialog, VikViewport *vv
   gtk_widget_show_all(dialog);
 }
 
-static void datasource_gc_get_cmd_string ( datasource_gc_widgets_t *widgets, gchar **cmd, gchar **input_file_type )
+static void datasource_gc_get_cmd_string ( datasource_gc_widgets_t *widgets, gchar **cmd, gchar **input_file_type, gpointer not_used )
 {
   //gchar *safe_string = g_shell_quote ( gtk_entry_get_text ( GTK_ENTRY(widgets->center_entry) ) );
   gchar *safe_user = g_shell_quote ( a_preferences_get ( VIKING_GC_PARAMS_NAMESPACE "username")->s );

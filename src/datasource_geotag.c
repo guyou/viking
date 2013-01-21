@@ -2,7 +2,7 @@
 /*
  * viking -- GPS Data and Topo Analyzer, Explorer, and Manager
  *
- * Copyright (C) 2011, Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
+ * Copyright (C) 2012, Rob Norris <rw_norris@hotmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,6 @@
 
 typedef struct {
 	GtkWidget *files;
-	VikViewport *vvp;
 	GSList *filelist;  // Files selected
 } datasource_geotag_user_data_t;
 
@@ -44,17 +43,17 @@ static gchar *last_folder_uri = NULL;
 
 static gpointer datasource_geotag_init( );
 static void datasource_geotag_add_setup_widgets ( GtkWidget *dialog, VikViewport *vvp, gpointer user_data );
-static void datasource_geotag_get_cmd_string ( gpointer user_data, gchar **babelargs_or_shellcmd, gchar **inputfile_or_inputtype );
-static gboolean datasource_geotag_process ( VikTrwLayer *vtl, const gchar *cmd, const gchar *extra, BabelStatusFunc status_cb, acq_dialog_widgets_t *adw );
+static void datasource_geotag_get_cmd_string ( gpointer user_data, gchar **babelargs_or_shellcmd, gchar **inputfile_or_inputtype, gpointer not_used );
+static gboolean datasource_geotag_process ( VikTrwLayer *vtl, const gchar *cmd, const gchar *extra, BabelStatusFunc status_cb, acq_dialog_widgets_t *adw, gpointer not_used );
 static void datasource_geotag_cleanup ( gpointer user_data );
 
 VikDataSourceInterface vik_datasource_geotag_interface = {
   N_("Create Waypoints from Geotagged Images"),
   N_("Geotagged Images"),
-  VIK_DATASOURCE_INTERNAL,
   VIK_DATASOURCE_ADDTOLAYER,
   VIK_DATASOURCE_INPUTTYPE_NONE,
   TRUE,
+  FALSE, // We should be able to see the data on the screen so no point in keeping the dialog open
   TRUE,
   (VikDataSourceInitFunc)		        datasource_geotag_init,
   (VikDataSourceCheckExistenceFunc)	    NULL,
@@ -85,8 +84,6 @@ static gpointer datasource_geotag_init ( )
 static void datasource_geotag_add_setup_widgets ( GtkWidget *dialog, VikViewport *vvp, gpointer user_data )
 {
 	datasource_geotag_user_data_t *userdata = (datasource_geotag_user_data_t *)user_data;
-
-	userdata->vvp = vvp;
 
 	/* The files selector */
 	userdata->files = gtk_file_chooser_widget_new ( GTK_FILE_CHOOSER_ACTION_OPEN );
@@ -127,7 +124,7 @@ static void datasource_geotag_add_setup_widgets ( GtkWidget *dialog, VikViewport
 	gtk_widget_show_all ( dialog );
 }
 
-static void datasource_geotag_get_cmd_string ( gpointer user_data, gchar **babelargs_or_shellcmd, gchar **inputfile_or_inputtype )
+static void datasource_geotag_get_cmd_string ( gpointer user_data, gchar **babelargs_or_shellcmd, gchar **inputfile_or_inputtype, gpointer not_used )
 {
 	datasource_geotag_user_data_t *userdata = (datasource_geotag_user_data_t *)user_data;
 	/* Retrieve the files selected */
@@ -140,16 +137,13 @@ static void datasource_geotag_get_cmd_string ( gpointer user_data, gchar **babel
 
 	/* TODO Memorize the file filter for later use... */
 	//GtkFileFilter *filter = gtk_file_chooser_get_filter ( GTK_FILE_CHOOSER(userdata->files) );
-
-	// return some value so processing will continue
-	*babelargs_or_shellcmd = g_strdup ("fake command"); // Not really used, thus no translations
 }
 
 
 /**
  * Process selected files and try to generate waypoints storing them in the given vtl
  */
-static gboolean datasource_geotag_process ( VikTrwLayer *vtl, const gchar *cmd, const gchar *extra, BabelStatusFunc status_cb, acq_dialog_widgets_t *adw )
+static gboolean datasource_geotag_process ( VikTrwLayer *vtl, const gchar *cmd, const gchar *extra, BabelStatusFunc status_cb, acq_dialog_widgets_t *adw, gpointer not_used )
 {
 	datasource_geotag_user_data_t *user_data = (datasource_geotag_user_data_t *)adw->user_data;
 
@@ -159,7 +153,7 @@ static gboolean datasource_geotag_process ( VikTrwLayer *vtl, const gchar *cmd, 
 	while ( cur_file ) {
 		gchar *filename = cur_file->data;
 		gchar *name;
-		VikWaypoint *wp = a_geotag_create_waypoint_from_file ( filename, vik_viewport_get_coord_mode ( user_data->vvp ), &name );
+		VikWaypoint *wp = a_geotag_create_waypoint_from_file ( filename, vik_viewport_get_coord_mode ( adw->vvp ), &name );
 		if ( wp ) {
 			// Create name if geotag method didn't return one
 			if ( !name )

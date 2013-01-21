@@ -46,7 +46,7 @@ static gboolean last_get_routes = TRUE;
 static gboolean last_get_waypoints = TRUE;
 
 static gpointer datasource_gps_init_func ( );
-static void datasource_gps_get_cmd_string ( gpointer add_widgets_data_not_used, gchar **babelargs, gchar **input_file );
+static void datasource_gps_get_cmd_string ( gpointer add_widgets_data_not_used, gchar **babelargs, gchar **input_file, gpointer not_used );
 static void datasource_gps_cleanup ( gpointer user_data );
 static void datasource_gps_progress ( BabelProgressCode c, gpointer data, acq_dialog_widgets_t *w );
 static void datasource_gps_add_setup_widgets ( GtkWidget *dialog, VikViewport *vvp, gpointer user_data );
@@ -56,16 +56,16 @@ static void datasource_gps_off ( gpointer add_widgets_data_not_used, gchar **bab
 VikDataSourceInterface vik_datasource_gps_interface = {
   N_("Acquire from GPS"),
   N_("Acquired from GPS"),
-  VIK_DATASOURCE_GPSBABEL_DIRECT,
   VIK_DATASOURCE_CREATENEWLAYER,
   VIK_DATASOURCE_INPUTTYPE_NONE,
+  TRUE,
   TRUE,
   TRUE,
   (VikDataSourceInitFunc)		datasource_gps_init_func,
   (VikDataSourceCheckExistenceFunc)	NULL,
   (VikDataSourceAddSetupWidgetsFunc)	datasource_gps_add_setup_widgets,
   (VikDataSourceGetCmdStringFunc)	datasource_gps_get_cmd_string,
-  (VikDataSourceProcessFunc)		NULL,
+  (VikDataSourceProcessFunc)        a_babel_convert_from,
   (VikDataSourceProgressFunc)		datasource_gps_progress,
   (VikDataSourceAddProgressWidgetsFunc)	datasource_gps_add_progress_widgets,
   (VikDataSourceCleanupFunc)		datasource_gps_cleanup,
@@ -179,7 +179,7 @@ gboolean datasource_gps_get_do_waypoints ( gpointer user_data )
   return last_get_waypoints;
 }
 
-static void datasource_gps_get_cmd_string ( gpointer user_data, gchar **babelargs, gchar **input_file )
+static void datasource_gps_get_cmd_string ( gpointer user_data, gchar **babelargs, gchar **input_file, gpointer not_used )
 {
   char *device = NULL;
   char *tracks = NULL;
@@ -290,7 +290,7 @@ static void set_total_count(gint cnt, acq_dialog_widgets_t *w)
 {
   gchar *s = NULL;
   gdk_threads_enter();
-  if (w->ok) {
+  if (w->running) {
     gps_user_data_t *gps_data = (gps_user_data_t *)w->user_data;
     const gchar *tmp_str;
     switch (gps_data->progress_type) {
@@ -317,7 +317,7 @@ static void set_current_count(gint cnt, acq_dialog_widgets_t *w)
 {
   gchar *s = NULL;
   gdk_threads_enter();
-  if (w->ok) {
+  if (w->running) {
     gps_user_data_t *gps_data = (gps_user_data_t *)w->user_data;
 
     if (cnt < gps_data->total_count) {
@@ -343,7 +343,7 @@ static void set_gps_info(const gchar *info, acq_dialog_widgets_t *w)
 {
   gchar *s = NULL;
   gdk_threads_enter();
-  if (w->ok) {
+  if (w->running) {
     s = g_strdup_printf(_("GPS Device: %s"), info);
     gtk_label_set_text ( GTK_LABEL(((gps_user_data_t *)w->user_data)->gps_label), s );
   }
@@ -366,7 +366,7 @@ static void datasource_gps_progress ( BabelProgressCode c, gpointer data, acq_di
     line = (gchar *)data;
 
     gdk_threads_enter();
-    if (w->ok) {
+    if (w->running) {
       gtk_label_set_text ( GTK_LABEL(w->status), _("Status: Working...") );
     }
     gdk_threads_leave();

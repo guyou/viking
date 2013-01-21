@@ -38,6 +38,7 @@
 #include "vikexttools.h"
 #include "garminsymbols.h"
 #include "vikmapslayer.h"
+#include "geonamessearch.h"
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -72,6 +73,7 @@ static void window_finalize ( GObject *gob );
 static GObjectClass *parent_class;
 
 static void window_set_filename ( VikWindow *vw, const gchar *filename );
+static const gchar *window_get_filename ( VikWindow *vw );
 
 static VikWindow *window_new ();
 
@@ -181,6 +183,7 @@ struct _VikWindow {
   gboolean only_updating_coord_mode_ui; /* hack for a bug in GTK */
   GtkUIManager *uim;
 
+  GThread  *thread;
   /* half-drawn update */
   VikLayer *trigger;
   VikCoord trigger_center;
@@ -188,15 +191,11 @@ struct _VikWindow {
   /* Store at this level for highlighted selection drawing since it applies to the viewport and the layers panel */
   /* Only one of these items can be selected at the same time */
   gpointer selected_vtl; /* notionally VikTrwLayer */
-  gpointer selected_tracks; /* notionally GList */
+  GHashTable *selected_tracks;
   gpointer selected_track; /* notionally VikTrack */
-  gpointer selected_waypoints; /* notionally GList */
+  GHashTable *selected_waypoints;
   gpointer selected_waypoint; /* notionally VikWaypoint */
   /* only use for individual track or waypoint */
-  ////// NEED TO THINK ABOUT VALIDITY OF THESE             //////
-  ////// i.e. what happens when stuff is deleted elsewhere //////
-  ////// Generally seems alright as can not access them    //////
-  ////// containing_vtl now seems unecessary               //////
   /* For track(s) & waypoint(s) it is the layer they are in - this helps refering to the individual item easier */
   gpointer containing_vtl; /* notionally VikTrwLayer */
 };
@@ -513,6 +512,11 @@ static void vik_window_init ( VikWindow *vw )
   vw->save_dia = NULL;
   vw->save_img_dia = NULL;
   vw->save_img_dir_dia = NULL;
+
+  // Store the thread value so comparisons can be made to determine the gdk update method
+  // Hopefully we are storing the main thread value here :)
+  //  [ATM any window initialization is always be performed by the main thread]
+  vw->thread = g_thread_self();
 }
 
 static VikWindow *window_new ()
@@ -616,7 +620,7 @@ static gboolean delete_event( VikWindow *vw )
       _("Do you want to save the changes you made to the document \"%s\"?\n"
 	"\n"
 	"Your changes will be lost if you don't save them."),
-      vw->filename ? a_file_basename ( vw->filename ) : _("Untitled") ) );
+      window_get_filename ( vw ) ) );
     gtk_dialog_add_buttons ( dia, _("Don't Save"), GTK_RESPONSE_NO, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, GTK_STOCK_SAVE, GTK_RESPONSE_YES, NULL );
     switch ( gtk_dialog_run ( dia ) )
     {
@@ -934,8 +938,8 @@ static void draw_ruler(VikViewport *vvp, GdkDrawable *d, GdkGC *gc, gint x1, gin
   gdouble len = sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
   gdouble dx = (x2-x1)/len*10; 
   gdouble dy = (y2-y1)/len*10;
-  gdouble c = cos(15.0 * M_PI/180.0);
-  gdouble s = sin(15.0 * M_PI/180.0);
+  gdouble c = cos(DEG2RAD(15.0));
+  gdouble s = sin(DEG2RAD(15.0));
   gdouble angle;
   gdouble baseangle = 0;
   gint i;
@@ -960,29 +964,8 @@ static void draw_ruler(VikViewport *vvp, GdkDrawable *d, GdkGC *gc, gint x1, gin
   /* draw compass */
 #define CR 80
 #define CW 4
-  angle = atan2(dy, dx) + M_PI_2;
 
-  if ( vik_viewport_get_drawmode ( vvp ) == VIK_VIEWPORT_DRAWMODE_UTM) {
-    VikCoord test;
-    struct LatLon ll;
-    struct UTM u;
-    gint tx, ty;
-
-    vik_viewport_screen_to_coord ( vvp, x1, y1, &test );
-    vik_coord_to_latlon ( &test, &ll );
-    ll.lat += vik_viewport_get_ympp ( vvp ) * vik_viewport_get_height ( vvp ) / 11000.0; // about 11km per degree latitude
-    a_coords_latlon_to_utm ( &ll, &u );
-    vik_coord_load_from_utm ( &test, VIK_VIEWPORT_DRAWMODE_UTM, &u );
-    vik_viewport_coord_to_screen ( vvp, &test, &tx, &ty );
-
-    baseangle = M_PI - atan2(tx-x1, ty-y1);
-    angle -= baseangle;
-  }
-
-  if (angle<0) 
-    angle+=2*M_PI;
-  if (angle>2*M_PI)
-    angle-=2*M_PI;
+  vik_viewport_compute_bearing ( vvp, x1, y1, x2, y2, &angle, &baseangle );
 
   {
     GdkColor color;
@@ -991,14 +974,14 @@ static void draw_ruler(VikViewport *vvp, GdkDrawable *d, GdkGC *gc, gint x1, gin
     gdk_color_parse("#2255cc", &color);
     gdk_gc_set_rgb_fg_color(thickgc, &color);
   }
-  gdk_draw_arc (d, thickgc, FALSE, x1-CR+CW/2, y1-CR+CW/2, 2*CR-CW, 2*CR-CW, (90 - baseangle*180/M_PI)*64, -angle*180/M_PI*64);
+  gdk_draw_arc (d, thickgc, FALSE, x1-CR+CW/2, y1-CR+CW/2, 2*CR-CW, 2*CR-CW, (90 - RAD2DEG(baseangle))*64, -RAD2DEG(angle)*64);
 
 
   gdk_gc_copy(thickgc, gc);
   gdk_gc_set_line_attributes(thickgc, 2, GDK_LINE_SOLID, GDK_CAP_BUTT, GDK_JOIN_MITER);
   for (i=0; i<180; i++) {
-    c = cos(i*M_PI/90.0 + baseangle);
-    s = sin(i*M_PI/90.0 + baseangle);
+    c = cos(DEG2RAD(i)*2 + baseangle);
+    s = sin(DEG2RAD(i)*2 + baseangle);
 
     if (i%5) {
       gdk_draw_line (d, gc, x1 + CR*c, y1 + CR*s, x1 + (CR+CW)*c, y1 + (CR+CW)*s);
@@ -1074,7 +1057,7 @@ static void draw_ruler(VikViewport *vvp, GdkDrawable *d, GdkGC *gc, gint x1, gin
     LABEL(xd, yd, wd, hd);
 
     /* draw label with bearing */
-    g_sprintf(str, "%3.1f°", angle*180.0/M_PI);
+    g_sprintf(str, "%3.1f°", RAD2DEG(angle));
     pango_layout_set_text(pl, str, -1);
     pango_layout_get_pixel_size ( pl, &wb, &hb );
     xb = x1 + CR*cos(angle-M_PI_2);
@@ -2063,16 +2046,22 @@ static void window_set_filename ( VikWindow *vw, const gchar *filename )
   if ( filename == NULL )
   {
     vw->filename = NULL;
-    file = _("Untitled");
   }
   else
   {
     vw->filename = g_strdup(filename);
-    file = a_file_basename ( filename );
   }
+
+  /* Refresh window's title */
+  file = window_get_filename ( vw );
   title = g_strdup_printf( "%s - Viking", file );
   gtk_window_set_title ( GTK_WINDOW(vw), title );
   g_free ( title );
+}
+
+static const gchar *window_get_filename ( VikWindow *vw )
+{
+  return vw->filename ? a_file_basename ( vw->filename ) : _("Untitled");
 }
 
 GtkWidget *vik_window_get_drawmode_button ( VikWindow *vw, VikViewportDrawMode mode )
@@ -2383,7 +2372,7 @@ static gboolean save_file_as ( GtkAction *a, VikWindow *vw )
     gtk_window_set_destroy_with_parent ( GTK_WINDOW(vw->save_dia), TRUE );
   }
   // Auto append / replace extension with '.vik' to the suggested file name as it's going to be a Viking File
-  gchar* auto_save_name = strdup ( vw->filename ? a_file_basename ( vw->filename ) : _("Untitled") );
+  gchar* auto_save_name = g_strdup ( window_get_filename ( vw ) );
   if ( ! check_file_ext ( auto_save_name, ".vik" ) )
     auto_save_name = g_strconcat ( auto_save_name, ".vik", NULL );
 
@@ -2474,6 +2463,13 @@ static void acquire_from_geotag ( GtkAction *a, VikWindow *vw )
 }
 #endif
 
+#ifdef VIK_CONFIG_GEONAMES
+static void acquire_from_wikipedia ( GtkAction *a, VikWindow *vw )
+{
+  a_acquire(vw, vw->viking_vlp, vw->viking_vvp, &vik_datasource_wikipedia_interface );
+}
+#endif
+
 static void goto_default_location( GtkAction *a, VikWindow *vw)
 {
   struct LatLon ll;
@@ -2519,6 +2515,7 @@ static void default_location_cb ( GtkAction *a, VikWindow *vw )
       NULL,
       VIK_LAYER_WIDGET_SPINBUTTON,
       NULL,
+      NULL,
       NULL },
   };
   VikLayerParam pref_lon[] = {
@@ -2527,6 +2524,7 @@ static void default_location_cb ( GtkAction *a, VikWindow *vw )
       VIK_LOCATION_LONG,
       NULL,
       VIK_LAYER_WIDGET_SPINBUTTON,
+      NULL,
       NULL,
       NULL },
   };
@@ -3135,6 +3133,9 @@ static GtkActionEntry entries[] = {
 #ifdef VIK_CONFIG_GEOTAG
   { "AcquireGeotag", NULL,               N_("From Geotagged _Images..."), NULL,         N_("Create waypoints from geotagged images"),       (GCallback)acquire_from_geotag   },
 #endif
+#ifdef VIK_CONFIG_GEONAMES
+  { "AcquireWikipedia", NULL,            N_("From _Wikipedia Waypoints"), NULL,         N_("Create waypoints from Wikipedia items in the current view"), (GCallback)acquire_from_wikipedia },
+#endif
   { "Save",      GTK_STOCK_SAVE,         N_("_Save"),                         "<control>S", N_("Save the file"),                                (GCallback)save_file             },
   { "SaveAs",    GTK_STOCK_SAVE_AS,      N_("Save _As..."),                      NULL,  N_("Save the file under different name"),           (GCallback)save_file_as          },
   { "GenImg",    GTK_STOCK_CLEAR,        N_("_Generate Image File..."),          NULL,  N_("Save a snapshot of the workspace into a file"), (GCallback)draw_to_image_file_cb },
@@ -3391,14 +3392,14 @@ void vik_window_set_selected_trw_layer ( VikWindow *vw, gpointer vtl )
   vik_viewport_set_highlight_thickness ( vw->viking_vvp, vik_trw_layer_get_property_tracks_line_thickness (vw->containing_vtl) );
 }
 
-gpointer vik_window_get_selected_tracks ( VikWindow *vw )
+GHashTable *vik_window_get_selected_tracks ( VikWindow *vw )
 {
   return vw->selected_tracks;
 }
 
-void vik_window_set_selected_tracks ( VikWindow *vw, gpointer gl, gpointer vtl )
+void vik_window_set_selected_tracks ( VikWindow *vw, GHashTable *ght, gpointer vtl )
 {
-  vw->selected_tracks = gl;
+  vw->selected_tracks = ght;
   vw->containing_vtl  = vtl;
   /* Clear others */
   vw->selected_vtl       = NULL;
@@ -3427,14 +3428,14 @@ void vik_window_set_selected_track ( VikWindow *vw, gpointer *vt, gpointer vtl )
   vik_viewport_set_highlight_thickness ( vw->viking_vvp, vik_trw_layer_get_property_tracks_line_thickness (vw->containing_vtl) );
 }
 
-gpointer vik_window_get_selected_waypoints ( VikWindow *vw )
+GHashTable *vik_window_get_selected_waypoints ( VikWindow *vw )
 {
   return vw->selected_waypoints;
 }
 
-void vik_window_set_selected_waypoints ( VikWindow *vw, gpointer gl, gpointer vtl )
+void vik_window_set_selected_waypoints ( VikWindow *vw, GHashTable *ght, gpointer vtl )
 {
-  vw->selected_waypoints = gl;
+  vw->selected_waypoints = ght;
   vw->containing_vtl     = vtl;
   /* Clear others */
   vw->selected_vtl       = NULL;
@@ -3483,4 +3484,9 @@ gboolean vik_window_clear_highlight ( VikWindow *vw )
     need_redraw = TRUE;
   }
   return need_redraw;
+}
+
+GThread *vik_window_get_thread ( VikWindow *vw )
+{
+  return vw->thread;
 }

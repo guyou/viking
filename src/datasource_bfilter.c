@@ -32,7 +32,7 @@
 
 /************************************ Simplify ***********************************/
 
-static void datasource_bfilter_simplify_get_cmd_string ( VikLayerParamData *paramdatas, gchar **cmd, gchar **input_file_type, const gchar *input_filename );
+static void datasource_bfilter_simplify_get_cmd_string ( VikLayerParamData *paramdatas, gchar **cmd, gchar **input_file_type, const gchar *input_filename, gpointer not_used );
 
 /* TODO: shell_escape stuff */
 /* TODO: name is useless for filters */
@@ -43,7 +43,7 @@ VikLayerParamScale simplify_params_scales[] = {
 };
 
 VikLayerParam bfilter_simplify_params[] = {
-  { "numberofpoints", VIK_LAYER_PARAM_UINT, VIK_LAYER_GROUP_NONE, N_("Max number of points:"), VIK_LAYER_WIDGET_SPINBUTTON, simplify_params_scales, NULL },
+  { "numberofpoints", VIK_LAYER_PARAM_UINT, VIK_LAYER_GROUP_NONE, N_("Max number of points:"), VIK_LAYER_WIDGET_SPINBUTTON, simplify_params_scales, NULL, NULL },
 };
 
 VikLayerParamData bfilter_simplify_params_defaults[] = {
@@ -59,14 +59,14 @@ VikLayerParamData bfilter_simplify_params_defaults[] = {
 VikDataSourceInterface vik_datasource_bfilter_simplify_interface = {
   N_("Simplify All Tracks..."),
   N_("Simplified Tracks"),
-  VIK_DATASOURCE_SHELL_CMD,
   VIK_DATASOURCE_CREATENEWLAYER,
   VIK_DATASOURCE_INPUTTYPE_TRWLAYER,
   TRUE,
   FALSE, /* keep dialog open after success */
+  TRUE,
   NULL, NULL, NULL,
   (VikDataSourceGetCmdStringFunc)	datasource_bfilter_simplify_get_cmd_string,
-  (VikDataSourceProcessFunc) NULL,
+  (VikDataSourceProcessFunc)        a_babel_convert_from_shellcommand,
   NULL, NULL, NULL,
   (VikDataSourceOffFunc) NULL,
 
@@ -78,7 +78,7 @@ VikDataSourceInterface vik_datasource_bfilter_simplify_interface = {
 };
 
 
-static void datasource_bfilter_simplify_get_cmd_string ( VikLayerParamData *paramdatas, gchar **cmd, gchar **input_file_type, const gchar *input_filename )
+static void datasource_bfilter_simplify_get_cmd_string ( VikLayerParamData *paramdatas, gchar **cmd, gchar **input_file_type, const gchar *input_filename, gpointer not_used )
 {
   *input_file_type = NULL;
   *cmd = g_strdup_printf ( "gpsbabel -i gpx -f %s -x simplify,count=%d -o gpx -F -", input_filename, paramdatas[0].u );
@@ -86,7 +86,7 @@ static void datasource_bfilter_simplify_get_cmd_string ( VikLayerParamData *para
 
 /************************************ Duplicate Location ***********************************/
 
-static void datasource_bfilter_dup_get_cmd_string ( VikLayerParamData *paramdatas, gchar **cmd, gchar **input_file_type, const gchar *input_filename );
+static void datasource_bfilter_dup_get_cmd_string ( VikLayerParamData *paramdatas, gchar **cmd, gchar **input_file_type, const gchar *input_filename, gpointer not_used );
 
 /* TODO: shell_escape stuff */
 /* TODO: name is useless for filters */
@@ -95,14 +95,14 @@ static void datasource_bfilter_dup_get_cmd_string ( VikLayerParamData *paramdata
 VikDataSourceInterface vik_datasource_bfilter_dup_interface = {
   N_("Remove Duplicate Waypoints"),
   N_("Remove Duplicate Waypoints"),
-  VIK_DATASOURCE_SHELL_CMD,
   VIK_DATASOURCE_CREATENEWLAYER,
   VIK_DATASOURCE_INPUTTYPE_TRWLAYER,
   TRUE,
   FALSE, /* keep dialog open after success */
+  TRUE,
   NULL, NULL, NULL,
   (VikDataSourceGetCmdStringFunc)	datasource_bfilter_dup_get_cmd_string,
-  (VikDataSourceProcessFunc) NULL,
+  (VikDataSourceProcessFunc)        a_babel_convert_from_shellcommand,
   NULL, NULL, NULL,
   (VikDataSourceOffFunc) NULL,
 
@@ -110,7 +110,7 @@ VikDataSourceInterface vik_datasource_bfilter_dup_interface = {
 };
 
 
-static void datasource_bfilter_dup_get_cmd_string ( VikLayerParamData *paramdatas, gchar **cmd, gchar **input_file_type, const gchar *input_filename )
+static void datasource_bfilter_dup_get_cmd_string ( VikLayerParamData *paramdatas, gchar **cmd, gchar **input_file_type, const gchar *input_filename, gpointer not_used )
 {
   *input_file_type = NULL;
   *cmd = g_strdup_printf ( "gpsbabel -i gpx -f %s -x duplicate,location -o gpx -F -", input_filename );
@@ -119,7 +119,7 @@ static void datasource_bfilter_dup_get_cmd_string ( VikLayerParamData *paramdata
 
 /************************************ Polygon ***********************************/
 
-static void datasource_bfilter_polygon_get_cmd_string ( VikLayerParamData *paramdatas, gchar **cmd, gchar **input_file_type, const gchar *input_filename, const gchar *input_track_filename );
+static void datasource_bfilter_polygon_get_cmd_string ( VikLayerParamData *paramdatas, gchar **cmd, gchar **input_file_type, const gchar *input_filename, const gchar *input_track_filename, gpointer not_used );
 
 /* TODO: shell_escape stuff */
 /* TODO: name is useless for filters */
@@ -128,14 +128,14 @@ static void datasource_bfilter_polygon_get_cmd_string ( VikLayerParamData *param
 VikDataSourceInterface vik_datasource_bfilter_polygon_interface = {
   N_("Waypoints Inside This"),
   N_("Polygonized Layer"),
-  VIK_DATASOURCE_SHELL_CMD,
   VIK_DATASOURCE_CREATENEWLAYER,
   VIK_DATASOURCE_INPUTTYPE_TRWLAYER_TRACK,
   TRUE,
   FALSE, /* keep dialog open after success */
+  TRUE,
   NULL, NULL, NULL,
   (VikDataSourceGetCmdStringFunc)	datasource_bfilter_polygon_get_cmd_string,
-  (VikDataSourceProcessFunc) NULL,
+  (VikDataSourceProcessFunc)        a_babel_convert_from_shellcommand,
   NULL, NULL, NULL,
   (VikDataSourceOffFunc) NULL,
 
@@ -147,7 +147,7 @@ VikDataSourceInterface vik_datasource_bfilter_polygon_interface = {
 };
 
 
-static void datasource_bfilter_polygon_get_cmd_string ( VikLayerParamData *paramdatas, gchar **cmd, gchar **input_file_type, const gchar *input_filename, const gchar *input_track_filename )
+static void datasource_bfilter_polygon_get_cmd_string ( VikLayerParamData *paramdatas, gchar **cmd, gchar **input_file_type, const gchar *input_filename, const gchar *input_track_filename, gpointer not_used )
 {
   *input_file_type = NULL;
   *cmd = g_strdup_printf ( "gpsbabel -i gpx -f %s -o arc -F - | gpsbabel -i gpx -f %s -x polygon,file=- -o gpx -F -", input_track_filename, input_filename );
@@ -155,7 +155,7 @@ static void datasource_bfilter_polygon_get_cmd_string ( VikLayerParamData *param
 
 /************************************ Exclude Polygon ***********************************/
 
-static void datasource_bfilter_exclude_polygon_get_cmd_string ( VikLayerParamData *paramdatas, gchar **cmd, gchar **input_file_type, const gchar *input_filename, const gchar *input_track_filename );
+static void datasource_bfilter_exclude_polygon_get_cmd_string ( VikLayerParamData *paramdatas, gchar **cmd, gchar **input_file_type, const gchar *input_filename, const gchar *input_track_filename, gpointer not_used );
 
 /* TODO: shell_escape stuff */
 /* TODO: name is useless for filters */
@@ -164,14 +164,14 @@ static void datasource_bfilter_exclude_polygon_get_cmd_string ( VikLayerParamDat
 VikDataSourceInterface vik_datasource_bfilter_exclude_polygon_interface = {
   N_("Waypoints Outside This"),
   N_("Polygonzied Layer"),
-  VIK_DATASOURCE_SHELL_CMD,
   VIK_DATASOURCE_CREATENEWLAYER,
   VIK_DATASOURCE_INPUTTYPE_TRWLAYER_TRACK,
   TRUE,
   FALSE, /* keep dialog open after success */
+  TRUE,
   NULL, NULL, NULL,
   (VikDataSourceGetCmdStringFunc)	datasource_bfilter_exclude_polygon_get_cmd_string,
-  (VikDataSourceProcessFunc) NULL,
+  (VikDataSourceProcessFunc)        a_babel_convert_from_shellcommand,
   NULL, NULL, NULL,
   (VikDataSourceOffFunc) NULL,
 
@@ -183,7 +183,7 @@ VikDataSourceInterface vik_datasource_bfilter_exclude_polygon_interface = {
 };
 
 
-static void datasource_bfilter_exclude_polygon_get_cmd_string ( VikLayerParamData *paramdatas, gchar **cmd, gchar **input_file_type, const gchar *input_filename, const gchar *input_track_filename )
+static void datasource_bfilter_exclude_polygon_get_cmd_string ( VikLayerParamData *paramdatas, gchar **cmd, gchar **input_file_type, const gchar *input_filename, const gchar *input_track_filename, gpointer not_used )
 {
   *input_file_type = NULL;
   *cmd = g_strdup_printf ( "gpsbabel -i gpx -f %s -o arc -F - | gpsbabel -i gpx -f %s -x polygon,exclude,file=- -o gpx -F -", input_track_filename, input_filename );

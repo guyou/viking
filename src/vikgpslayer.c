@@ -124,9 +124,9 @@ typedef struct {
 static void gps_session_delete(GpsSession *sess);
 
 static gchar *params_groups[] = {
-  "Data Mode",
+  N_("Data Mode"),
 #if defined (VIK_CONFIG_REALTIME_GPS_TRACKING) && defined (GPSD_API_MAJOR_VERSION)
-  "Realtime Tracking Mode",
+  N_("Realtime Tracking Mode"),
 #endif
 };
 
@@ -134,9 +134,9 @@ enum {GROUP_DATA_MODE, GROUP_REALTIME_MODE};
 
 #if defined (VIK_CONFIG_REALTIME_GPS_TRACKING) && defined (GPSD_API_MAJOR_VERSION)
 static gchar *params_vehicle_position[] = {
-  "Keep vehicle at center",
-  "Keep vehicle on screen",
-  "Disable",
+  N_("Keep vehicle at center"),
+  N_("Keep vehicle on screen"),
+  N_("Disable"),
   NULL
 };
 enum {
@@ -147,21 +147,21 @@ enum {
 #endif
 
 static VikLayerParam gps_layer_params[] = {
-  { "gps_protocol", VIK_LAYER_PARAM_STRING, GROUP_DATA_MODE, N_("GPS Protocol:"), VIK_LAYER_WIDGET_COMBOBOX, NULL, NULL}, // List now assigned at runtime
-  { "gps_port", VIK_LAYER_PARAM_STRING, GROUP_DATA_MODE, N_("Serial Port:"), VIK_LAYER_WIDGET_COMBOBOX, params_ports, NULL},
-  { "gps_download_tracks", VIK_LAYER_PARAM_BOOLEAN, GROUP_DATA_MODE, N_("Download Tracks:"), VIK_LAYER_WIDGET_CHECKBUTTON, NULL, NULL},
-  { "gps_upload_tracks", VIK_LAYER_PARAM_BOOLEAN, GROUP_DATA_MODE, N_("Upload Tracks:"), VIK_LAYER_WIDGET_CHECKBUTTON, NULL, NULL},
-  { "gps_download_routes", VIK_LAYER_PARAM_BOOLEAN, GROUP_DATA_MODE, N_("Download Routes:"), VIK_LAYER_WIDGET_CHECKBUTTON, NULL, NULL},
-  { "gps_upload_routes", VIK_LAYER_PARAM_BOOLEAN, GROUP_DATA_MODE, N_("Upload Routes:"), VIK_LAYER_WIDGET_CHECKBUTTON, NULL, NULL},
-  { "gps_download_waypoints", VIK_LAYER_PARAM_BOOLEAN, GROUP_DATA_MODE, N_("Download Waypoints:"), VIK_LAYER_WIDGET_CHECKBUTTON, NULL, NULL},
-  { "gps_upload_waypoints", VIK_LAYER_PARAM_BOOLEAN, GROUP_DATA_MODE, N_("Upload Waypoints:"), VIK_LAYER_WIDGET_CHECKBUTTON, NULL, NULL},
+  { "gps_protocol", VIK_LAYER_PARAM_STRING, GROUP_DATA_MODE, N_("GPS Protocol:"), VIK_LAYER_WIDGET_COMBOBOX, NULL, NULL, NULL }, // List now assigned at runtime
+  { "gps_port", VIK_LAYER_PARAM_STRING, GROUP_DATA_MODE, N_("Serial Port:"), VIK_LAYER_WIDGET_COMBOBOX, params_ports, NULL, NULL },
+  { "gps_download_tracks", VIK_LAYER_PARAM_BOOLEAN, GROUP_DATA_MODE, N_("Download Tracks:"), VIK_LAYER_WIDGET_CHECKBUTTON, NULL, NULL, NULL },
+  { "gps_upload_tracks", VIK_LAYER_PARAM_BOOLEAN, GROUP_DATA_MODE, N_("Upload Tracks:"), VIK_LAYER_WIDGET_CHECKBUTTON, NULL, NULL, NULL },
+  { "gps_download_routes", VIK_LAYER_PARAM_BOOLEAN, GROUP_DATA_MODE, N_("Download Routes:"), VIK_LAYER_WIDGET_CHECKBUTTON, NULL, NULL, NULL },
+  { "gps_upload_routes", VIK_LAYER_PARAM_BOOLEAN, GROUP_DATA_MODE, N_("Upload Routes:"), VIK_LAYER_WIDGET_CHECKBUTTON, NULL, NULL, NULL },
+  { "gps_download_waypoints", VIK_LAYER_PARAM_BOOLEAN, GROUP_DATA_MODE, N_("Download Waypoints:"), VIK_LAYER_WIDGET_CHECKBUTTON, NULL, NULL, NULL },
+  { "gps_upload_waypoints", VIK_LAYER_PARAM_BOOLEAN, GROUP_DATA_MODE, N_("Upload Waypoints:"), VIK_LAYER_WIDGET_CHECKBUTTON, NULL, NULL, NULL },
 #if defined (VIK_CONFIG_REALTIME_GPS_TRACKING) && defined (GPSD_API_MAJOR_VERSION)
-  { "record_tracking", VIK_LAYER_PARAM_BOOLEAN, GROUP_REALTIME_MODE, N_("Recording tracks"), VIK_LAYER_WIDGET_CHECKBUTTON},
-  { "center_start_tracking", VIK_LAYER_PARAM_BOOLEAN, GROUP_REALTIME_MODE, N_("Jump to current position on start"), VIK_LAYER_WIDGET_CHECKBUTTON},
-  { "moving_map_method", VIK_LAYER_PARAM_UINT, GROUP_REALTIME_MODE, N_("Moving Map Method:"), VIK_LAYER_WIDGET_RADIOGROUP_STATIC, params_vehicle_position, NULL},
-  { "gpsd_host", VIK_LAYER_PARAM_STRING, GROUP_REALTIME_MODE, N_("Gpsd Host:"), VIK_LAYER_WIDGET_ENTRY},
-  { "gpsd_port", VIK_LAYER_PARAM_STRING, GROUP_REALTIME_MODE, N_("Gpsd Port:"), VIK_LAYER_WIDGET_ENTRY},
-  { "gpsd_retry_interval", VIK_LAYER_PARAM_STRING, GROUP_REALTIME_MODE, N_("Gpsd Retry Interval (seconds):"), VIK_LAYER_WIDGET_ENTRY},
+  { "record_tracking", VIK_LAYER_PARAM_BOOLEAN, GROUP_REALTIME_MODE, N_("Recording tracks"), VIK_LAYER_WIDGET_CHECKBUTTON, NULL, NULL, NULL },
+  { "center_start_tracking", VIK_LAYER_PARAM_BOOLEAN, GROUP_REALTIME_MODE, N_("Jump to current position on start"), VIK_LAYER_WIDGET_CHECKBUTTON, NULL, NULL, NULL },
+  { "moving_map_method", VIK_LAYER_PARAM_UINT, GROUP_REALTIME_MODE, N_("Moving Map Method:"), VIK_LAYER_WIDGET_RADIOGROUP_STATIC, params_vehicle_position, NULL, NULL },
+  { "gpsd_host", VIK_LAYER_PARAM_STRING, GROUP_REALTIME_MODE, N_("Gpsd Host:"), VIK_LAYER_WIDGET_ENTRY, NULL, NULL, NULL },
+  { "gpsd_port", VIK_LAYER_PARAM_STRING, GROUP_REALTIME_MODE, N_("Gpsd Port:"), VIK_LAYER_WIDGET_ENTRY, NULL, NULL, NULL },
+  { "gpsd_retry_interval", VIK_LAYER_PARAM_STRING, GROUP_REALTIME_MODE, N_("Gpsd Retry Interval (seconds):"), VIK_LAYER_WIDGET_ENTRY, NULL, NULL, NULL },
 #endif /* VIK_CONFIG_REALTIME_GPS_TRACKING */
 };
 enum {
@@ -1170,7 +1170,7 @@ static void gps_comm_thread(GpsSession *sess)
 
   if (sess->direction == GPS_DOWN)
     result = a_babel_convert_from (sess->vtl, sess->cmd_args, sess->port,
-        (BabelStatusFunc) gps_download_progress_func, sess);
+        (BabelStatusFunc) gps_download_progress_func, sess, NULL);
   else {
     result = a_babel_convert_to (sess->vtl, sess->track, sess->cmd_args, sess->port,
         (BabelStatusFunc) gps_upload_progress_func, sess);
@@ -1194,7 +1194,7 @@ static void gps_comm_thread(GpsSession *sess)
 	if ( sess->vvp && sess->direction == GPS_DOWN ) {
 	  /* View the data available */
 	  vik_trw_layer_auto_set_view ( sess->vtl, sess->vvp) ;
-	  vik_layer_emit_update ( VIK_LAYER(sess->vtl), TRUE ); // Yes update from background thread
+	  vik_layer_emit_update ( VIK_LAYER(sess->vtl) ); // NB update from background thread
 	}
       }
     } else {
@@ -1342,7 +1342,7 @@ gint vik_gps_comm ( VikTrwLayer *vtl,
     if ( turn_off ) {
       // No need for thread for powering off device (should be quick operation...) - so use babel command directly:
       gchar *device_off = g_strdup_printf("-i %s,%s", protocol, "power_off");
-      gboolean result = a_babel_convert_from (NULL, (const char*)device_off, (const char*)port, NULL, NULL);
+      gboolean result = a_babel_convert_from (NULL, (const char*)device_off, (const char*)port, NULL, NULL, NULL);
       if ( !result )
         a_dialog_error_msg ( VIK_GTK_WINDOW_FROM_LAYER(vtl), _("Could not turn off device.") );
       g_free ( device_off );
@@ -1465,8 +1465,8 @@ static void realtime_tracking_draw(VikGpsLayer *vgl, VikViewport *vp)
     vik_coord_load_from_latlon ( &gps, vik_viewport_get_coord_mode(vp), &ll);
     vik_viewport_coord_to_screen ( vp, &gps, &x, &y );
 
-    gdouble heading_cos = cos(M_PI/180*vgl->realtime_fix.fix.track);
-    gdouble heading_sin = sin(M_PI/180*vgl->realtime_fix.fix.track);
+    gdouble heading_cos = cos(DEG2RAD(vgl->realtime_fix.fix.track));
+    gdouble heading_sin = sin(DEG2RAD(vgl->realtime_fix.fix.track));
 
     half_back_y = y+8*heading_cos;
     half_back_x = x-8*heading_sin;
@@ -1619,7 +1619,7 @@ static void gpsd_raw_hook(VglGpsd *vgpsd, gchar *data)
     vgl->first_realtime_trackpoint = FALSE;
     create_realtime_trackpoint(vgl, FALSE);
 
-    vik_layer_emit_update ( update_all ? VIK_LAYER(vgl) : VIK_LAYER(vgl->trw_children[TRW_REALTIME]), TRUE); // Yes update from background thread
+    vik_layer_emit_update ( update_all ? VIK_LAYER(vgl) : VIK_LAYER(vgl->trw_children[TRW_REALTIME]) ); // NB update from background thread
   }
 }
 

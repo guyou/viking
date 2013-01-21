@@ -220,6 +220,20 @@ The main &appname; area where the layer data is drawn, is called the <emphasis r
 <listitem><para>The zoom factor</para></listitem>
 <listitem><para>The location of the mouse pointer (and potentially height information if DEM data is available)</para></listitem>
 </itemizedlist>
+<para>When creating a track/route, the statusbar also displays some information about the track/route.</para>
+<figure>
+<title>Statusbar</title>
+<screenshot>
+  <graphic format="PNG" fileref="figures/trw_statusbar.png"/>
+</screenshot>
+</figure>
+<para>This part of the statusbar displays:
+<itemizedlist>
+<listitem><para>The total distance of the track/route (including currently edited segment).</para></listitem>
+<listitem><para>The bearing of the currently edited segment.</para></listitem>
+<listitem><para>The distance of the currently edited segment.</para></listitem>
+</itemizedlist>
+</para>
 </section>
 
 <section><title>Projections</title>
@@ -253,7 +267,7 @@ The &appname; automatic caching strategy is two fold:
 <itemizedlist>
 <listitem>
 <para>
-  If the age of the tile on disk is less than the specified tile age in the <link linkend="prefs_osm">preferences</link>,
+  If the age of the tile on disk is less than the specified tile age (see <xref linkend="prefs"/>),
   it will <emphasis>not</emphasis> attempt to contact the server to get a new version of the tile.
 </para>
 </listitem>
@@ -273,7 +287,7 @@ The &appname; automatic caching strategy is two fold:
 </note>
 </section>
 
-<section id="shortcut_keys"><title>Shortcut Keys</title>
+<section id="shortcut_keys" xreflabel="Shortcut Keys"><title>Shortcut Keys</title>
 <para>
 &appname; has several shortcut keys or key combinations for commands as listed in the main window along side the command.
 </para>
@@ -363,7 +377,7 @@ Besides it's own file type, &appname; can open (and save to via export methods) 
 <para>
 By default &appname; opens a default blank window centered on the home location.
 Each window contains menus, a toolbar, a viewport, layers panel and a statusbar.
-Each section (apart from the viewport) can be hidden via the <link linkend="shortcut_keys">keyboard shortcuts</link> or from the
+Each section (apart from the viewport) can be hidden using the <xref linkend="shortcut_keys"/> or from the
 <menuchoice><guimenu>View</guimenu><guisubmenu>Show</guisubmenu></menuchoice> choices.
 </para>
 <para>
@@ -372,7 +386,7 @@ However generally one window is enough for most purposes!
 </para>
 <para>
 Several operations apply at the window level as follows next.
-Also see the <link linkend="tools">Tools</link> section for the operational modes that generally work in conjunction with a selected layer.
+Also see <xref linkend="tools"/> for the operational modes that generally work in conjunction with a selected layer.
 </para>
 
 <section><title>New</title>
@@ -435,13 +449,16 @@ GPX and KML files may also be appended, but this is exactly the same as the norm
 </para>
 </section>
 
-<section id="acquire"><title>Acquire</title>
+<section id="acquire" xreflabel="acquire"><title>Acquire</title>
 
 <para>
-Located on the <menuchoice><guimenu>File</guimenu><guisubmenu>Acquire</guisubmenu></menuchoice> menu only.
+Available on the <menuchoice><guimenu>File</guimenu><guisubmenu>Acquire</guisubmenu></menuchoice> menu and from the <xref linkend="TrackWaypoint"/> layer menu.
 </para>
 <para>
-If successful, these methods place the results in a new TrackWaypoint layer.
+If used from the <guimenu>File</guimenu> menu and a TrackWaypoint layer is not currently selected, these methods place the results in a new TrackWaypoint layer. When a TrackWaypoint layer is selected, then using the <menuchoice><guimenu>File</guimenu><guisubmenu>Acquire</guisubmenu></menuchoice> will put the results into the selected TrackWaypoint layer.
+</para>
+<para>
+If used from the <xref linkend="TrackWaypoint"/> layer menu these methods place the results in that TrackWaypoint layer.
 </para>
 
 <section>
@@ -491,7 +508,17 @@ Enables automatic creation of waypoints from geotagged images.
 </para>
 <para>
 This menu opens a dialog to select such image files.
-If the image files have geotag information in them, then a TrackWaypoint layer with named waypoints positioned at the location of each image with a thumbnail of that image is created.
+If the image files have geotag information in them, then a <xref linkend="TrackWaypoint"/> layer with named waypoints positioned at the location of each image with a thumbnail of that image is created.
+</para>
+</section>
+
+<section>
+<title>From Wikipedia Waypoints</title>
+<para>
+<menuchoice><guimenu>File</guimenu><guimenuitem>Acquire</guimenuitem><guimenuitem>From Wikipedia Waypoints</guimenuitem></menuchoice>
+</para>
+<para>
+This gets 'interesting' points from Wikipedia for the specified view: either within the extent of layer bounds or within the current viewport boundary.
 </para>
 </section>
 
@@ -551,13 +578,13 @@ This is only available in UTM mode.
 Layers supported by &appname; are:
 </para>
 <itemizedlist>
-<listitem><para>Aggregate</para></listitem>
-<listitem><para>TrackWaypoint</para></listitem>
-<listitem><para>GPS</para></listitem>
-<listitem><para>DEM</para></listitem>
-<listitem><para>Coord</para></listitem>
-<listitem><para>Map</para></listitem>
-<listitem><para>GeoRef</para></listitem>
+<listitem><para><xref linkend="Aggregate"/></para></listitem>
+<listitem><para><xref linkend="TrackWaypoint"/></para></listitem>
+<listitem><para><xref linkend="GPS"/></para></listitem>
+<listitem><para><xref linkend="DEM"/></para></listitem>
+<listitem><para><xref linkend="Coordinate"/></para></listitem>
+<listitem><para><xref linkend="Maps"/></para></listitem>
+<listitem><para><xref linkend="GeoRef"/></para></listitem>
 </itemizedlist>
 <para>
 For each layer there are a few standard options:
@@ -582,8 +609,9 @@ The cut/copy/paste options can be accessed in a variety of ways once the layer h
 <para>
 See the individual section for detail about each layer.
 </para>
+</section>
 
-<section><title>TrackWaypoint Layer</title>
+<section id="TrackWaypoint" xreflabel="TrackWaypoint"><title>TrackWaypoint Layer</title>
 <para>
 TrackWaypoint layers display GPS data (tracks, routes and waypoints).
 </para>
@@ -601,6 +629,11 @@ layers panel to show all the individual items and then typing the name of the tr
 <para>
 The containing Tracks, Routes or Waypoints sublayers are only shown when items of that type exist.
 To start creating them enter into a create mode via either the <guibutton>Create</guibutton> toolbar commands or the <guimenuitem>New</guimenuitem> menu commands.
+</para>
+
+<para>
+The sublayers also offer right click menu options.
+These are the same as those available at the TrackWaypoint level, but only those that relate to the sublayer type.
 </para>
 
 <para>
@@ -625,19 +658,19 @@ Version1.1+: This will automatically move the viewport and select the best zoom 
 
 <section><title>View</title>
 
-<section><title>View All Tracks</title>
+<section id="track_view_all"><title>View All Tracks</title>
 <para>
 Version1.1+: This will automatically move the viewport and select the best zoom level to see the all the tracks in the layer (ignoring positions of any routes or waypoints).
 </para>
 </section>
 
-<section><title>View All Routes</title>
+<section id="route_view_all"><title>View All Routes</title>
 <para>
 Version1.4+: This will automatically move the viewport and select the best zoom level to see the all the routes in the layer (ignoring positions of any tracks or waypoints).
 </para>
 </section>
 
-<section><title>View All Waypoints</title>
+<section id="wp_view_all"><title>View All Waypoints</title>
 <para>
 Version1.1+: This will automatically move the viewport and select the best zoom level to see the all the waypoints in the layer (ignoring positions of any tracks or routes).
 </para>
@@ -651,7 +684,7 @@ This will automatically move the viewport to see the whole layer (i.e. tracks, r
 </para>
 </section>
 
-<section><title>Goto Waypoint</title>
+<section id="wp_goto"><title>Goto Waypoint</title>
 <para>
 This opens a dialog box to enter a name of waypoint to search for. If it is found the viewport is centred on it.
 </para>
@@ -672,16 +705,29 @@ Version1.1+: An individual track can be exported to a GPX file via the track men
 </para>
 </section>
 
+<section id="finish"><title>Finish Track or Route</title>
+<para>
+This is only available when a track or route is being created by the <xref linkend="track_create"/> or <xref linkend="route_create"/> tools.
+Selecting this option ends the creation of that individual track or route.
+</para>
+</section>
+
+<section><title>New</title>
 <section id="new_wp"><title>New Waypoint</title>
 <para>
 This opens a dialog box to create a new waypoint. A default name will be suggested and the default position is the center of the viewport.
 </para>
 </section>
-
-<section><title>Add Wikipedia Waypoints</title>
+<section id="new_track"><title>New Track</title>
 <para>
-This gets 'interesting' points from Wikipedia for the specified view: either within the extent of layer bounds or within the current viewport boundary.
+This turns on the <xref linkend="track_create"/> tool.
 </para>
+</section>
+<section id="new_route"><title>New Route</title>
+<para>
+This turns on the <xref linkend="route_create"/> tool.
+</para>
+</section>
 </section>
 
 <section><title>Geotag Images</title>
@@ -693,7 +739,7 @@ See <link linkend="geotagging">Geotagging</link> for further detail.
 
 <section><title>Acquire</title>
 <para>
-This offers the same choice of <link linkend="acquire">Acquire</link> methods as on the <guimenu>File</guimenu> menu.
+This offers the same choice from <xref linkend="acquire"/> methods as on the <guimenu>File</guimenu> menu.
 However when invoked from here, the results will be stored in this layer (instead of creating a new one).
 </para>
 </section>
@@ -712,10 +758,10 @@ Tracks, Routes or Waypoints that are invisible will not be transferred.
 </para>
 </section>
 
-<section id="osm_upload"><title>Upload To OSM</title>
+<section id="osm_upload" xreflabel="Upload To OSM" ><title>Upload To OSM</title>
 <para>
 This opens a dialog to upload all tracks and waypoints to <ulink url="http://openstreetmap.org/">OpenStreetMap</ulink> traces.
-Useful if you are an OpenStreetMap contributor (you will need an OpenStreetMap account), these details can be stored in &appname; <link linkend="prefs_osm">preferences.</link>
+Useful if you are an OpenStreetMap contributor (you will need an OpenStreetMap account), these details can be stored in &appname; <xref linkend="prefs_osm"/>
 </para>
 <para>
  &appname; allows you to edit a track, e.g. remove duplicate points, perhaps remove track points leading to your home and then upload it to OpenStreetMap.
@@ -728,6 +774,28 @@ The password is transferred <emphasis role="bold">unencrypted</emphasis> in ever
 </warning>
 </section>
 
+</section>
+
+<section><title>Delete</title>
+<para>Offers deletion of various parts of a TrackWaypoint layer:</para>
+<section id="delete_all_tracks"><title>Delete All Tracks</title>
+<para>Deletes all the tracks in this layer.</para>
+</section>
+<section id="delete_selection_tracks"><title>Delete Tracks from Selection</title>
+<para>Opens a dialog with list of all the tracks from this layer to choose the ones to delete.</para>
+</section>
+<section id="delete_all_routes"><title>Delete All Routes</title>
+<para>Deletes all the routes in this layer.</para>
+</section>
+<section id="delete_selection_routes"><title>Delete Routes from Selection</title>
+<para>Opens a dialog with list of all the routes from this layer to choose the ones to delete.</para>
+</section>
+<section id="delete_all_waypoints"><title>Delete All Waypoints</title>
+<para>Deletes all the waypoints in this layer.</para>
+</section>
+<section id="delete_selection_waypoints"><title>Delete Waypoints from Selection</title>
+<para>Opens a dialog with list of all the waypoints from this layer to choose the ones to delete.</para>
+</section>
 </section>
 
 <section><title>Filter</title>
@@ -770,6 +838,17 @@ See <link linkend="geotagging">Geotagging</link> for further detail.
 
 </section><!-- End TRW Layer Options -->
 
+<section><title>Track and Route Sublayer Options</title>
+<para>Repeats options available at the TrackWaypoint level, but only those for tracks and routes:</para>
+<itemizedlist>
+<listitem><para>Finish Track or Route. Same as the layer <link linkend="finish_track">Finish Track or Route</link></para></listitem>
+<listitem><para>New Track or Route. Same as the layer <link linkend="new_track">New Track</link> or <link linkend="new_route">New Route</link></para></listitem>
+<listitem><para>View All Tracks or Routes. Same as the layer <link linkend="track_view_all">View All Tracks</link> or <link linkend="route_view_all">View All Routes</link></para></listitem>
+<listitem><para>Delete All Tracks or Routes. Same as the layer <link linkend="delete_all_tracks">Delete All Tracks</link> or <link linkend="delete_all_routes">Delete All Routes</link></para></listitem>
+<listitem><para>Delete Tracks or Routes from Selection. Same as the layer <link linkend="delete_selection_tracks">Delete Tracks from Selection</link> or <link linkend="delete_selection_routes">Delete Routes from Selection</link></para></listitem>
+</itemizedlist>
+</section>
+
 <section><title>Track and Route Properties</title>
 <para>
 Show many useful statistics about a track or a route, including a
@@ -810,6 +889,13 @@ The following colors are used in the elevation-distance graph:
 </section>
 
 <section><title>Track and Route Operations</title>
+
+<section><title>Finish Track</title>
+<para>
+This is only available when a track is being created by the <xref linkend="track_create"/> tool.
+Selecting this option ends the creation of the individual track.
+</para>
+</section>
 
 <section><title>Goto</title>
 <para>
@@ -984,6 +1070,17 @@ The record of the Google route is stored in the track's comment, so if the comme
 
 </section><!-- End Track Options -->
 
+<section><title>Waypoint Sublayer Options</title>
+<para>Repeats options available at the TrackWaypoint level, but only those for waypoints:</para>
+<itemizedlist>
+<listitem><para>New Waypoint. Same as the layer <link linkend="new_wp">New Waypoint</link></para></listitem>
+<listitem><para>View All Waypoints. Same as the layer <link linkend="wp_view_all">View All Waypoints</link></para></listitem>
+<listitem><para>Goto Waypoint. Same as the layer <link linkend="wp_goto">Goto Waypoint</link></para></listitem>
+<listitem><para>Delete All Waypoints. Same as the layer <link linkend="delete_all_waypoints">Delete All Waypoints</link></para></listitem>
+<listitem><para>Delete Waypoints from Selection. Same as the layer <link linkend="delete_selection_waypoints">Delete Waypoints from Selection</link></para></listitem>
+</itemizedlist>
+</section>
+
 <section><title>Waypoint Properties</title>
 
 <para>
@@ -1004,9 +1101,15 @@ This centers the viewport on the selected waypoint.
 </para>
 </section>
 
+<section><title>Visit Webpage</title>
+<para>
+If the waypoint's comment (or description) starts with 'http:' then this option is available and allows launching a web browser to go to the webpage.
+</para>
+</section>
+
 <section><title>Visit Geocache Webpage</title>
 <para>
-If the waypoint's name is in Geocache form (GCXXXXX) you can launch a web browser to go to the Geocache page.
+If the waypoint's name is in Geocache form (GCXXXXX) then this option is available and allows launching a web browser to go to the Geocache page.
 </para>
 </section>
 
@@ -1018,7 +1121,7 @@ Same as the layer <link linkend="new_wp">New Waypoint</link>.
 
 </section><!-- WP END -->
 
-<section id="geotagging"><title>Version1.3+: Geotag Images</title>
+<section id="geotagging" xreflabel="Geotagging"><title>Version1.3+: Geotag Images</title>
 <para>
 This dialog allows geotagging images (normally taken with a digital camera) via interpolation against a specific track or all tracks in the TrackWaypoint layer - depending on how it is invoked.
 </para>
@@ -1047,11 +1150,11 @@ Various options allow control of how the geotagging process is performed:
 
 </section><!-- TRW Layer END -->
 
-<section id="gps_layer"><title>GPS Layer</title>
+<section id="GPS" xreflabel="GPS"><title>GPS Layer</title>
 <para>
 The GPS layer is responsible for uploading and downloading GPS data
 from a GPS device. It also is responsible for realtime GPS tracking.
-Expand the GPS layer in the layers panel to see the two TrackWaypoint layers it
+Expand the GPS layer in the layers panel to see the two <xref linkend="TrackWaypoint"/> layers it
 uses for uploading and downloading. To upload, download, or use
 realtime tracking, right-click the GPS layer and click the appropiate
 menu item.
@@ -1094,7 +1197,7 @@ There are several options to quickly delete a subsection of data:
 
 </section><!-- End GPS -->
 
-<section><title>DEM (Digital Elevation Model) Layer</title>
+<section id="DEM" xreflabel="DEM"><title>DEM (Digital Elevation Model) Layer</title>
 <para>
 This layer provides elevation data from the <ulink url="http://www2.jpl.nasa.gov/srtm/">Shuttle Radar Topography Mission (SRTM)</ulink>
 </para>
@@ -1119,7 +1222,7 @@ Using many DEMs is CPU/memory intensive. Depending on your computer's capability
 </section><!-- End DEM -->
 
 
-<section><title>Maps Layer</title>
+<section id="Maps" xreflabel="Maps"><title>Maps Layer</title>
 <para>
 This layer provides a single map resource, you may have multiple map layers but only top one (if enabled) will be visible.
 You will need an open internet connection when you are downloading maps, but once downloaded they are available from the hard disk cache. When map are avaliable from the disk cache it is much faster and can be used offline.
@@ -1144,7 +1247,7 @@ Inbuilt maps include various <ulink url="http://en.wikipedia.org/wiki/TerraServe
 </itemizedlist>
 
 <para>
-&appname; can be configured to handle additional maps. See <link linkend="extend_viking">Extending &appname;</link> for further detail.
+&appname; can be configured to handle additional maps. See <xref linkend="extend_viking"/> for further detail.
 </para>
 
 <section><title>Layer Operations</title>
@@ -1170,12 +1273,12 @@ Force a refresh of all visible map tiles.
 
 </section><!-- End Maps -->
 
-<section><title>Aggregrate Layer</title>
+<section id="Aggregate" xreflabel="Aggregate"><title>Aggregate Layer</title>
 <para>
 This layer is a container layer to hold other layers. There is always an initial and controlling 'Top Layer' that can not be removed, although it can be renamed.
 </para>
 <para>
-This layer type is useful for grouping other layers, especially TrackWaypoint layers, in whatever categories are relevant to you: such as by activity, location or date.
+This layer type is useful for grouping other layers, especially <xref linkend="TrackWaypoint"/> layers, in whatever categories are relevant to you: such as by activity, location or date.
 Here are some suggestions:
 <itemizedlist>
 <listitem><para>Hiking</para></listitem>
@@ -1205,7 +1308,7 @@ Add a new layer of the selected type.
 
 </section><!-- End Agg -->
 
-<section><title>GeoRef Layer</title>
+<section id="GeoRef" xreflabel="GeoRef"><title>GeoRef Layer</title>
 <para>
 This layer allows one to use any image as a map. You will need to tell it how to align the map to a position in the world and the scale of map.
 </para>
@@ -1231,15 +1334,14 @@ Opens a file save dialog to save the scale and position information as a <ulink 
 
 </section><!-- End GeoRef -->
 
-<section><title>Coord Layer</title>
+<section id="Coordinate" xreflabel="Coordinate"><title>Coordinate Layer</title>
 <para>
 This layer is allows drawing of grid lines on the viewport.
 </para>
 </section><!-- End Coord -->
 
-</section>
 
-<section id="tools"><title>Tools</title>
+<section id="tools" xreflabel="Tools"><title>Tools</title>
 <para>
 &appname;'s mouse actions on the viewport are controlled by which tool is active. Only one tool can be active at a time. The default mode is pan.
 </para>
@@ -1312,7 +1414,7 @@ This mode can also be entered by the keyboard shortcut <keycap>Ctrl+Shift+U</key
 </para>
 </section>
 
-<section id="select"><title>Version1.1+: Select</title>
+<section id="select" xreflabel="Select"><title>Version1.1+: Select</title>
 <para>
 This mode is entered by clicking on the toolbar icon: <guiicon><inlinegraphic fileref="figures/select_18.png"/></guiicon>
 </para>
@@ -1329,9 +1431,9 @@ This mode can also be entered by the keyboard shortcut <keycap>Ctrl+Shift+S</key
 
 <section><title>TrackWaypoint Layer Tools</title>
 <para>
-You must have a TrackWaypoint Layer selected to use these tools.
+You must have a <xref linkend="TrackWaypoint"/> Layer selected to use these tools.
 </para>
-<section><title>Create Waypoint</title>
+<section id="createwptool" xreflabel="Create Waypoint"><title>Create Waypoint</title>
 <para>
 Enable this tool by clicking on the toolbar icon: <guiicon><inlinegraphic fileref="figures/addwp_18.png"/></guiicon>
 </para>
@@ -1340,7 +1442,7 @@ Left click will open the new waypoint dialog using the specified position.
 </para>
 </section>
 
-<section><title>Create/Begin Track</title>
+<section id="track_create" xreflabel="Create Track"><title>Create Track</title>
 <para>
 Enable this tool by clicking on the toolbar icon: <guiicon><inlinegraphic fileref="figures/addtr_18.png"/></guiicon>
 </para>
@@ -1350,7 +1452,23 @@ If <keycap>Ctrl</keycap> is held at the same time, it will jump the new trackpoi
 Right click or <keycap>Backspace</keycap>: undo one point.
 </para>
 <para>
-Double click or <keycap>Escape</keycap>: finish track creation.
+Double click or <keycap>Escape</keycap>: to finish track creation.
+Finishing the track is also available via the right click <xref linkend="TrackWaypoint"/> and track menus.
+</para>
+<para>
+One must finish the current track to be able to create another track.
+</para>
+</section>
+
+<section id="route_create" xreflabel="Create Route"><title>Create Route</title>
+<para>
+Enable this tool by clicking on the toolbar icon: <guiicon><inlinegraphic fileref="figures/vik_new_route_18.png"/></guiicon>
+</para>
+<para>
+This operates in exactly the same way as the <link linkend="track_create">Create Track</link> above.
+</para>
+<para>
+One must finish the current route to be able to create another route.
 </para>
 </section>
 
@@ -1389,7 +1507,7 @@ Enable this tool by clicking on the toolbar icon: <guiicon><inlinegraphic filere
 <para>
 Opens an image viewer with the picture associated with the waypoint.
 By default this uses the default system image viewer.
-For Linux you can override this with the setting in the <link linkend="prefs_external">preferences.</link>
+For Linux you can override this with the setting in the <xref linkend="prefs_external"/>
 </para>
 </section>
 
@@ -1413,7 +1531,7 @@ Right-click: undo last routing (only track removed - not any waypoints)
 
 <section><title>Georef Map Layer Tools</title>
 <para>
-You must have a Georef Map Layer selected to use these tools.
+You must have a <xref linkend="GeoRef"/> Map Layer selected to use these tools.
 </para>
 <section><title>Georef zoom</title>
 <para>
@@ -1437,7 +1555,7 @@ Drag to move the georeferenced map.
 
 <section><title>Map Download</title>
 <para>
-You must have a Map Layer selected to use this.
+You must have a <xref linkend="Maps"/> Layer selected to use this.
 </para>
 <para>
 Enable this tool by clicking on the toolbar icon: <guiicon><inlinegraphic fileref="figures/mapdl_18.png"/></guiicon>
@@ -1452,7 +1570,7 @@ Right-click to redownload bad/all tiles. Right-click and drag to redownload bad/
 
 <section><title>DEM Download</title>
 <para>
-You must have a DEM Layer selected to use this.
+You must have a <xref linkend="DEM"/> Layer selected to use this.
 </para>
 <para>
 Enable this tool by clicking on the toolbar icon: <guiicon><inlinegraphic fileref="figures/demdl_18.png"/></guiicon>
@@ -1480,7 +1598,7 @@ This feature is called <guilabel>Webtools</guilabel>. It is also known as Extern
 </section>
 
 <!-- Preferences -->
-<section id="prefs"><title>Preferences</title>
+<section id="prefs" xreflabel="Preferences"><title>Preferences</title>
 <section><title>General</title>
 <section><title>Localisation</title>
 <para>You can select units displayed by &appname; to best fit your usage.</para>
@@ -1536,7 +1654,7 @@ Generally if you have a system with lots of memory it's recommended to increase 
 </section>
 </section>
 
-<section id="prefs_external"><title>Export/External</title>
+<section id="prefs_external" xreflabel="Export/External Preferences"><title>Export/External</title>
 <section><title>KML Export Units</title>
 <para>Allows setting the units used when saved as the KML file type, such as Metric or Statue units</para>
 </section>
@@ -1546,7 +1664,7 @@ Generally if you have a system with lots of memory it's recommended to increase 
 <para>Note: for Windows systems, viewing images associated with Waypoints always uses the system's default image viewer.</para>
 </section>
 <section><title>External GPX programs</title>
-<para>Allows setting the programs invoked via the TrackWaypoint Layer -> Export Layer -> Open With 'program'</para>
+<para>Allows setting the programs invoked via the <xref linkend="TrackWaypoint"/> Layer menu <menuchoice><guimenu>Export Layer</guimenu><guisubmenu>Open With 'program'</guisubmenu></menuchoice></para>
 <para>Two options are given so that it can be configured for various uses such as:</para>
 <itemizedlist>
 <listitem><para>An OSM editor (default)</para></listitem>
@@ -1555,9 +1673,9 @@ Generally if you have a system with lots of memory it's recommended to increase 
 </section>
 </section>
 
-<section id="prefs_osm"><title>OpenStreetMap Traces</title>
+<section id="prefs_osm" xreflabel="OpenStreetMap Traces Preferences"><title>OpenStreetMap Traces</title>
 <section><title>OSM Username + Password</title>
-<para>Store your OSM details here, so that you don't need to enter it in every time in the <link linkend="osm_upload">Upload to OSM</link> procedure.</para>
+<para>Store your OSM details here, so that you don't need to enter it in every time in the <xref linkend="osm_upload"/> procedure.</para>
 <warning>
 <para>
 Your OSM password will be stored in plain text.
@@ -1687,7 +1805,7 @@ the map. </para>
 	Then at any time you can return to this place by clicking on the <guibutton>Home</guibutton> icon on the toolbar.
 </para>
 <para>
-    You can also set the default location via specifing the exact latitude and longitude in the <link linkend="prefs">Preferences</link>.
+    You can also set the default location via specifing the exact latitude and longitude in the <xref linkend="prefs"/>.
 </para>
 </section>
 
@@ -1732,7 +1850,7 @@ automatically.
 <step><para>Keep the download source as is (SRTM Global 90m), hit <guilabel>OK</guilabel>.</para></step>
 </procedure>
 
-<para>In the layer listing on the left, the DEM layer should reside
+<para>In the layer listing on the left, the <xref linkend="DEM"/> layer should reside
 above the map layer. If this is not the case, highlight the DEM layer
 an shift it one up (using the arrow up button).
 </para>
@@ -1760,12 +1878,12 @@ You can also alter the Min. and Max. elevation in this dialogue.
 </section>
 <section><title>GPS Track with Height Profile</title>
 <procedure>
-<step><para>Uncheck the DEM layer (the map is shown again)</para></step>
+<step><para>Uncheck the <xref linkend="DEM"/> layer (the map is shown again)</para></step>
 <step>
 	<para><menuchoice><guimenu>Layers</guimenu><guimenuitem>New TrackWaypoint Layer</guimenuitem></menuchoice></para>
 	<para>Ensure the new track layer is above the map layer.</para>
 </step>
-<step><para>Expand the TrackWaypoint layer, select <guimenuitem>Tracks</guimenuitem></para></step>
+<step><para>Expand the <xref linkend="TrackWaypoint"/> layer, select <guimenuitem>Tracks</guimenuitem></para></step>
 <step><para>In the tools menu choose <guiicon><inlinegraphic fileref="figures/addtr_18.png"/></guiicon> <guibutton>Create Track</guibutton>
 </para></step>
 <step><para>Leftclick in the map window, enter a name</para></step>
@@ -1788,7 +1906,7 @@ In order to save this setting for later usage
 </section>
 <section><title>Usecase: offline data for holiday</title>
 <para>
-Suppose you want to have the map and DEM data offline for your holiday in Italy near Bologna.
+Suppose you want to have the <xref linkend="Maps"/> and <xref linkend="DEM"/> data offline for your holiday in Italy near Bologna.
 </para>
 <procedure>
 <step><para>Start a new &appname; session.</para></step>
@@ -1801,7 +1919,7 @@ This allows you to delete the map stuff after holiday without purging the rest o
 <step><para>check <guilabel>autodownload map</guilabel></para></step>
 <step><para>keep <guilabel>viking zoom level</guilabel></para></step>
 <step><para>zoom out to 1024</para></step>
-<step><para>add a DEM layer (as discussed above)</para></step>
+<step><para>add a <xref linkend="DEM"/> layer (as discussed above)</para></step>
 <step><para>download the DEM data</para></step>
 </procedure>
 <para>In the &app; version discussed here, the DEM data automatically
@@ -1846,16 +1964,15 @@ It is possible to upload data directly from &appname; to OpenStreetMap.
 <formalpara>
 <title>Upload a layer</title>
 <para>
-One solution is to upload whole a TrackWaypoint layer. To do this,
+One solution is to upload whole a <xref linkend="TrackWaypoint"/> layer. To do this,
 simply select the layer and right click on it. Then, select <guimenuitem>Upload to
 OSM</guimenuitem>.
 </para>
 </formalpara>
 <formalpara>
 <title>Upload a single track</title>
-<para>One solution is to upload whole a TrackWaypoint layer. To do
-this, simply select the layer and right click on it. Then, select
-<guimenuitem>Upload to OSM</guimenuitem>.
+<para>Another solution is to upload an individual track. Simply select the track and right click on it.
+Then select <guimenuitem>Upload to OSM</guimenuitem>.
 </para>
 </formalpara>
 <formalpara>
@@ -1866,7 +1983,7 @@ The email field is the email you used to subscribed into OpenStreetMap.
 The password field is the password you used with this account.
 The filename is the name you want your upload has on the server. This information is displayed by the osm server.
 The description is some descriptive information.
-The tags field is a white separated list of tag.
+The tags field is a white separated list of tags.
 </para> 
 </formalpara>
 </section>
@@ -1894,7 +2011,7 @@ See <ulink url="http://wiki.openstreetmap.org/wiki/API_v0.6#GPS_Traces"/> for fu
 
 <section><title>Geotagging</title>
 <para>
-	This assumes you already have a map layer enabled for ease of use (if not see above to get one).
+	This assumes you already have a <xref linkend="Maps"/> layer enabled for ease of use (if not see above to get one).
 </para>
 <section><title>Manual Positioning</title>
 <para>
@@ -1903,12 +2020,12 @@ See <ulink url="http://wiki.openstreetmap.org/wiki/API_v0.6#GPS_Traces"/> for fu
 	ATM this process only works on an individual image, so it will be tedious for handling lots of images.
 </para>
 <para>
-	First create a Track Waypoint layer or use an existing one; and select it in the Layers Panel.
+	First create a <xref linkend="TrackWaypoint"/> layer or use an existing one; and select it in the Layers Panel.
 	NB Make sure this layer is above the map layer in the Layers Panel list.
 	Create a new waypoint (or move an existing one) to exact location desired:
 <itemizedlist>
-	<listitem><para>Select the New Waypoint tool, then left click on the map at the location desired, choosing an image to associate with it in the new waypoint dialog</para></listitem>
-	<listitem><para>Select the <link linkend="select">Select Tool</link>, then left click on waypoint to be moved. Left click again and drag the waypoint to the location desired</para></listitem>
+	<listitem><para>Select the <xref linkend="createwptool"/> tool, then left click on the map at the location desired, choosing an image to associate with it in the new waypoint dialog</para></listitem>
+	<listitem><para>Select the <xref linkend="select"/> tool, then left click on waypoint to be moved. Left click again and drag the waypoint to the location desired</para></listitem>
 </itemizedlist>
 	Then using the Select tool left click on waypoint to select it, then right click to access the Waypoint properties menu, then choose
 	<menuchoice><guimenu>Update Geotag on Image</guimenu><guisubmenu>Update</guisubmenu></menuchoice>
@@ -1925,8 +2042,8 @@ See <ulink url="http://wiki.openstreetmap.org/wiki/API_v0.6#GPS_Traces"/> for fu
 	It helps if this is the track that was recorded at the time you took some photographs!
 </para>
 <para>
-	Select the track either from the layers panel on the left or via the viewport using the <link linkend="select">Select Tool</link>.
-	Then right click on it and chose the <menuchoice><guimenu>Geotag Images...</guimenu></menuchoice> leading you to the <link linkend="geotagging">Geotagging Dialog</link>.
+	Select the track either from the layers panel on the left or via the viewport using the <xref linkend="select"/> tool.
+	Then right click on it and chose the <menuchoice><guimenu>Geotag Images...</guimenu></menuchoice> leading you to the <xref linkend="geotagging"/> Dialog.
 </para>
 <para>
 	Load some images that where taken around the time the track log was recorded. Confirm the other options in the dialog - normally the defaults should be alright and select OK.
@@ -1953,14 +2070,14 @@ See <ulink url="http://wiki.openstreetmap.org/wiki/API_v0.6#GPS_Traces"/> for fu
 	so currently this functionality is disabled in <trademark>Windows</trademark> builds of &appname;
 </para>
 <para>
-	This assumes you already have a map layer enabled for ease of use (if not see above to get one).
+	This assumes you already have a <xref linkend="Maps"/> layer enabled for ease of use (if not see above to get one).
 </para>
 <para>
 	Turn on the GPS Device, ensure it has figured out it's location and plug it in to your computer.
 </para>
 <section><title>Set Up GPS Layer</title>
 <para>
-	You will need a <link linkend="gps_layer">GPS Layer</link>. One can be added via <menuchoice><guimenu>Layers</guimenu><guisubmenu>Add GPS Layer</guisubmenu></menuchoice>.
+	You will need a <xref linkend="GPS"/> layer. One can be added via <menuchoice><guimenu>Layers</guimenu><guisubmenu>Add GPS Layer</guisubmenu></menuchoice>.
 </para>
 <para>
 	Adjust the <emphasis>Realtime Tracking Mode</emphasis> settings to interface with <ulink url="http://www.catb.org/gpsd/">gpsd</ulink> as necessary. Normally the defaults should suffice.
@@ -1981,7 +2098,7 @@ See <ulink url="http://wiki.openstreetmap.org/wiki/API_v0.6#GPS_Traces"/> for fu
 </section>
 </section>
 
-<section id="extend_viking">
+<section id="extend_viking" xreflabel="Extending Viking">
     <title>Extending Viking</title>
 
       <para>Currently, &app; has some extention points based on configuration files. The file format is heavily inspired by the GtkBuilder file format: you specify the class of the GObject to build and set its properties. Technically, it is a XML file containing a "objects" root element. Inside this element, you set a collection of "object".</para>
