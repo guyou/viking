@@ -5,4 +5,7 @@ This patch moves all editable properties of a track/route to a
 dedicated tab. It seems better to distinguish editable properties
 and computed properties (called Statistics).
 
+TODO: fix how widgets are distributed horizontally in the "Properties"
+tab.
+
 Signed-off-by: Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
