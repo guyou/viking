@@ -1,6 +1,8 @@
 From: Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
-Subject: [PATCH] t/gui/rework-trw-propwin
+Subject: [PATCH] Add a tab in the Track property window
 
-<patch description>
+This patch moves all editable properties of a track/route to a
+dedicated tab. It seems better to distinguish editable properties
+and computed properties (called Statistics).
 
 Signed-off-by: Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
