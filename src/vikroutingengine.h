@@ -45,7 +45,8 @@ typedef struct _VikRoutingEngineClass VikRoutingEngineClass;
 struct _VikRoutingEngineClass
 {
   GObjectClass object_class;
-  int (*find)(VikRoutingEngine *self, VikTrwLayer *vt, struct LatLon start, struct LatLon end);
+  int (*find)(VikRoutingEngine *self, VikTrwLayer *vtl, struct LatLon start, struct LatLon end);
+  int (*refine)(VikRoutingEngine *self, VikTrwLayer *vtl, VikTrack *vt);
 };
 
 GType vik_routing_engine_get_type ();
@@ -54,7 +55,8 @@ struct _VikRoutingEngine {
   GObject obj;
 };
 
-int vik_routing_engine_find ( VikRoutingEngine *self, VikTrwLayer *vt, struct LatLon start, struct LatLon end );
+int vik_routing_engine_find ( VikRoutingEngine *self, VikTrwLayer *vtl, struct LatLon start, struct LatLon end );
+int vik_routing_engine_refine ( VikRoutingEngine *self, VikTrwLayer *vtl, VikTrack *vt );
 
 /* Acessors */
 gchar *vik_routing_engine_get_id ( VikRoutingEngine *self );
