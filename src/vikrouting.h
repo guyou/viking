@@ -29,6 +29,7 @@ G_BEGIN_DECLS
 
 
 /* Default */
+VikRoutingEngine *vik_routing_default_engine (void);
 void vik_routing_default_find ( VikTrwLayer *vt, struct LatLon start, struct LatLon end );
 
 /* Routing engines management */
