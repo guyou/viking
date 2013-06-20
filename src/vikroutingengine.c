@@ -142,6 +142,7 @@ vik_routing_engine_class_init ( VikRoutingEngineClass *klass )
   routing_class = VIK_ROUTING_ENGINE_CLASS ( klass );
   routing_class->find = NULL;
   routing_class->refine = NULL;
+  routing_class->supports_refine = NULL;
 
   pspec = g_param_spec_string ("id",
                                "Identifier",
@@ -237,10 +238,27 @@ vik_routing_engine_refine ( VikRoutingEngine *self, VikTrwLayer *vtl, VikTrack *
 	VikRoutingEngineClass *klass;
 	
 	g_return_val_if_fail ( VIK_IS_ROUTING_ENGINE (self), 0 );
-	klass = VIK_ROUTING_ENGINE_GET_CLASS( self );
+	klass = VIK_ROUTING_ENGINE_GET_CLASS ( self );
 	g_return_val_if_fail ( klass->refine != NULL, 0 );
 
-	return klass->refine( self, vtl, vt );
+	return klass->refine ( self, vtl, vt );
+}
+
+/**
+ * vik_routing_engine_supports_refine:
+ *
+ * Returns: %TRUE if this engine supports the refine of track
+ */
+gboolean
+vik_routing_engine_supports_refine ( VikRoutingEngine *self )
+{
+  VikRoutingEngineClass *klass;
+
+  g_return_val_if_fail ( VIK_IS_ROUTING_ENGINE (self), FALSE );
+  klass = VIK_ROUTING_ENGINE_GET_CLASS ( self );
+  g_return_val_if_fail ( klass->supports_refine != NULL, FALSE );
+
+  return klass->supports_refine ( self );
 }
 
 /**

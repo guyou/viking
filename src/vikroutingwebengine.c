@@ -44,6 +44,7 @@ static void vik_routing_web_engine_finalize ( GObject *gob );
 
 static int vik_routing_web_engine_find ( VikRoutingEngine *self, VikTrwLayer *vtl, struct LatLon start, struct LatLon end );
 static int vik_routing_web_engine_refine ( VikRoutingEngine *self, VikTrwLayer *vtl, VikTrack *vt );
+static gboolean vik_routing_web_engine_supports_refine ( VikRoutingEngine *self );
 
 typedef struct _VikRoutingWebEnginePrivate VikRoutingWebEnginePrivate;
 struct _VikRoutingWebEnginePrivate
@@ -177,6 +178,7 @@ static void vik_routing_web_engine_class_init ( VikRoutingWebEngineClass *klass 
 
   parent_class->find = vik_routing_web_engine_find;
   parent_class->refine = vik_routing_web_engine_refine;
+  parent_class->supports_refine = vik_routing_web_engine_supports_refine;
 
   /**
    * VikRoutingWebEngine:url-base:
@@ -437,4 +439,14 @@ vik_routing_web_engine_refine ( VikRoutingEngine *self, VikTrwLayer *vtl, VikTra
 
   g_free(uri);
   return ret;
+}
+
+static gboolean
+vik_routing_web_engine_supports_refine ( VikRoutingEngine *self )
+{
+  g_return_val_if_fail ( VIK_IS_ROUTING_WEB_ENGINE (self), FALSE);
+
+  VikRoutingWebEnginePrivate *priv = VIK_ROUTING_WEB_ENGINE_PRIVATE ( self );
+
+  return (priv->url_via_ll_fmt) != NULL;
 }

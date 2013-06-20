@@ -4709,6 +4709,82 @@ static void trw_layer_auto_track_refine ( gpointer pass_along[6] )
   }
 }
 
+/*
+ * @see g_list_foreach()
+ */
+static void fill_engine_box (gpointer data, gpointer user_data)
+{
+  VikRoutingEngine *engine = (VikRoutingEngine*) data;
+  /* Only register engine supporting direction request */
+  gboolean ok = vik_routing_engine_supports_refine (engine);
+  if (ok)
+  {
+    GtkWidget *widget = (GtkWidget*) user_data;
+    /* Add item in widget */
+    const gchar *label = vik_routing_engine_get_label (engine);
+    vik_combo_box_text_append (widget, label);
+    /* Save engine in internal list */
+    GList *engines = (GList*) g_object_get_data ( G_OBJECT ( widget ) , "engines" );
+    engines = g_list_append ( engines, engine );
+    g_object_set_data ( G_OBJECT ( widget ), "engines", engines );
+  }
+}
+
+/*
+
+ */
+static void trw_layer_track_refine ( gpointer pass_along[6] )
+{
+  g_debug ("%s", __FUNCTION__);
+  VikTrwLayer *vtl = VIK_TRW_LAYER(pass_along[0]);
+  VikTrack *trk;
+  if ( GPOINTER_TO_INT (pass_along[2]) == VIK_TRW_LAYER_SUBLAYER_ROUTE )
+    trk = (VikTrack *) g_hash_table_lookup ( vtl->routes, pass_along[3] );
+  else
+    trk = (VikTrack *) g_hash_table_lookup ( vtl->tracks, pass_along[3] );
+
+  if ( trk && trk->trackpoints )
+  {
+    /* Select engine from dialog */
+    GtkWidget *dialog = gtk_dialog_new_with_buttons (_("Routing Engine..."),
+                                                  vtl,
+                                                  GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                  GTK_STOCK_CANCEL,
+                                                  GTK_RESPONSE_REJECT,
+                                                  GTK_STOCK_OK,
+                                                  GTK_RESPONSE_ACCEPT,
+                                                  NULL);
+    GtkWidget * combo = vik_combo_box_text_new ();
+    vik_routing_foreach_engine (fill_engine_box, combo);
+    // FIXME gtk_combo_box_set_active (GTK_COMBO_BOX (combo), last_engine);
+    gtk_widget_show_all(combo);
+    
+    gtk_box_pack_start ( GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), combo, TRUE, TRUE, 0 );
+
+    gtk_dialog_set_default_response ( GTK_DIALOG(dialog), GTK_RESPONSE_ACCEPT );
+
+    if ( gtk_dialog_run ( GTK_DIALOG(dialog) ) == GTK_RESPONSE_ACCEPT )
+    {
+        VikRoutingEngine *routing = vik_routing_default_engine ();
+        /* Force saving track */
+        vtl->route_finder_check_added_track = TRUE;
+
+        vik_routing_engine_refine (routing, vtl, trk);
+            
+        if ( vtl->route_finder_added_track )
+          vik_track_calculate_bounds ( vtl->route_finder_added_track );
+
+        vtl->route_finder_added_track = NULL;
+        vtl->route_finder_check_added_track = FALSE;
+        
+        vik_layer_emit_update ( VIK_LAYER(vtl) );
+    }
+    gtk_widget_destroy ( dialog );
+
+
+  }
+}
+
 static void trw_layer_edit_trackpoint ( gpointer pass_along[6] )
 {
   VikTrwLayer *vtl = VIK_TRW_LAYER(pass_along[0]);
@@ -6741,6 +6817,12 @@ static gboolean trw_layer_sublayer_add_menu_items ( VikTrwLayer *l, GtkMenu *men
     item = gtk_image_menu_item_new_with_mnemonic ( _("Refine Route") );
     gtk_image_menu_item_set_image ( (GtkImageMenuItem*)item, gtk_image_new_from_stock (GTK_STOCK_ZOOM_FIT, GTK_ICON_SIZE_MENU) );
     g_signal_connect_swapped ( G_OBJECT(item), "activate", G_CALLBACK(trw_layer_auto_track_refine), pass_along );
+    gtk_menu_shell_append ( GTK_MENU_SHELL(menu), item );
+    gtk_widget_show ( item );
+
+    item = gtk_image_menu_item_new_with_mnemonic ( _("Refine Route...") );
+    gtk_image_menu_item_set_image ( (GtkImageMenuItem*)item, gtk_image_new_from_stock (GTK_STOCK_ZOOM_FIT, GTK_ICON_SIZE_MENU) );
+    g_signal_connect_swapped ( G_OBJECT(item), "activate", G_CALLBACK(trw_layer_track_refine), pass_along );
     gtk_menu_shell_append ( GTK_MENU_SHELL(menu), item );
     gtk_widget_show ( item );
 
