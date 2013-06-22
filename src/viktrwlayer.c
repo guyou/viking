@@ -4681,27 +4681,6 @@ static void trw_layer_auto_track_view ( gpointer pass_along[6] )
 }
 
 /*
- * @see g_list_foreach()
- */
-static void fill_engine_box (gpointer data, gpointer user_data)
-{
-  VikRoutingEngine *engine = (VikRoutingEngine*) data;
-  /* Only register engine supporting direction request */
-  gboolean ok = vik_routing_engine_supports_refine (engine);
-  if (ok)
-  {
-    GtkWidget *widget = (GtkWidget*) user_data;
-    /* Add item in widget */
-    const gchar *label = vik_routing_engine_get_label (engine);
-    vik_combo_box_text_append (widget, label);
-    /* Save engine in internal list */
-    GList *engines = (GList*) g_object_get_data ( G_OBJECT ( widget ) , "engines" );
-    engines = g_list_append ( engines, engine );
-    g_object_set_data ( G_OBJECT ( widget ), "engines", engines );
-  }
-}
-
-/*
 
  */
 static void trw_layer_track_refine ( gpointer pass_along[6] )
@@ -4718,15 +4697,14 @@ static void trw_layer_track_refine ( gpointer pass_along[6] )
   {
     /* Select engine from dialog */
     GtkWidget *dialog = gtk_dialog_new_with_buttons (_("Routing Engine..."),
-                                                  vtl,
+                                                  VIK_GTK_WINDOW_FROM_LAYER (vtl),
                                                   GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
                                                   GTK_STOCK_CANCEL,
                                                   GTK_RESPONSE_REJECT,
                                                   GTK_STOCK_OK,
                                                   GTK_RESPONSE_ACCEPT,
                                                   NULL);
-    GtkWidget * combo = vik_combo_box_text_new ();
-    vik_routing_foreach_engine (fill_engine_box, combo);
+    GtkWidget * combo = vik_routing_ui_selector_new ( (Predicate)vik_routing_engine_supports_refine, NULL );
     // FIXME gtk_combo_box_set_active (GTK_COMBO_BOX (combo), last_engine);
     gtk_widget_show_all(combo);
     
@@ -4736,7 +4714,8 @@ static void trw_layer_track_refine ( gpointer pass_along[6] )
 
     if ( gtk_dialog_run ( GTK_DIALOG(dialog) ) == GTK_RESPONSE_ACCEPT )
     {
-        VikRoutingEngine *routing = vik_routing_default_engine ();
+        int active = gtk_combo_box_get_active ( GTK_COMBO_BOX(combo) );
+        VikRoutingEngine *routing = vik_routing_ui_selector_get_nth (combo, active);
         /* Force saving track */
         vtl->route_finder_check_added_track = TRUE;
 

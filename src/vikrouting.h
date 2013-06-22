@@ -29,14 +29,18 @@ G_BEGIN_DECLS
 
 
 /* Default */
-VikRoutingEngine *vik_routing_default_engine (void);
 void vik_routing_default_find ( VikTrwLayer *vt, struct LatLon start, struct LatLon end );
 
 /* Routing engines management */
 void vik_routing_prefs_init();
 void vik_routing_register( VikRoutingEngine *engine );
 void vik_routing_unregister_all ();
-void vik_routing_foreach_engine (GFunc func, gpointer user_data);
+void vik_routing_foreach_engine ( GFunc func, gpointer user_data );
+
+/* UI */
+typedef gboolean (*Predicate)( gpointer data, gpointer user_data );
+GtkWidget *vik_routing_ui_selector_new ( Predicate func, gpointer user_data );
+VikRoutingEngine *vik_routing_ui_selector_get_nth ( GtkWidget *combo, int pos );
 
 G_END_DECLS
 
