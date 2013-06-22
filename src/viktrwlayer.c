@@ -4681,37 +4681,6 @@ static void trw_layer_auto_track_view ( gpointer pass_along[6] )
 }
 
 /*
-
- */
-static void trw_layer_auto_track_refine ( gpointer pass_along[6] )
-{
-  g_debug ("%s", __FUNCTION__);
-  VikTrwLayer *vtl = VIK_TRW_LAYER(pass_along[0]);
-  VikTrack *trk;
-  if ( GPOINTER_TO_INT (pass_along[2]) == VIK_TRW_LAYER_SUBLAYER_ROUTE )
-    trk = (VikTrack *) g_hash_table_lookup ( vtl->routes, pass_along[3] );
-  else
-    trk = (VikTrack *) g_hash_table_lookup ( vtl->tracks, pass_along[3] );
-
-  if ( trk && trk->trackpoints )
-  {
-    VikRoutingEngine *routing = vik_routing_default_engine ();
-    /* Force saving track */
-    vtl->route_finder_check_added_track = TRUE;
-
-    vik_routing_engine_refine (routing, vtl, trk);
-        
-    if ( vtl->route_finder_added_track )
-      vik_track_calculate_bounds ( vtl->route_finder_added_track );
-
-    vtl->route_finder_added_track = NULL;
-    vtl->route_finder_check_added_track = FALSE;
-    
-    vik_layer_emit_update ( VIK_LAYER(vtl) );
-  }
-}
-
-/*
  * @see g_list_foreach()
  */
 static void fill_engine_box (gpointer data, gpointer user_data)
@@ -6812,18 +6781,6 @@ static gboolean trw_layer_sublayer_add_menu_items ( VikTrwLayer *l, GtkMenu *men
     gtk_menu_shell_append ( GTK_MENU_SHELL(menu), item );
     gtk_widget_show ( item );
 
-    item = gtk_image_menu_item_new_with_mnemonic ( _("Refine Route") );
-    gtk_image_menu_item_set_image ( (GtkImageMenuItem*)item, gtk_image_new_from_stock (GTK_STOCK_ZOOM_FIT, GTK_ICON_SIZE_MENU) );
-    g_signal_connect_swapped ( G_OBJECT(item), "activate", G_CALLBACK(trw_layer_auto_track_refine), pass_along );
-    gtk_menu_shell_append ( GTK_MENU_SHELL(menu), item );
-    gtk_widget_show ( item );
-
-    item = gtk_image_menu_item_new_with_mnemonic ( _("Refine Route...") );
-    gtk_image_menu_item_set_image ( (GtkImageMenuItem*)item, gtk_image_new_from_stock (GTK_STOCK_ZOOM_FIT, GTK_ICON_SIZE_MENU) );
-    g_signal_connect_swapped ( G_OBJECT(item), "activate", G_CALLBACK(trw_layer_track_refine), pass_along );
-    gtk_menu_shell_append ( GTK_MENU_SHELL(menu), item );
-    gtk_widget_show ( item );
-
     GtkWidget *goto_submenu;
     goto_submenu = gtk_menu_new ();
     item = gtk_image_menu_item_new_with_mnemonic ( _("_Goto") );
@@ -6971,6 +6928,12 @@ static gboolean trw_layer_sublayer_add_menu_items ( VikTrwLayer *l, GtkMenu *men
       item = gtk_image_menu_item_new_with_mnemonic ( _("_Reverse Route") );
     gtk_image_menu_item_set_image ( (GtkImageMenuItem*)item, gtk_image_new_from_stock (GTK_STOCK_GO_BACK, GTK_ICON_SIZE_MENU) );
     g_signal_connect_swapped ( G_OBJECT(item), "activate", G_CALLBACK(trw_layer_reverse), pass_along );
+    gtk_menu_shell_append ( GTK_MENU_SHELL(menu), item );
+    gtk_widget_show ( item );
+
+    item = gtk_image_menu_item_new_with_mnemonic ( _("Refine Route...") );
+    gtk_image_menu_item_set_image ( (GtkImageMenuItem*)item, gtk_image_new_from_stock (GTK_STOCK_ZOOM_FIT, GTK_ICON_SIZE_MENU) );
+    g_signal_connect_swapped ( G_OBJECT(item), "activate", G_CALLBACK(trw_layer_track_refine), pass_along );
     gtk_menu_shell_append ( GTK_MENU_SHELL(menu), item );
     gtk_widget_show ( item );
 
