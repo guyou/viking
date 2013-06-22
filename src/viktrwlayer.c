@@ -212,6 +212,8 @@ struct _VikTrwLayer {
   VikStdLayerMenuItem menu_selection;
 
   gint highest_wp_number;
+
+  gboolean alphabetized;
 };
 
 /* A caached waypoint image. */
@@ -1232,6 +1234,12 @@ static VikTrwLayer* trw_layer_new1 ( VikViewport *vvp )
 
   rv->draw_sync_done = TRUE;
   rv->draw_sync_do = TRUE;
+  // Everything else is 0, FALSE or NULL
+
+  rv->alphabetized = TRUE;
+  gboolean alphabetized;
+  if ( a_settings_get_boolean ( "trackwaypoint_alphabetized", &alphabetized ) )
+    rv->alphabetized = alphabetized;
 
   return rv;
 }
@@ -1940,11 +1948,10 @@ static void trw_layer_realize_track ( gpointer id, VikTrack *track, gpointer pas
     gdk_pixbuf_fill ( pixbuf, pixel );
   }
 
-#ifdef VIK_CONFIG_ALPHABETIZED_TRW
-  vik_treeview_add_sublayer_alphabetized ( (VikTreeview *) pass_along[3], (GtkTreeIter *) pass_along[0], (GtkTreeIter *) pass_along[1], track->name, pass_along[2], id, GPOINTER_TO_INT (pass_along[4]), pixbuf, TRUE, TRUE );
-#else
-  vik_treeview_add_sublayer ( (VikTreeview *) pass_along[3], (GtkTreeIter *) pass_along[0], (GtkTreeIter *) pass_along[1], track->name, pass_along[2], id, GPOINTER_TO_INT (pass_along[4]), pixbuf, TRUE, TRUE );
-#endif
+  if ( VIK_TRW_LAYER(pass_along[2])->alphabetized )
+    vik_treeview_add_sublayer_alphabetized ( (VikTreeview *) pass_along[3], (GtkTreeIter *) pass_along[0], (GtkTreeIter *) pass_along[1], track->name, pass_along[2], id, GPOINTER_TO_INT (pass_along[4]), pixbuf, TRUE, TRUE );
+  else
+    vik_treeview_add_sublayer ( (VikTreeview *) pass_along[3], (GtkTreeIter *) pass_along[0], (GtkTreeIter *) pass_along[1], track->name, pass_along[2], id, GPOINTER_TO_INT (pass_along[4]), pixbuf, TRUE, TRUE );
 
   if ( pixbuf )
     g_object_unref (pixbuf);
@@ -1963,11 +1970,10 @@ static void trw_layer_realize_waypoint ( gpointer id, VikWaypoint *wp, gpointer 
 {
   GtkTreeIter *new_iter = g_malloc(sizeof(GtkTreeIter));
 
-#ifdef VIK_CONFIG_ALPHABETIZED_TRW
-  vik_treeview_add_sublayer_alphabetized ( (VikTreeview *) pass_along[3], (GtkTreeIter *) pass_along[0], (GtkTreeIter *) pass_along[1], wp->name, pass_along[2], id, GPOINTER_TO_INT (pass_along[4]), get_wp_sym_small (wp->symbol), TRUE, TRUE );
-#else
-  vik_treeview_add_sublayer ( (VikTreeview *) pass_along[3], (GtkTreeIter *) pass_along[0], (GtkTreeIter *) pass_along[1], wp->name, pass_along[2], id, GPOINTER_TO_UINT (pass_along[4]), get_wp_sym_small (wp->symbol), TRUE, TRUE );
-#endif
+  if ( VIK_TRW_LAYER(pass_along[2])->alphabetized )
+    vik_treeview_add_sublayer_alphabetized ( (VikTreeview *) pass_along[3], (GtkTreeIter *) pass_along[0], (GtkTreeIter *) pass_along[1], wp->name, pass_along[2], id, GPOINTER_TO_INT (pass_along[4]), get_wp_sym_small (wp->symbol), TRUE, TRUE );
+  else
+    vik_treeview_add_sublayer ( (VikTreeview *) pass_along[3], (GtkTreeIter *) pass_along[0], (GtkTreeIter *) pass_along[1], wp->name, pass_along[2], id, GPOINTER_TO_UINT (pass_along[4]), get_wp_sym_small (wp->symbol), TRUE, TRUE );
 
   *new_iter = *((GtkTreeIter *) pass_along[1]);
   g_hash_table_insert ( VIK_TRW_LAYER(pass_along[2])->waypoints_iters, id, new_iter );
@@ -1978,29 +1984,26 @@ static void trw_layer_realize_waypoint ( gpointer id, VikWaypoint *wp, gpointer 
 
 static void trw_layer_add_sublayer_tracks ( VikTrwLayer *vtl, VikTreeview *vt, GtkTreeIter *layer_iter )
 {
-#ifdef VIK_CONFIG_ALPHABETIZED_TRW
-  vik_treeview_add_sublayer_alphabetized ( (VikTreeview *) vt, layer_iter, &(vtl->tracks_iter), _("Tracks"), vtl, NULL, VIK_TRW_LAYER_SUBLAYER_TRACKS, NULL, TRUE, FALSE );
-#else
-  vik_treeview_add_sublayer ( (VikTreeview *) vt, layer_iter, &(vtl->tracks_iter), _("Tracks"), vtl, NULL, VIK_TRW_LAYER_SUBLAYER_TRACKS, NULL, TRUE, FALSE );
-#endif
+  if ( vtl->alphabetized )
+    vik_treeview_add_sublayer_alphabetized ( (VikTreeview *) vt, layer_iter, &(vtl->tracks_iter), _("Tracks"), vtl, NULL, VIK_TRW_LAYER_SUBLAYER_TRACKS, NULL, TRUE, FALSE );
+  else
+    vik_treeview_add_sublayer ( (VikTreeview *) vt, layer_iter, &(vtl->tracks_iter), _("Tracks"), vtl, NULL, VIK_TRW_LAYER_SUBLAYER_TRACKS, NULL, TRUE, FALSE );
 }
 
 static void trw_layer_add_sublayer_waypoints ( VikTrwLayer *vtl, VikTreeview *vt, GtkTreeIter *layer_iter )
 {
-#ifdef VIK_CONFIG_ALPHABETIZED_TRW
-  vik_treeview_add_sublayer_alphabetized ( (VikTreeview *) vt, layer_iter, &(vtl->waypoints_iter), _("Waypoints"), vtl, NULL, VIK_TRW_LAYER_SUBLAYER_WAYPOINTS, NULL, TRUE, FALSE );
-#else
-  vik_treeview_add_sublayer ( (VikTreeview *) vt, layer_iter, &(vtl->waypoints_iter), _("Waypoints"), vtl, NULL, VIK_TRW_LAYER_SUBLAYER_WAYPOINTS, NULL, TRUE, FALSE );
-#endif
+  if ( vtl->alphabetized )
+    vik_treeview_add_sublayer_alphabetized ( (VikTreeview *) vt, layer_iter, &(vtl->waypoints_iter), _("Waypoints"), vtl, NULL, VIK_TRW_LAYER_SUBLAYER_WAYPOINTS, NULL, TRUE, FALSE );
+  else
+    vik_treeview_add_sublayer ( (VikTreeview *) vt, layer_iter, &(vtl->waypoints_iter), _("Waypoints"), vtl, NULL, VIK_TRW_LAYER_SUBLAYER_WAYPOINTS, NULL, TRUE, FALSE );
 }
 
 static void trw_layer_add_sublayer_routes ( VikTrwLayer *vtl, VikTreeview *vt, GtkTreeIter *layer_iter )
 {
-#ifdef VIK_CONFIG_ALPHABETIZED_TRW
-  vik_treeview_add_sublayer_alphabetized ( (VikTreeview *) vt, layer_iter, &(vtl->routes_iter), _("Routes"), vtl, NULL, VIK_TRW_LAYER_SUBLAYER_ROUTES, NULL, TRUE, FALSE );
-#else
-  vik_treeview_add_sublayer ( (VikTreeview *) vt, layer_iter, &(vtl->routes_iter), _("Routes"), vtl, NULL, VIK_TRW_LAYER_SUBLAYER_ROUTES, NULL, TRUE, FALSE );
-#endif
+  if ( vtl->alphabetized )
+    vik_treeview_add_sublayer_alphabetized ( (VikTreeview *) vt, layer_iter, &(vtl->routes_iter), _("Routes"), vtl, NULL, VIK_TRW_LAYER_SUBLAYER_ROUTES, NULL, TRUE, FALSE );
+  else
+    vik_treeview_add_sublayer ( (VikTreeview *) vt, layer_iter, &(vtl->routes_iter), _("Routes"), vtl, NULL, VIK_TRW_LAYER_SUBLAYER_ROUTES, NULL, TRUE, FALSE );
 }
 
 static void trw_layer_realize ( VikTrwLayer *vtl, VikTreeview *vt, GtkTreeIter *layer_iter )
@@ -3670,11 +3673,11 @@ void vik_trw_layer_add_waypoint ( VikTrwLayer *vtl, gchar *name, VikWaypoint *wp
     GtkTreeIter *iter = g_malloc(sizeof(GtkTreeIter));
 
     // Visibility column always needed for waypoints
-#ifdef VIK_CONFIG_ALPHABETIZED_TRW
-    vik_treeview_add_sublayer_alphabetized ( VIK_LAYER(vtl)->vt, &(vtl->waypoints_iter), iter, name, vtl, GUINT_TO_POINTER(wp_uuid), VIK_TRW_LAYER_SUBLAYER_WAYPOINT, get_wp_sym_small (wp->symbol), TRUE, TRUE );
-#else
-    vik_treeview_add_sublayer ( VIK_LAYER(vtl)->vt, &(vtl->waypoints_iter), iter, name, vtl, GUINT_TO_POINTER(wp_uuid), VIK_TRW_LAYER_SUBLAYER_WAYPOINT, get_wp_sym_small (wp->symbol), TRUE, TRUE );
-#endif
+    if ( vtl->alphabetized )
+      vik_treeview_add_sublayer_alphabetized ( VIK_LAYER(vtl)->vt, &(vtl->waypoints_iter), iter, name, vtl, GUINT_TO_POINTER(wp_uuid), VIK_TRW_LAYER_SUBLAYER_WAYPOINT, get_wp_sym_small (wp->symbol), TRUE, TRUE );
+    else
+      vik_treeview_add_sublayer ( VIK_LAYER(vtl)->vt, &(vtl->waypoints_iter), iter, name, vtl, GUINT_TO_POINTER(wp_uuid), VIK_TRW_LAYER_SUBLAYER_WAYPOINT, get_wp_sym_small (wp->symbol), TRUE, TRUE );
+
     // Actual setting of visibility dependent on the waypoint
     vik_treeview_item_set_visible ( VIK_LAYER(vtl)->vt, iter, wp->visible );
 
@@ -3704,11 +3707,11 @@ void vik_trw_layer_add_track ( VikTrwLayer *vtl, gchar *name, VikTrack *t )
 
     GtkTreeIter *iter = g_malloc(sizeof(GtkTreeIter));
     // Visibility column always needed for tracks
-#ifdef VIK_CONFIG_ALPHABETIZED_TRW
-    vik_treeview_add_sublayer_alphabetized ( VIK_LAYER(vtl)->vt, &(vtl->tracks_iter), iter, name, vtl, GUINT_TO_POINTER(tr_uuid), VIK_TRW_LAYER_SUBLAYER_TRACK, NULL, TRUE, TRUE );
-#else
-    vik_treeview_add_sublayer ( VIK_LAYER(vtl)->vt, &(vtl->tracks_iter), iter, name, vtl, GUINT_TO_POINTER(tr_uuid), VIK_TRW_LAYER_SUBLAYER_TRACK, NULL, TRUE, TRUE );
-#endif
+    if ( vtl->alphabetized )
+      vik_treeview_add_sublayer_alphabetized ( VIK_LAYER(vtl)->vt, &(vtl->tracks_iter), iter, name, vtl, GUINT_TO_POINTER(tr_uuid), VIK_TRW_LAYER_SUBLAYER_TRACK, NULL, TRUE, TRUE );
+    else
+      vik_treeview_add_sublayer ( VIK_LAYER(vtl)->vt, &(vtl->tracks_iter), iter, name, vtl, GUINT_TO_POINTER(tr_uuid), VIK_TRW_LAYER_SUBLAYER_TRACK, NULL, TRUE, TRUE );
+
     // Actual setting of visibility dependent on the track
     vik_treeview_item_set_visible ( VIK_LAYER(vtl)->vt, iter, t->visible );
 
@@ -3738,11 +3741,11 @@ void vik_trw_layer_add_route ( VikTrwLayer *vtl, gchar *name, VikTrack *t )
 
     GtkTreeIter *iter = g_malloc(sizeof(GtkTreeIter));
     // Visibility column always needed for tracks
-#ifdef VIK_CONFIG_ALPHABETIZED_TRW
-    vik_treeview_add_sublayer_alphabetized ( VIK_LAYER(vtl)->vt, &(vtl->routes_iter), iter, name, vtl, GUINT_TO_POINTER(rt_uuid), VIK_TRW_LAYER_SUBLAYER_ROUTE, NULL, TRUE, TRUE );
-#else
-    vik_treeview_add_sublayer ( VIK_LAYER(vtl)->vt, &(vtl->routes_iter), iter, name, vtl, GUINT_TO_POINTER(rt_uuid), VIK_TRW_LAYER_SUBLAYER_ROUTE, NULL, TRUE, TRUE );
-#endif
+    if ( vtl->alphabetized )
+      vik_treeview_add_sublayer_alphabetized ( VIK_LAYER(vtl)->vt, &(vtl->routes_iter), iter, name, vtl, GUINT_TO_POINTER(rt_uuid), VIK_TRW_LAYER_SUBLAYER_ROUTE, NULL, TRUE, TRUE );
+    else
+      vik_treeview_add_sublayer ( VIK_LAYER(vtl)->vt, &(vtl->routes_iter), iter, name, vtl, GUINT_TO_POINTER(rt_uuid), VIK_TRW_LAYER_SUBLAYER_ROUTE, NULL, TRUE, TRUE );
+
     // Actual setting of visibility dependent on the track
     vik_treeview_item_set_visible ( VIK_LAYER(vtl)->vt, iter, t->visible );
 
@@ -4335,9 +4338,8 @@ static void trw_layer_waypoint_rename ( VikTrwLayer *vtl, VikWaypoint *wp, const
 
     if ( it ) {
       vik_treeview_item_set_name ( VIK_LAYER(vtl)->vt, it, new_name );
-#ifdef VIK_CONFIG_ALPHABETIZED_TRW
-      vik_treeview_sublayer_realphabetize ( VIK_LAYER(vtl)->vt, it, new_name );
-#endif
+      if ( vtl->alphabetized )
+        vik_treeview_sublayer_realphabetize ( VIK_LAYER(vtl)->vt, it, new_name );
     }
   }
 }
@@ -4659,7 +4661,7 @@ static void trw_layer_goto_track_min_alt ( gpointer pass_along[6] )
  */
 static void trw_layer_auto_track_view ( gpointer pass_along[6] )
 {
-  VikTrwLayer *vtl = (VikTrwLayer *)pass_along[0];
+  VikTrwLayer *vtl = VIK_TRW_LAYER(pass_along[0]);
   VikTrack *trk;
   if ( GPOINTER_TO_INT (pass_along[2]) == VIK_TRW_LAYER_SUBLAYER_ROUTE )
     trk = (VikTrack *) g_hash_table_lookup ( vtl->routes, pass_along[3] );
@@ -4670,11 +4672,11 @@ static void trw_layer_auto_track_view ( gpointer pass_along[6] )
   {
     struct LatLon maxmin[2] = { {0,0}, {0,0} };
     trw_layer_find_maxmin_tracks ( NULL, trk, maxmin );
-    trw_layer_zoom_to_show_latlons ( VIK_TRW_LAYER(pass_along[0]), pass_along[5], maxmin );
+    trw_layer_zoom_to_show_latlons ( vtl, pass_along[5], maxmin );
     if ( pass_along[1] )
       vik_layers_panel_emit_update ( VIK_LAYERS_PANEL(pass_along[1]) );
     else
-      vik_layer_emit_update ( VIK_LAYER(pass_along[0]) );
+      vik_layer_emit_update ( VIK_LAYER(vtl) );
   }
 }
 
@@ -5814,9 +5816,8 @@ static void vik_trw_layer_uniquify_tracks ( VikTrwLayer *vtl, VikLayersPanel *vl
 
       if ( it ) {
         vik_treeview_item_set_name ( VIK_LAYER(vtl)->vt, it, newname );
-#ifdef VIK_CONFIG_ALPHABETIZED_TRW
-        vik_treeview_sublayer_realphabetize ( VIK_LAYER(vtl)->vt, it, newname );
-#endif
+        if ( vtl->alphabetized )
+          vik_treeview_sublayer_realphabetize ( VIK_LAYER(vtl)->vt, it, newname );
       }
     }
 
@@ -6309,9 +6310,8 @@ static const gchar* trw_layer_sublayer_rename_request ( VikTrwLayer *l, const gc
     // Update WP name and refresh the treeview
     vik_waypoint_set_name (wp, newname);
 
-#ifdef VIK_CONFIG_ALPHABETIZED_TRW
-    vik_treeview_sublayer_realphabetize ( VIK_LAYER(l)->vt, iter, newname );
-#endif
+    if ( l->alphabetized )
+      vik_treeview_sublayer_realphabetize ( VIK_LAYER(l)->vt, iter, newname );
 
     vik_layers_panel_emit_update ( VIK_LAYERS_PANEL(vlp) );
 
@@ -6347,9 +6347,8 @@ static const gchar* trw_layer_sublayer_rename_request ( VikTrwLayer *l, const gc
     // Property Dialog of the track
     vik_trw_layer_propwin_update ( trk );
 
-#ifdef VIK_CONFIG_ALPHABETIZED_TRW
-    vik_treeview_sublayer_realphabetize ( VIK_LAYER(l)->vt, iter, newname );
-#endif
+    if ( l->alphabetized )
+      vik_treeview_sublayer_realphabetize ( VIK_LAYER(l)->vt, iter, newname );
 
     vik_layers_panel_emit_update ( VIK_LAYERS_PANEL(vlp) );
 
@@ -6385,9 +6384,8 @@ static const gchar* trw_layer_sublayer_rename_request ( VikTrwLayer *l, const gc
     // Property Dialog of the track
     vik_trw_layer_propwin_update ( trk );
 
-#ifdef VIK_CONFIG_ALPHABETIZED_TRW
-    vik_treeview_sublayer_realphabetize ( VIK_LAYER(l)->vt, iter, newname );
-#endif
+    if ( l->alphabetized )
+      vik_treeview_sublayer_realphabetize ( VIK_LAYER(l)->vt, iter, newname );
 
     vik_layers_panel_emit_update ( VIK_LAYERS_PANEL(vlp) );
 
@@ -8382,10 +8380,9 @@ static gboolean tool_new_track_or_route_click ( VikTrwLayer *vtl, GdkEventButton
   tp->timestamp = 0;
 
   if ( vtl->current_track ) {
-    vtl->current_track->trackpoints = g_list_append ( vtl->current_track->trackpoints, tp );
+    vik_track_add_trackpoint ( vtl->current_track, tp, TRUE ); // Ensure bounds is updated
     /* Auto attempt to get elevation from DEM data (if it's available) */
     vik_track_apply_dem_data_last_trackpoint ( vtl->current_track );
-    vik_track_calculate_bounds ( vtl->current_track );
   }
 
   vtl->ct_x1 = vtl->ct_x2;
