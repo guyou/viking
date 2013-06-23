@@ -1,6 +1,9 @@
 From: Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
 Subject: [PATCH] Add function to refine a track from routing service
 
-<patch description>
+The user is now able to plan a journey by creating a simple track/route
+and then request a routing engine to refine this track/route.
+This is a simple solution to extend route finder tool, adding 'via'
+points in the journey.
 
 Signed-off-by: Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
