@@ -46,8 +46,10 @@ struct _VikRoutingEngineClass
 {
   GObjectClass object_class;
   int (*find)(VikRoutingEngine *self, VikTrwLayer *vtl, struct LatLon start, struct LatLon end);
+  gchar *(*get_cmd_from_directions)(VikRoutingEngine *self, const gchar *start, const gchar *end);
+  gboolean (*supports_direction)(VikRoutingEngine *self);
   int (*refine)(VikRoutingEngine *self, VikTrwLayer *vtl, VikTrack *vt);
-      gboolean (*supports_refine)(VikRoutingEngine *self);
+  gboolean (*supports_refine)(VikRoutingEngine *self);
 };
 
 GType vik_routing_engine_get_type ();
@@ -58,12 +60,14 @@ struct _VikRoutingEngine {
 
 int vik_routing_engine_find ( VikRoutingEngine *self, VikTrwLayer *vtl, struct LatLon start, struct LatLon end );
 int vik_routing_engine_refine ( VikRoutingEngine *self, VikTrwLayer *vtl, VikTrack *vt );
+gchar *vik_routing_engine_get_cmd_from_directions ( VikRoutingEngine *self, const gchar *start, const gchar *end );
 
 /* Acessors */
 gchar *vik_routing_engine_get_id ( VikRoutingEngine *self );
 gchar *vik_routing_engine_get_label ( VikRoutingEngine *self );
 gchar *vik_routing_engine_get_format ( VikRoutingEngine *self );
 
+gboolean vik_routing_engine_supports_direction ( VikRoutingEngine *self );
 gboolean vik_routing_engine_supports_refine ( VikRoutingEngine *self );
 
 G_END_DECLS
