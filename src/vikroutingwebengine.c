@@ -487,15 +487,15 @@ struct _append_ctx {
 };
 
 static void
-_append_stringified_coords(gpointer data, gpointer user_data)
+_append_stringified_coords ( gpointer data, gpointer user_data )
 {
   VikTrackpoint *vtp = (VikTrackpoint*)data;
   struct _append_ctx *ctx = (struct _append_ctx*)user_data;
   
   /* Stringify coordinate */
   struct LatLon position;
-  vik_coord_to_latlon (&(vtp->coord), &position);
-  gchar *string = substitute_latlon (ctx->priv->url_via_ll_fmt, position);
+  vik_coord_to_latlon ( &(vtp->coord), &position );
+  gchar *string = substitute_latlon ( ctx->priv->url_via_ll_fmt, position );
   
   /* Append */
   ctx->urlParts[ctx->nb] = string;
@@ -505,47 +505,50 @@ _append_stringified_coords(gpointer data, gpointer user_data)
 static gchar *
 vik_routing_web_engine_get_url_for_track ( VikRoutingEngine *self, VikTrack *vt )
 {
-	gchar **urlParts;
-	gchar *url;
+  gchar **urlParts;
+  gchar *url;
 
-	VikRoutingWebEnginePrivate *priv = VIK_ROUTING_WEB_ENGINE_PRIVATE ( self );
+  VikRoutingWebEnginePrivate *priv = VIK_ROUTING_WEB_ENGINE_PRIVATE ( self );
 
-	g_return_val_if_fail ( priv->url_base != NULL, NULL);
-	g_return_val_if_fail ( priv->url_start_ll_fmt != NULL, NULL);
-	g_return_val_if_fail ( priv->url_stop_ll_fmt != NULL, NULL);
-	g_return_val_if_fail ( priv->url_via_ll_fmt != NULL, NULL);
+  g_return_val_if_fail ( priv->url_base != NULL, NULL );
+  g_return_val_if_fail ( priv->url_start_ll_fmt != NULL, NULL );
+  g_return_val_if_fail ( priv->url_stop_ll_fmt != NULL, NULL );
+  g_return_val_if_fail ( priv->url_via_ll_fmt != NULL, NULL );
 
-	gsize len = 1 + g_list_length (vt->trackpoints) + 1; /* base + trackpoints + NULL */
-	urlParts = g_malloc(sizeof(gchar*)*len);
-	urlParts[0] = g_strdup (priv->url_base);
-	urlParts[len-1] = NULL;
+  /* Init temporary storage */
+  gsize len = 1 + g_list_length ( vt->trackpoints ) + 1; /* base + trackpoints + NULL */
+  urlParts = g_malloc ( sizeof(gchar*)*len );
+  urlParts[0] = g_strdup ( priv->url_base );
+  urlParts[len-1] = NULL;
 
-	struct _append_ctx ctx;
-	ctx.priv = priv;
-	ctx.urlParts = urlParts;
-	ctx.nb = 1; /* First cell available */
-	g_list_foreach (vt->trackpoints, _append_stringified_coords, &ctx);
+  struct _append_ctx ctx;
+  ctx.priv = priv;
+  ctx.urlParts = urlParts;
+  ctx.nb = 1; /* First cell available, previous used for base URL */
 
-	/* Override first and last positions */
-	struct LatLon position;
-	VikTrackpoint *vtp;
-	g_free (urlParts[1]);
-	vtp = g_list_first (vt->trackpoints)->data;
-	vik_coord_to_latlon (&(vtp->coord), &position);
-	urlParts[1] = substitute_latlon ( priv->url_start_ll_fmt, position );
-	g_free (urlParts[len-2]);
-	vtp = g_list_last (vt->trackpoints)->data;
-	vik_coord_to_latlon (&(vtp->coord), &position);
-	urlParts[len-2] = substitute_latlon ( priv->url_stop_ll_fmt, position );
+  /* Append all trackpoints to URL */
+  g_list_foreach ( vt->trackpoints, _append_stringified_coords, &ctx );
 
-	/* Concat */
-	url = g_strjoinv (NULL, urlParts);
-	g_debug ("%s: %s", __FUNCTION__, url);
+  /* Override first and last positions with associated formats */
+  struct LatLon position;
+  VikTrackpoint *vtp;
+  g_free ( urlParts[1] );
+  vtp = g_list_first ( vt->trackpoints )->data;
+  vik_coord_to_latlon ( &(vtp->coord ), &position );
+  urlParts[1] = substitute_latlon ( priv->url_start_ll_fmt, position );
+  g_free ( urlParts[len-2] );
+  vtp = g_list_last ( vt->trackpoints )->data;
+  vik_coord_to_latlon ( &(vtp->coord), &position );
+  urlParts[len-2] = substitute_latlon ( priv->url_stop_ll_fmt, position );
 
-	/* Free */
-	g_strfreev ( urlParts );
-	
-    return url;
+  /* Concat */
+  url = g_strjoinv ( NULL, urlParts );
+  g_debug ( "%s: %s", __FUNCTION__, url );
+
+  /* Free */
+  g_strfreev ( urlParts );
+
+  return url;
 }
 
 static int
@@ -554,14 +557,18 @@ vik_routing_web_engine_refine ( VikRoutingEngine *self, VikTrwLayer *vtl, VikTra
   gchar *uri;
   int ret = 0;  /* OK */
 
-  uri = vik_routing_web_engine_get_url_for_track(self, vt);
+  /* Compute URL */
+  uri = vik_routing_web_engine_get_url_for_track ( self, vt );
 
-  DownloadMapOptions *options = vik_routing_web_engine_get_download_options(self);
-  
+  /* Download data */
+  DownloadMapOptions *options = vik_routing_web_engine_get_download_options ( self );
+
+  /* Convert and insert data in model */
   gchar *format = vik_routing_engine_get_format ( self );
   a_babel_convert_from_url ( vtl, uri, format, NULL, NULL, options );
 
   g_free(uri);
+
   return ret;
 }
 
@@ -572,5 +579,5 @@ vik_routing_web_engine_supports_refine ( VikRoutingEngine *self )
 
   VikRoutingWebEnginePrivate *priv = VIK_ROUTING_WEB_ENGINE_PRIVATE ( self );
 
-  return (priv->url_via_ll_fmt) != NULL;
+  return priv->url_via_ll_fmt != NULL;
 }

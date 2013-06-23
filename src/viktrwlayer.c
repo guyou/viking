@@ -4676,13 +4676,15 @@ static void trw_layer_auto_track_view ( gpointer pass_along[6] )
 }
 
 /*
-
+ * Refine the selected track/route with a routing engine.
+ * The routing engine is selected by the user, when requestiong the job.
  */
 static void trw_layer_track_refine ( gpointer pass_along[6] )
 {
-  g_debug ("%s", __FUNCTION__);
+  static gint last_engine = 0;
   VikTrwLayer *vtl = VIK_TRW_LAYER(pass_along[0]);
   VikTrack *trk;
+
   if ( GPOINTER_TO_INT (pass_along[2]) == VIK_TRW_LAYER_SUBLAYER_ROUTE )
     trk = (VikTrack *) g_hash_table_lookup ( vtl->routes, pass_along[3] );
   else
@@ -4700,33 +4702,36 @@ static void trw_layer_track_refine ( gpointer pass_along[6] )
                                                   GTK_RESPONSE_ACCEPT,
                                                   NULL);
     GtkWidget * combo = vik_routing_ui_selector_new ( (Predicate)vik_routing_engine_supports_refine, NULL );
-    // FIXME gtk_combo_box_set_active (GTK_COMBO_BOX (combo), last_engine);
+    gtk_combo_box_set_active (GTK_COMBO_BOX (combo), last_engine);
     gtk_widget_show_all(combo);
-    
+
     gtk_box_pack_start ( GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), combo, TRUE, TRUE, 0 );
 
     gtk_dialog_set_default_response ( GTK_DIALOG(dialog), GTK_RESPONSE_ACCEPT );
 
     if ( gtk_dialog_run ( GTK_DIALOG(dialog) ) == GTK_RESPONSE_ACCEPT )
     {
-        int active = gtk_combo_box_get_active ( GTK_COMBO_BOX(combo) );
-        VikRoutingEngine *routing = vik_routing_ui_selector_get_nth (combo, active);
+        /* Dialog validated: retrieve selected engine and do the job */
+        last_engine = gtk_combo_box_get_active ( GTK_COMBO_BOX(combo) );
+        VikRoutingEngine *routing = vik_routing_ui_selector_get_nth (combo, last_engine);
+
         /* Force saving track */
+        /* FIXME: remove or rename this hack */
         vtl->route_finder_check_added_track = TRUE;
 
+        /* the job */
         vik_routing_engine_refine (routing, vtl, trk);
-            
+
+        /* FIXME: remove or rename this hack */
         if ( vtl->route_finder_added_track )
           vik_track_calculate_bounds ( vtl->route_finder_added_track );
 
         vtl->route_finder_added_track = NULL;
         vtl->route_finder_check_added_track = FALSE;
-        
+
         vik_layer_emit_update ( VIK_LAYER(vtl) );
     }
     gtk_widget_destroy ( dialog );
-
-
   }
 }
 
@@ -6905,8 +6910,11 @@ static gboolean trw_layer_sublayer_add_menu_items ( VikTrwLayer *l, GtkMenu *men
     gtk_menu_shell_append ( GTK_MENU_SHELL(menu), item );
     gtk_widget_show ( item );
 
-    item = gtk_image_menu_item_new_with_mnemonic ( _("Refine Route...") );
-    gtk_image_menu_item_set_image ( (GtkImageMenuItem*)item, gtk_image_new_from_stock (GTK_STOCK_ZOOM_FIT, GTK_ICON_SIZE_MENU) );
+    if ( subtype == VIK_TRW_LAYER_SUBLAYER_TRACK )
+      item = gtk_image_menu_item_new_with_mnemonic ( _("Refine Track...") );
+    else
+      item = gtk_image_menu_item_new_with_mnemonic ( _("Refine Route...") );
+    gtk_image_menu_item_set_image ( (GtkImageMenuItem*)item, gtk_image_new_from_stock (GTK_STOCK_FIND, GTK_ICON_SIZE_MENU) );
     g_signal_connect_swapped ( G_OBJECT(item), "activate", G_CALLBACK(trw_layer_track_refine), pass_along );
     gtk_menu_shell_append ( GTK_MENU_SHELL(menu), item );
     gtk_widget_show ( item );
