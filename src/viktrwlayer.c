@@ -4701,6 +4701,11 @@ static void trw_layer_track_refine ( gpointer pass_along[6] )
                                                   GTK_STOCK_OK,
                                                   GTK_RESPONSE_ACCEPT,
                                                   NULL);
+    GtkWidget *label = gtk_label_new ( _("Select routing engine") );
+    gtk_widget_show_all(label);
+
+    gtk_box_pack_start ( GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), label, TRUE, TRUE, 0 );
+
     GtkWidget * combo = vik_routing_ui_selector_new ( (Predicate)vik_routing_engine_supports_refine, NULL );
     gtk_combo_box_set_active (GTK_COMBO_BOX (combo), last_engine);
     gtk_widget_show_all(combo);
