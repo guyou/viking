@@ -2,6 +2,7 @@
  * viking -- GPS Data and Topo Analyzer, Explorer, and Manager
  *
  * Copyright (C) 2003-2005, Evan Battaglia <gtoevan@gmx.net>
+ * Copyright (c) 2013, Rob Norris <rw_norris@hotmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +21,7 @@
  */
 
 #include "viking.h"
+#include "viktrwlayer_analysis.h"
 #include "icons/icons.h"
 
 #include <string.h>
@@ -96,6 +98,8 @@ VikLayerInterface vik_aggregate_layer_interface = {
 struct _VikAggregateLayer {
   VikLayer vl;
   GList *children;
+  // One per layer
+  GtkWidget *tracks_analysis_dialog;
 };
 
 GType vik_aggregate_layer_get_type ()
@@ -408,6 +412,106 @@ static void aggregate_layer_child_visibile_off ( gpointer data[2] )
   aggregate_layer_child_visibile ( data, FALSE );
 }
 
+/**
+ * If order is true sort ascending, otherwise a descending sort
+ */
+static gint sort_layer_compare ( gconstpointer a, gconstpointer b, gpointer order )
+{
+  VikLayer *sa = (VikLayer *)a;
+  VikLayer *sb = (VikLayer *)b;
+
+  // Default ascending order
+  gint answer = g_strcmp0 ( sa->name, sb->name );
+
+  if ( GPOINTER_TO_INT(order) ) {
+    // Invert sort order for ascending order
+    answer = -answer;
+  }
+
+  return answer;
+}
+
+static void aggregate_layer_sort_a2z ( gpointer lav[2] )
+{
+  VikAggregateLayer *val = VIK_AGGREGATE_LAYER(lav[0]);
+  vik_treeview_sort_children ( VIK_LAYER(val)->vt, &(VIK_LAYER(val)->iter), VL_SO_ALPHABETICAL_ASCENDING );
+  val->children = g_list_sort_with_data ( val->children, sort_layer_compare, GINT_TO_POINTER(TRUE) );
+}
+
+static void aggregate_layer_sort_z2a ( gpointer lav[2] )
+{
+  VikAggregateLayer *val = VIK_AGGREGATE_LAYER(lav[0]);
+  vik_treeview_sort_children ( VIK_LAYER(val)->vt, &(VIK_LAYER(val)->iter), VL_SO_ALPHABETICAL_DESCENDING );
+  val->children = g_list_sort_with_data ( val->children, sort_layer_compare, GINT_TO_POINTER(FALSE) );
+}
+
+/**
+ * aggregate_layer_analyse_create_list:
+ * @vl:        The layer that should create the track and layers list
+ * @user_data: Not used in this function
+ *
+ * Returns: A list of #vik_trw_track_list_t
+ */
+static GList* aggregate_layer_analyse_create_list ( VikLayer *vl, gpointer user_data )
+{
+  VikAggregateLayer *val = VIK_AGGREGATE_LAYER(vl);
+
+  // Get all TRW layers
+  GList *layers = NULL;
+  layers = vik_aggregate_layer_get_all_layers_of_type ( val, layers, VIK_LAYER_TRW, TRUE );
+
+  // For each TRW layers keep appending the tracks and routes to build a list of all of them
+  GList *tracks_and_layers = NULL;
+  layers = g_list_first ( layers );
+  while ( layers ) {
+    GList *tracks = NULL;
+    tracks = g_list_concat ( tracks, g_hash_table_get_values ( vik_trw_layer_get_tracks( VIK_TRW_LAYER(layers->data) ) ) );
+    tracks = g_list_concat ( tracks, g_hash_table_get_values ( vik_trw_layer_get_routes( VIK_TRW_LAYER(layers->data) ) ) );
+
+    GList *trks = g_list_first (tracks);
+    while ( trks ) {
+      vik_trw_track_list_t *vtdl = g_malloc (sizeof(vik_trw_track_list_t));
+      vtdl->trk = VIK_TRACK(trks->data);
+      vtdl->vtl = VIK_TRW_LAYER(layers->data);
+      tracks_and_layers = g_list_prepend ( tracks_and_layers, vtdl );
+      trks = g_list_next ( trks );
+    }
+    g_list_free ( tracks );
+    layers = g_list_next ( layers );
+  }
+  g_list_free ( layers );
+
+  return tracks_and_layers;
+}
+
+/**
+ * aggregate_layer_analyse_close:
+ *
+ * Stuff to do on dialog closure
+ */
+static void aggregate_layer_analyse_close ( GtkWidget *dialog, gint resp, VikLayer* vl )
+{
+  VikAggregateLayer *val = VIK_AGGREGATE_LAYER(vl);
+  gtk_widget_destroy ( dialog );
+  val->tracks_analysis_dialog = NULL;
+}
+
+static void aggregate_layer_analyse ( gpointer data[2] )
+{
+  VikAggregateLayer *val = VIK_AGGREGATE_LAYER(data[0]);
+
+  // There can only be one!
+  if ( val->tracks_analysis_dialog )
+    return;
+
+  val->tracks_analysis_dialog = vik_trw_layer_analyse_this ( VIK_GTK_WINDOW_FROM_LAYER(VIK_LAYER(val)),
+                                                             VIK_LAYER(val)->name,
+                                                             VIK_LAYER(val),
+                                                             NULL,
+                                                             aggregate_layer_analyse_create_list,
+                                                             aggregate_layer_analyse_close );
+}
+
 static void aggregate_layer_add_menu_items ( VikAggregateLayer *val, GtkMenu *menu, gpointer vlp )
 {
   // Data to pass on in menu functions
@@ -443,6 +547,29 @@ static void aggregate_layer_add_menu_items ( VikAggregateLayer *val, GtkMenu *me
   gtk_menu_shell_append (GTK_MENU_SHELL (vis_submenu), item);
   gtk_widget_show ( item );
 
+  GtkWidget *submenu_sort = gtk_menu_new ();
+  item = gtk_image_menu_item_new_with_mnemonic ( _("_Sort") );
+  gtk_image_menu_item_set_image ( (GtkImageMenuItem*)item, gtk_image_new_from_stock (GTK_STOCK_REFRESH, GTK_ICON_SIZE_MENU) );
+  gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+  gtk_widget_show ( item );
+  gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), submenu_sort );
+
+  item = gtk_image_menu_item_new_with_mnemonic ( _("Name _Ascending") );
+  gtk_image_menu_item_set_image ( (GtkImageMenuItem*)item, gtk_image_new_from_stock (GTK_STOCK_SORT_ASCENDING, GTK_ICON_SIZE_MENU) );
+  g_signal_connect_swapped ( G_OBJECT(item), "activate", G_CALLBACK(aggregate_layer_sort_a2z), data );
+  gtk_menu_shell_append ( GTK_MENU_SHELL(submenu_sort), item );
+  gtk_widget_show ( item );
+
+  item = gtk_image_menu_item_new_with_mnemonic ( _("Name _Descending") );
+  gtk_image_menu_item_set_image ( (GtkImageMenuItem*)item, gtk_image_new_from_stock (GTK_STOCK_SORT_DESCENDING, GTK_ICON_SIZE_MENU) );
+  g_signal_connect_swapped ( G_OBJECT(item), "activate", G_CALLBACK(aggregate_layer_sort_z2a), data );
+  gtk_menu_shell_append ( GTK_MENU_SHELL(submenu_sort), item );
+  gtk_widget_show ( item );
+
+  item = gtk_menu_item_new_with_mnemonic ( _("_Statistics") );
+  g_signal_connect_swapped ( G_OBJECT(item), "activate", G_CALLBACK(aggregate_layer_analyse), data );
+  gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+  gtk_widget_show ( item );
 }
 
 static void disconnect_layer_signal ( VikLayer *vl, VikAggregateLayer *val )
@@ -455,6 +582,8 @@ void vik_aggregate_layer_free ( VikAggregateLayer *val )
   g_list_foreach ( val->children, (GFunc)(disconnect_layer_signal), val );
   g_list_foreach ( val->children, (GFunc)(g_object_unref), NULL );
   g_list_free ( val->children );
+  if ( val->tracks_analysis_dialog != NULL )
+    gtk_widget_destroy ( val->tracks_analysis_dialog );
 }
 
 static void delete_layer_iter ( VikLayer *vl )

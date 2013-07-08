@@ -90,6 +90,10 @@ typedef enum {
 // Also easier for colours to be set via a function call rather than a static assignment
 typedef VikLayerParamData (*VikLayerDefaultFunc) ( void );
 
+// Convert between the value held internally and the value used for display
+//  e.g. keep the internal value in seconds yet use days in the display
+typedef VikLayerParamData (*VikLayerConvertFunc) ( VikLayerParamData );
+
 typedef struct {
   VikLayerTypeEnum layer;
   const gchar *name;
@@ -101,6 +105,8 @@ typedef struct {
   gpointer extra_widget_data;
   const gchar *tooltip;
   VikLayerDefaultFunc default_value;
+  VikLayerConvertFunc convert_to_display;
+  VikLayerConvertFunc convert_to_internal;
 } VikLayerParam;
 
 enum {
@@ -168,6 +174,15 @@ void a_uibuilder_free_paramdatas ( VikLayerParamData *paramdatas, VikLayerParam 
 #define vik_combo_box_text_new gtk_combo_box_new_text
 #define vik_combo_box_text_append(X,Y) gtk_combo_box_append_text(GTK_COMBO_BOX(X),Y)
 #endif
+
+// Consider adding sort options such as by time
+//  However use within the treeview then is more complicated as one would need to store that data in the treeview...
+typedef enum {
+  VL_SO_NONE = 0,
+  VL_SO_ALPHABETICAL_ASCENDING,
+  VL_SO_ALPHABETICAL_DESCENDING,
+  VL_SO_LAST
+} vik_layer_sort_order_t;
 
 G_END_DECLS
 

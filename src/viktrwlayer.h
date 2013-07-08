@@ -96,11 +96,22 @@ void trw_layer_cancel_tps_of_track ( VikTrwLayer *vtl, VikTrack *trk );
 
 void vik_trw_layer_reset_waypoints ( VikTrwLayer *vtl );
 
+// For creating a list of tracks with the corresponding layer it is in
+//  (thus a selection of tracks may be from differing layers)
+typedef struct {
+  VikTrack *trk;
+  VikTrwLayer *vtl;
+} vik_trw_track_list_t;
+
 /* Exposed Layer Interface function definitions */
 // Intended only for use by other trw_layer subwindows
 void trw_layer_verify_thumbnails ( VikTrwLayer *vtl, GtkWidget *vp );
 // Other functions only for use by other trw_layer subwindows
 gchar *trw_layer_new_unique_sublayer_name ( VikTrwLayer *vtl, gint sublayer_type, const gchar *name );
+
+gboolean vik_trw_layer_get_tracks_visibility ( VikTrwLayer *vtl );
+gboolean vik_trw_layer_get_routes_visibility ( VikTrwLayer *vtl );
+gboolean vik_trw_layer_get_waypoints_visibility ( VikTrwLayer *vtl );
 
 void trw_layer_update_treeview ( VikTrwLayer *vtl, VikTrack *trk, gpointer *trk_id );
 
