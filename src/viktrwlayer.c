@@ -4725,6 +4725,11 @@ static void trw_layer_track_refine ( gpointer pass_along[6] )
         last_engine = gtk_combo_box_get_active ( GTK_COMBO_BOX(combo) );
         VikRoutingEngine *routing = vik_routing_ui_selector_get_nth (combo, last_engine);
 
+        /* Change cursor */
+        gtk_widget_hide ( dialog );
+
+        vik_window_set_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(pass_along[0])) );
+
         /* Force saving track */
         /* FIXME: remove or rename this hack */
         vtl->route_finder_check_added_track = TRUE;
@@ -4740,6 +4745,9 @@ static void trw_layer_track_refine ( gpointer pass_along[6] )
         vtl->route_finder_check_added_track = FALSE;
 
         vik_layer_emit_update ( VIK_LAYER(vtl) );
+
+        /* Restore cursor */
+        vik_window_clear_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(pass_along[0])) );
     }
     gtk_widget_destroy ( dialog );
   }
