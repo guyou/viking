@@ -1,0 +1,6 @@
+From: Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
+Subject: [PATCH] Export via GPSBabel
+
+Allow to export data in all formats supported by gpsbabel.
+
+Signed-off-by: Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
