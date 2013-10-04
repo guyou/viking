@@ -311,6 +311,7 @@ static void trw_layer_geotagging ( gpointer lav[2] );
 #endif
 static void trw_layer_acquire_gps_cb ( gpointer lav[2] );
 static void trw_layer_acquire_routing_cb ( gpointer lav[2] );
+static void trw_layer_acquire_url_cb ( gpointer lav[2] );
 #ifdef VIK_CONFIG_OPENSTREETMAP
 static void trw_layer_acquire_osm_cb ( gpointer lav[2] );
 static void trw_layer_acquire_osm_my_traces_cb ( gpointer lav[2] );
@@ -3032,24 +3033,14 @@ static void trw_layer_export ( gpointer layer_and_vlp[2], const gchar *title, co
   while ( gtk_dialog_run ( GTK_DIALOG(file_selector) ) == GTK_RESPONSE_ACCEPT )
   {
     fn = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER(file_selector) );
-    if ( g_file_test ( fn, G_FILE_TEST_EXISTS ) == FALSE )
+    if ( g_file_test ( fn, G_FILE_TEST_EXISTS ) == FALSE ||
+         a_dialog_yes_or_no ( GTK_WINDOW(file_selector), _("The file \"%s\" exists, do you wish to overwrite it?"), a_file_basename ( fn ) ) )
     {
       gtk_widget_hide ( file_selector );
       vik_window_set_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(layer_and_vlp[0])) );
       failed = ! a_file_export ( VIK_TRW_LAYER(layer_and_vlp[0]), fn, file_type, trk, TRUE );
       vik_window_clear_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(layer_and_vlp[0])) );
       break;
-    }
-    else
-    {
-      if ( a_dialog_yes_or_no ( GTK_WINDOW(file_selector), _("The file \"%s\" exists, do you wish to overwrite it?"), a_file_basename ( fn ) ) )
-      {
-        gtk_widget_hide ( file_selector );
-        vik_window_set_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(layer_and_vlp[0])) );
-	failed = ! a_file_export ( VIK_TRW_LAYER(layer_and_vlp[0]), fn, file_type, trk, TRUE );
-        vik_window_clear_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(layer_and_vlp[0])) );
-        break;
-      }
     }
   }
   gtk_widget_destroy ( file_selector );
@@ -3367,6 +3358,20 @@ static void trw_layer_acquire_routing_cb ( gpointer lav[2] )
   VikViewport *vvp =  vik_window_viewport(vw);
 
   a_acquire ( vw, vlp, vvp, &vik_datasource_routing_interface, NULL, NULL );
+}
+
+/*
+ * Acquire into this TRW Layer from an entered URL
+ */
+static void trw_layer_acquire_url_cb ( gpointer lav[2] )
+{
+  VikTrwLayer *vtl = VIK_TRW_LAYER(lav[0]);
+  VikLayersPanel *vlp = VIK_LAYERS_PANEL(lav[1]);
+  VikWindow *vw = (VikWindow *)(VIK_GTK_WINDOW_FROM_LAYER(vtl));
+  VikViewport *vvp = vik_window_viewport(vw);
+
+  vik_datasource_url_interface.mode = VIK_DATASOURCE_ADDTOLAYER;
+  a_acquire ( vw, vlp, vvp, &vik_datasource_url_interface, NULL, NULL );
 }
 
 #ifdef VIK_CONFIG_OPENSTREETMAP
@@ -3854,6 +3859,11 @@ static void trw_layer_add_menu_items ( VikTrwLayer *vtl, GtkMenu *menu, gpointer
   gtk_widget_show ( item );
 #endif
 
+  item = gtk_menu_item_new_with_mnemonic ( _("From _URL...") );
+  g_signal_connect_swapped ( G_OBJECT(item), "activate", G_CALLBACK(trw_layer_acquire_url_cb), pass_along );
+  gtk_menu_shell_append (GTK_MENU_SHELL (acquire_submenu), item);
+  gtk_widget_show ( item );
+
 #ifdef VIK_CONFIG_GEONAMES
   GtkWidget *wikipedia_submenu = gtk_menu_new();
   item = gtk_image_menu_item_new_with_mnemonic ( _("From _Wikipedia Waypoints") );
@@ -3892,6 +3902,7 @@ static void trw_layer_add_menu_items ( VikTrwLayer *vtl, GtkMenu *menu, gpointer
   item = gtk_menu_item_new_with_mnemonic ( _("From _File...") );
   g_signal_connect_swapped ( G_OBJECT(item), "activate", G_CALLBACK(trw_layer_acquire_file_cb), pass_along );
   gtk_menu_shell_append (GTK_MENU_SHELL (acquire_submenu), item);
+  gtk_widget_set_tooltip_text (item, _("Import File With GPS_Babel..."));
   gtk_widget_show ( item );
 
   vik_ext_tool_datasources_add_menu_items_to_menu ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)), GTK_MENU (acquire_submenu) );
