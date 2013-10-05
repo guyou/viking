@@ -819,8 +819,12 @@ gboolean a_file_export ( VikTrwLayer *vtl, const gchar *filename, VikFileType_t 
 /**
  * a_file_export_babel:
  */
-gboolean a_file_export_babel ( VikTrwLayer *vtl, const gchar *filename, gint sublayer, gconstpointer part, const gchar *format )
-  return a_babel_convert_to ( vtl, sublayer, part, args, filename, NULL, NULL );
+gboolean a_file_export_babel ( VikTrwLayer *vtl, const gchar *filename, const gchar *format )
+{
+  gchar *args = g_strdup_printf("-o %s", format);
+  gboolean result = a_babel_convert_to ( vtl, NULL, args, filename, NULL, NULL );
+  g_free(args);
+  return result;
 }
 
 /**
