@@ -31,7 +31,7 @@
 #include "viking.h"
 #include "viktrwlayer_export.h"
 
-void trw_layer_export ( VikTrwLayer *vtl, const gchar *title, const gchar* default_name, VikTrack* trk, guint file_type )
+void vik_trw_layer_export ( VikTrwLayer *vtl, const gchar *title, const gchar* default_name, VikTrack* trk, guint file_type )
 {
   GtkWidget *file_selector;
   const gchar *fn;
@@ -73,7 +73,7 @@ void trw_layer_export ( VikTrwLayer *vtl, const gchar *title, const gchar* defau
  * Convert the given TRW layer into a temporary GPX file and open it with the specified program
  *
  */
-void trw_layer_export_external_gpx ( VikTrwLayer *vtl, const gchar* external_program )
+void vik_trw_layer_export_external_gpx ( VikTrwLayer *vtl, const gchar* external_program )
 {
   gchar *name_used = NULL;
   int fd;

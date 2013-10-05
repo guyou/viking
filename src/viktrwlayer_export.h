@@ -30,9 +30,9 @@
 
 G_BEGIN_DECLS
 
-void trw_layer_export ( VikTrwLayer *vtl, const gchar *title, const gchar* default_name, VikTrack* trk, guint file_type );
+void vik_trw_layer_export ( VikTrwLayer *vtl, const gchar *title, const gchar* default_name, VikTrack* trk, guint file_type );
 
-void trw_layer_export_external_gpx ( VikTrwLayer *vtl, const gchar* external_program );
+void vik_trw_layer_export_external_gpx ( VikTrwLayer *vtl, const gchar* external_program );
 
 G_END_DECLS
 

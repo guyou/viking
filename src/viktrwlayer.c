@@ -3013,12 +3013,12 @@ static void trw_layer_auto_view ( gpointer layer_and_vlp[2] )
 
 static void trw_layer_export_gpspoint ( gpointer layer_and_vlp[2] )
 {
-  trw_layer_export ( VIK_TRW_LAYER (layer_and_vlp[0]), _("Export Layer"), vik_layer_get_name(VIK_LAYER(layer_and_vlp[0])), NULL, FILE_TYPE_GPSPOINT );
+  vik_trw_layer_export ( VIK_TRW_LAYER (layer_and_vlp[0]), _("Export Layer"), vik_layer_get_name(VIK_LAYER(layer_and_vlp[0])), NULL, FILE_TYPE_GPSPOINT );
 }
 
 static void trw_layer_export_gpsmapper ( gpointer layer_and_vlp[2] )
 {
-  trw_layer_export ( VIK_TRW_LAYER (layer_and_vlp[0]), _("Export Layer"), vik_layer_get_name(VIK_LAYER(layer_and_vlp[0])), NULL, FILE_TYPE_GPSMAPPER );
+  vik_trw_layer_export ( VIK_TRW_LAYER (layer_and_vlp[0]), _("Export Layer"), vik_layer_get_name(VIK_LAYER(layer_and_vlp[0])), NULL, FILE_TYPE_GPSMAPPER );
 }
 
 static void trw_layer_export_gpx ( gpointer layer_and_vlp[2] )
@@ -3028,7 +3028,7 @@ static void trw_layer_export_gpx ( gpointer layer_and_vlp[2] )
   if ( ! check_file_ext ( auto_save_name, ".gpx" ) )
     auto_save_name = g_strconcat ( auto_save_name, ".gpx", NULL );
 
-  trw_layer_export ( VIK_TRW_LAYER (layer_and_vlp[0]), _("Export Layer"), auto_save_name, NULL, FILE_TYPE_GPX );
+  vik_trw_layer_export ( VIK_TRW_LAYER (layer_and_vlp[0]), _("Export Layer"), auto_save_name, NULL, FILE_TYPE_GPX );
 
   g_free ( auto_save_name );
 }
@@ -3040,19 +3040,19 @@ static void trw_layer_export_kml ( gpointer layer_and_vlp[2] )
   if ( ! check_file_ext ( auto_save_name, ".kml" ) )
     auto_save_name = g_strconcat ( auto_save_name, ".kml", NULL );
 
-  trw_layer_export ( VIK_TRW_LAYER (layer_and_vlp[0]), _("Export Layer"), auto_save_name, NULL, FILE_TYPE_KML );
+  vik_trw_layer_export ( VIK_TRW_LAYER (layer_and_vlp[0]), _("Export Layer"), auto_save_name, NULL, FILE_TYPE_KML );
 
   g_free ( auto_save_name );
 }
 
 static void trw_layer_export_external_gpx_1 ( gpointer layer_and_vlp[2] )
 {
-  trw_layer_export_external_gpx ( VIK_TRW_LAYER (layer_and_vlp[0]), a_vik_get_external_gpx_program_1() );
+  vik_trw_layer_export_external_gpx ( VIK_TRW_LAYER (layer_and_vlp[0]), a_vik_get_external_gpx_program_1() );
 }
 
 static void trw_layer_export_external_gpx_2 ( gpointer layer_and_vlp[2] )
 {
-  trw_layer_export_external_gpx ( VIK_TRW_LAYER (layer_and_vlp[0]), a_vik_get_external_gpx_program_2() );
+  vik_trw_layer_export_external_gpx ( VIK_TRW_LAYER (layer_and_vlp[0]), a_vik_get_external_gpx_program_2() );
 }
 
 static void trw_layer_export_gpx_track ( gpointer pass_along[6] )
@@ -3081,7 +3081,7 @@ static void trw_layer_export_gpx_track ( gpointer pass_along[6] )
     label = _("Export Route as GPX");
   else
     label = _("Export Track as GPX");
-  trw_layer_export ( VIK_TRW_LAYER (layer_and_vlp[0]), label, auto_save_name, trk, FILE_TYPE_GPX );
+  vik_trw_layer_export ( VIK_TRW_LAYER (layer_and_vlp[0]), label, auto_save_name, trk, FILE_TYPE_GPX );
 
   g_free ( auto_save_name );
 }
