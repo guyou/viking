@@ -33,6 +33,7 @@
 #include "viking.h"
 #include "vikmapslayer.h"
 #include "vikgpslayer.h"
+#include "viktrwlayer_export.h"
 #include "viktrwlayer_tpwin.h"
 #include "viktrwlayer_propwin.h"
 #include "viktrwlayer_analysis.h"
@@ -289,7 +290,6 @@ static void trw_layer_gps_upload_any ( gpointer pass_along[6] );
 
 static void trw_layer_centerize ( gpointer layer_and_vlp[2] );
 static void trw_layer_auto_view ( gpointer layer_and_vlp[2] );
-static void trw_layer_export ( VikTrwLayer *vtl, const gchar* title, const gchar* default_name, VikTrack* trk, guint file_type );
 static void trw_layer_goto_wp ( gpointer layer_and_vlp[2] );
 static void trw_layer_new_wp ( gpointer lav[2] );
 static void trw_layer_new_track ( gpointer lav[2] );
@@ -3009,43 +3009,6 @@ static void trw_layer_auto_view ( gpointer layer_and_vlp[2] )
   }
   else
     a_dialog_info_msg ( VIK_GTK_WINDOW_FROM_LAYER(layer_and_vlp[0]), _("This layer has no waypoints or trackpoints.") );
-}
-
-static void trw_layer_export ( VikTrwLayer *vtl, const gchar *title, const gchar* default_name, VikTrack* trk, guint file_type )
-{
-  GtkWidget *file_selector;
-  const gchar *fn;
-  gboolean failed = FALSE;
-  file_selector = gtk_file_chooser_dialog_new (title,
-					       NULL,
-					       GTK_FILE_CHOOSER_ACTION_SAVE,
-					       GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-					       GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
-					       NULL);
-  gchar *cwd = g_get_current_dir();
-  if ( cwd ) {
-    gtk_file_chooser_set_current_folder ( GTK_FILE_CHOOSER(file_selector), cwd );
-    g_free ( cwd );
-  }
-
-  gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER(file_selector), default_name);
-
-  while ( gtk_dialog_run ( GTK_DIALOG(file_selector) ) == GTK_RESPONSE_ACCEPT )
-  {
-    fn = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER(file_selector) );
-    if ( g_file_test ( fn, G_FILE_TEST_EXISTS ) == FALSE ||
-         a_dialog_yes_or_no ( GTK_WINDOW(file_selector), _("The file \"%s\" exists, do you wish to overwrite it?"), a_file_basename ( fn ) ) )
-    {
-      gtk_widget_hide ( file_selector );
-      vik_window_set_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)) );
-      failed = ! a_file_export ( vtl, fn, file_type, trk, TRUE );
-      vik_window_clear_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)) );
-      break;
-    }
-  }
-  gtk_widget_destroy ( file_selector );
-  if ( failed )
-    a_dialog_error_msg ( VIK_GTK_WINDOW_FROM_LAYER(vtl), _("The filename you requested could not be opened for writing.") );
 }
 
 static void trw_layer_export_gpspoint ( gpointer layer_and_vlp[2] )
