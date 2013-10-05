@@ -67,3 +67,40 @@ void trw_layer_export ( VikTrwLayer *vtl, const gchar *title, const gchar* defau
   if ( failed )
     a_dialog_error_msg ( VIK_GTK_WINDOW_FROM_LAYER(vtl), _("The filename you requested could not be opened for writing.") );
 }
+
+
+/**
+ * Convert the given TRW layer into a temporary GPX file and open it with the specified program
+ *
+ */
+void trw_layer_export_external_gpx ( VikTrwLayer *vtl, const gchar* external_program )
+{
+  gchar *name_used = NULL;
+  int fd;
+
+  if ((fd = g_file_open_tmp("tmp-viking.XXXXXX.gpx", &name_used, NULL)) >= 0) {
+    vik_window_set_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)) );
+    gboolean failed = ! a_file_export ( VIK_TRW_LAYER(vtl), name_used, FILE_TYPE_GPX, NULL, TRUE);
+    vik_window_clear_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)) );
+    if (failed) {
+      a_dialog_error_msg (VIK_GTK_WINDOW_FROM_LAYER(vtl), _("Could not create temporary file for export.") );
+    }
+    else {
+      GError *err = NULL;
+      gchar *quoted_file = g_shell_quote ( name_used );
+      gchar *cmd = g_strdup_printf ( "%s %s", external_program, quoted_file );
+      g_free ( quoted_file );
+      if ( ! g_spawn_command_line_async ( cmd, &err ) )
+        {
+          a_dialog_error_msg_extra ( VIK_GTK_WINDOW_FROM_LAYER( vtl), _("Could not launch %s."), external_program );
+          g_error_free ( err );
+        }
+      g_free ( cmd );
+    }
+    // Note ATM the 'temporary' file is not deleted, as loading via another program is not instantaneous
+    //g_remove ( name_used );
+    // Perhaps should be deleted when the program ends?
+    // For now leave it to the user to delete it / use system temp cleanup methods.
+    g_free ( name_used );
+  }
+}
