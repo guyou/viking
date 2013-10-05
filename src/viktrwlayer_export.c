@@ -105,10 +105,14 @@ void vik_trw_layer_export_external_gpx ( VikTrwLayer *vtl, const gchar* external
   }
 }
 
-void add_entry ( gpointer data, gpointer user_data )
+void babel_ui_selector_add_entry_cb ( gpointer data, gpointer user_data )
 {
   BabelFile *file = (BabelFile*)data;
   GtkWidget *combo = GTK_WIDGET (user_data);
+
+  GList *formats = g_object_get_data ( G_OBJECT ( combo ), "formats");
+  formats = g_list_append(formats, file);
+  g_object_set_data ( G_OBJECT ( combo ), "formats", formats );
 
   const gchar *label = file->label;
   vik_combo_box_text_append (combo, label);
@@ -119,9 +123,25 @@ GtkWidget *babel_ui_selector_new ( BabelMode mode )
   /* Create the combo */
   GtkWidget * combo = vik_combo_box_text_new ();
 
-  a_babel_foreach_file_with_mode (mode, add_entry, combo);
+  /* Prepare space for file format list */
+  g_object_set_data ( G_OBJECT ( combo ), "formats", NULL );
+
+  a_babel_foreach_file_with_mode (mode, babel_ui_selector_add_entry_cb, combo);
 
   return combo;
+}
+
+void babel_ui_selector_destroy ( GtkWidget *selector )
+{
+  GList *formats = g_object_get_data ( G_OBJECT ( selector ), "formats");
+  g_free (formats);
+}
+
+BabelFile *babel_ui_selector_get ( GtkWidget *selector )
+{
+  gint active = gtk_combo_box_get_active (GTK_COMBO_BOX(selector));
+  GList *formats = g_object_get_data ( G_OBJECT ( selector ), "formats");
+  return (BabelFile*)g_list_nth_data(formats, active);
 }
 
 void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl )
@@ -165,12 +185,13 @@ void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl )
       gtk_widget_hide ( file_selector );
       vik_window_set_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)) );
       // FIXME sublayer
-      // FIXME format
-      failed = ! a_file_export_babel ( vtl, fn, VIK_TRW_LAYER_SUBLAYER_ALL, NULL, "todo" );
+      BabelFile *active = babel_ui_selector_get(babel_selector);
+      failed = ! a_file_export_babel ( vtl, fn, active->name );
       vik_window_clear_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)) );
       break;
     }
   }
+  //babel_ui_selector_destroy(babel_selector);
   gtk_widget_destroy ( file_selector );
   if ( failed )
     a_dialog_error_msg ( VIK_GTK_WINDOW_FROM_LAYER(vtl), _("The filename you requested could not be opened for writing.") );
