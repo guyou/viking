@@ -100,11 +100,6 @@ void a_babel_foreach_file_with_mode (BabelMode mode, GFunc func, gpointer user_d
         current = g_list_next (current) )
   {
     BabelFile *currentFile = current->data;
-    printf("Processing %s : %d%d%d%d%d%d\n",
-    		currentFile->label,
-    		currentFile->mode.waypointsRead, currentFile->mode.waypointsWrite,
-    		currentFile->mode.tracksRead, currentFile->mode.tracksWrite,
-    		currentFile->mode.routesRead, currentFile->mode.routesWrite);
     /* Check compatibility of modes */
     gboolean compat = TRUE;
     if (mode.waypointsRead  && ! currentFile->mode.waypointsRead)  compat = FALSE;
@@ -116,8 +111,6 @@ void a_babel_foreach_file_with_mode (BabelMode mode, GFunc func, gpointer user_d
     /* Do call */
     if (compat)
       func (currentFile, user_data);
-    else
-      g_debug ("%s does not match", currentFile->label);
   }
 }
 
