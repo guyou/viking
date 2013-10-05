@@ -3045,6 +3045,13 @@ static void trw_layer_export_kml ( gpointer layer_and_vlp[2] )
   g_free ( auto_save_name );
 }
 
+static void trw_layer_export_babel ( gpointer layer_and_vlp[2] )
+{
+
+  vik_trw_layer_export_gpsbabel ( VIK_TRW_LAYER (layer_and_vlp[0]) );
+
+}
+
 static void trw_layer_export_external_gpx_1 ( gpointer layer_and_vlp[2] )
 {
   vik_trw_layer_export_external_gpx ( VIK_TRW_LAYER (layer_and_vlp[0]), a_vik_get_external_gpx_program_1() );
@@ -3708,6 +3715,11 @@ static void trw_layer_add_menu_items ( VikTrwLayer *vtl, GtkMenu *menu, gpointer
 
   item = gtk_menu_item_new_with_mnemonic ( _("Export as _KML...") );
   g_signal_connect_swapped ( G_OBJECT(item), "activate", G_CALLBACK(trw_layer_export_kml), pass_along );
+  gtk_menu_shell_append (GTK_MENU_SHELL (export_submenu), item);
+  gtk_widget_show ( item );
+
+  item = gtk_menu_item_new_with_mnemonic ( _("Export via GPSbabel...") );
+  g_signal_connect_swapped ( G_OBJECT(item), "activate", G_CALLBACK(trw_layer_export_babel), pass_along );
   gtk_menu_shell_append (GTK_MENU_SHELL (export_submenu), item);
   gtk_widget_show ( item );
 

@@ -20,7 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
-#include <math.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -28,6 +27,7 @@
 #include <glib/gstdio.h>
 #include <glib/gi18n.h>
 
+#include "babel.h"
 #include "viking.h"
 #include "viktrwlayer_export.h"
 
@@ -103,4 +103,75 @@ void vik_trw_layer_export_external_gpx ( VikTrwLayer *vtl, const gchar* external
     // For now leave it to the user to delete it / use system temp cleanup methods.
     g_free ( name_used );
   }
+}
+
+void add_entry ( gpointer data, gpointer user_data )
+{
+  BabelFile *file = (BabelFile*)data;
+  GtkWidget *combo = GTK_WIDGET (user_data);
+
+  const gchar *label = file->label;
+  vik_combo_box_text_append (combo, label);
+}
+
+GtkWidget *babel_ui_selector_new ( BabelMode mode )
+{
+  /* Create the combo */
+  GtkWidget * combo = vik_combo_box_text_new ();
+
+  a_babel_foreach_file_with_mode (mode, add_entry, combo);
+
+  return combo;
+}
+
+void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl )
+{
+  BabelMode mode = { 0, 0, 0, 0, 0, 0 };
+  if ( g_hash_table_size (vik_trw_layer_get_routes(vtl)) ) {
+      mode.routesWrite = 1;
+  }
+  if ( g_hash_table_size (vik_trw_layer_get_tracks(vtl)) ) {
+      mode.tracksWrite = 1;
+  }
+  if ( g_hash_table_size (vik_trw_layer_get_waypoints(vtl)) ) {
+      mode.waypointsWrite = 1;
+  }
+  GtkWidget *file_selector;
+  const gchar *fn;
+  gboolean failed = FALSE;
+  const gchar *title = _("Export via GPSbabel");
+  file_selector = gtk_file_chooser_dialog_new (title,
+                                               NULL,
+                                               GTK_FILE_CHOOSER_ACTION_SAVE,
+                                               GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                                               GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+                                               NULL);
+  gchar *cwd = g_get_current_dir();
+  if ( cwd ) {
+    gtk_file_chooser_set_current_folder ( GTK_FILE_CHOOSER(file_selector), cwd );
+    g_free ( cwd );
+  }
+  GtkWidget *babel_selector = babel_ui_selector_new ( mode );
+  gtk_file_chooser_set_extra_widget (GTK_FILE_CHOOSER(file_selector), babel_selector);
+
+  // TODO gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER(file_selector), default_name);
+
+  while ( gtk_dialog_run ( GTK_DIALOG(file_selector) ) == GTK_RESPONSE_ACCEPT )
+  {
+    fn = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER(file_selector) );
+    if ( g_file_test ( fn, G_FILE_TEST_EXISTS ) == FALSE ||
+         a_dialog_yes_or_no ( GTK_WINDOW(file_selector), _("The file \"%s\" exists, do you wish to overwrite it?"), a_file_basename ( fn ) ) )
+    {
+      gtk_widget_hide ( file_selector );
+      vik_window_set_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)) );
+      // FIXME sublayer
+      // FIXME format
+      failed = ! a_file_export_babel ( vtl, fn, VIK_TRW_LAYER_SUBLAYER_ALL, NULL, "todo" );
+      vik_window_clear_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)) );
+      break;
+    }
+  }
+  gtk_widget_destroy ( file_selector );
+  if ( failed )
+    a_dialog_error_msg ( VIK_GTK_WINDOW_FROM_LAYER(vtl), _("The filename you requested could not be opened for writing.") );
 }

@@ -817,6 +817,13 @@ gboolean a_file_export ( VikTrwLayer *vtl, const gchar *filename, VikFileType_t 
 }
 
 /**
+ * a_file_export_babel:
+ */
+gboolean a_file_export_babel ( VikTrwLayer *vtl, const gchar *filename, gint sublayer, gconstpointer part, const gchar *format )
+  return a_babel_convert_to ( vtl, sublayer, part, args, filename, NULL, NULL );
+}
+
+/**
  * Just a wrapper around realpath, which itself is platform dependent
  */
 char *file_realpath ( const char *path, char *real )
