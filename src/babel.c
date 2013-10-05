@@ -479,6 +479,8 @@ static gboolean babel_general_convert_to( VikTrwLayer *vt, VikTrack *trk, BabelS
  */
 gboolean a_babel_convert_to( VikTrwLayer *vt, VikTrack *track, const char *babelargs, const char *to, BabelStatusFunc cb, gpointer user_data )
 {
+  g_debug("%s: %s to %s", __FUNCTION__, babelargs, to);
+
   int i,j;
   int fd_src;
   gchar *name_src = NULL;
