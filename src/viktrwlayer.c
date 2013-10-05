@@ -3049,17 +3049,17 @@ static void trw_layer_export_kml ( gpointer layer_and_vlp[2] )
  * Convert the given TRW layer into a temporary GPX file and open it with the specified program
  *
  */
-static void trw_layer_export_external_gpx ( gpointer layer_and_vlp[2], const gchar* external_program )
+static void trw_layer_export_external_gpx ( VikTrwLayer *vtl, const gchar* external_program )
 {
   gchar *name_used = NULL;
   int fd;
 
   if ((fd = g_file_open_tmp("tmp-viking.XXXXXX.gpx", &name_used, NULL)) >= 0) {
-    vik_window_set_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(layer_and_vlp[0])) );
-    gboolean failed = ! a_file_export ( VIK_TRW_LAYER(layer_and_vlp[0]), name_used, FILE_TYPE_GPX, NULL, TRUE);
-    vik_window_clear_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(layer_and_vlp[0])) );
+    vik_window_set_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)) );
+    gboolean failed = ! a_file_export ( VIK_TRW_LAYER(vtl), name_used, FILE_TYPE_GPX, NULL, TRUE);
+    vik_window_clear_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)) );
     if (failed) {
-      a_dialog_error_msg (VIK_GTK_WINDOW_FROM_LAYER(layer_and_vlp[0]), _("Could not create temporary file for export.") );
+      a_dialog_error_msg (VIK_GTK_WINDOW_FROM_LAYER(vtl), _("Could not create temporary file for export.") );
     }
     else {
       GError *err = NULL;
@@ -3068,7 +3068,7 @@ static void trw_layer_export_external_gpx ( gpointer layer_and_vlp[2], const gch
       g_free ( quoted_file );
       if ( ! g_spawn_command_line_async ( cmd, &err ) )
 	{
-	  a_dialog_error_msg_extra ( VIK_GTK_WINDOW_FROM_LAYER( layer_and_vlp[0]), _("Could not launch %s."), external_program );
+	  a_dialog_error_msg_extra ( VIK_GTK_WINDOW_FROM_LAYER( vtl), _("Could not launch %s."), external_program );
 	  g_error_free ( err );
 	}
       g_free ( cmd );
@@ -3083,12 +3083,12 @@ static void trw_layer_export_external_gpx ( gpointer layer_and_vlp[2], const gch
 
 static void trw_layer_export_external_gpx_1 ( gpointer layer_and_vlp[2] )
 {
-  trw_layer_export_external_gpx ( layer_and_vlp, a_vik_get_external_gpx_program_1() );
+  trw_layer_export_external_gpx ( VIK_TRW_LAYER (layer_and_vlp[0]), a_vik_get_external_gpx_program_1() );
 }
 
 static void trw_layer_export_external_gpx_2 ( gpointer layer_and_vlp[2] )
 {
-  trw_layer_export_external_gpx ( layer_and_vlp, a_vik_get_external_gpx_program_2() );
+  trw_layer_export_external_gpx ( VIK_TRW_LAYER (layer_and_vlp[0]), a_vik_get_external_gpx_program_2() );
 }
 
 static void trw_layer_export_gpx_track ( gpointer pass_along[6] )
