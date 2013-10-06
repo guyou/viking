@@ -156,6 +156,7 @@ void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl )
   if ( g_hash_table_size (vik_trw_layer_get_waypoints(vtl)) ) {
       mode.waypointsWrite = 1;
   }
+
   GtkWidget *file_selector;
   const gchar *fn;
   gboolean failed = FALSE;
