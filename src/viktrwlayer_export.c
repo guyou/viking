@@ -144,6 +144,29 @@ BabelFile *babel_ui_selector_get ( GtkWidget *selector )
   return (BabelFile*)g_list_nth_data(formats, active);
 }
 
+GtkWidget *babel_ui_modes_new ( gboolean tracks, gboolean routes, gboolean waypoints )
+{
+  GtkWidget *hbox = gtk_hbox_new(FALSE, 0);
+  GtkWidget *button = NULL;
+
+  button = gtk_check_button_new_with_label ( _("Tracks"));
+  gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON(button), tracks );
+  gtk_box_pack_start ( GTK_BOX(hbox), button, TRUE, TRUE, 0 );
+  gtk_widget_show (button);
+
+  button = gtk_check_button_new_with_label ( _("Routes"));
+  gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON(button), routes );
+  gtk_box_pack_start ( GTK_BOX(hbox), button, TRUE, TRUE, 0 );
+  gtk_widget_show (button);
+
+  button = gtk_check_button_new_with_label ( _("Waypoints"));
+  gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON(button), waypoints );
+  gtk_box_pack_start ( GTK_BOX(hbox), button, TRUE, TRUE, 0 );
+  gtk_widget_show (button);
+
+  return hbox;
+}
+
 void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl )
 {
   BabelMode mode = { 0, 0, 0, 0, 0, 0 };
@@ -181,7 +204,15 @@ void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl )
   gtk_widget_show (label);
   gtk_widget_show_all (hbox);
 
-  gtk_file_chooser_set_extra_widget (GTK_FILE_CHOOSER(file_selector), hbox);
+  GtkWidget *babel_modes = babel_ui_modes_new(mode.tracksWrite, mode.routesWrite, mode.waypointsWrite);
+  gtk_widget_show (babel_modes);
+
+  GtkWidget *vbox = gtk_vbox_new(FALSE, 0);
+  gtk_box_pack_start ( GTK_BOX(vbox), hbox, TRUE, TRUE, 0 );
+  gtk_box_pack_start ( GTK_BOX(vbox), babel_modes, TRUE, TRUE, 0 );
+  gtk_widget_show_all (vbox);
+
+  gtk_file_chooser_set_extra_widget (GTK_FILE_CHOOSER(file_selector), vbox);
 
   // TODO gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER(file_selector), default_name);
 
