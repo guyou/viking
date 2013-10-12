@@ -167,6 +167,21 @@ GtkWidget *babel_ui_modes_new ( gboolean tracks, gboolean routes, gboolean waypo
   return hbox;
 }
 
+void babel_ui_modes_get ( GtkWidget *container, gboolean *tracks, gboolean *routes, gboolean *waypoints )
+{
+  GList* children = gtk_container_get_children ( GTK_CONTAINER(container) );
+  GtkWidget *child = NULL;
+
+  child = g_list_nth_data ( children, 0 );
+  *tracks = gtk_toggle_button_get_active ( GTK_TOGGLE_BUTTON(child) );
+
+  child = g_list_nth_data ( children, 1 );
+  *routes = gtk_toggle_button_get_active ( GTK_TOGGLE_BUTTON(child) );
+
+  child = g_list_nth_data ( children, 2 );
+  *waypoints = gtk_toggle_button_get_active ( GTK_TOGGLE_BUTTON(child) );
+}
+
 void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl )
 {
   BabelMode mode = { 0, 0, 0, 0, 0, 0 };
@@ -226,7 +241,9 @@ void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl )
       vik_window_set_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)) );
       // FIXME sublayer
       BabelFile *active = babel_ui_selector_get(babel_selector);
-      failed = ! a_file_export_babel ( vtl, fn, active->name );
+      gboolean tracks, routes, waypoints;
+      babel_ui_modes_get( babel_modes, &tracks, &routes, &waypoints );
+      failed = ! a_file_export_babel ( vtl, fn, active->name, tracks, routes, waypoints );
       vik_window_clear_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)) );
       break;
     }
