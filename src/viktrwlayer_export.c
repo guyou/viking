@@ -173,7 +173,15 @@ void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl )
     g_free ( cwd );
   }
   GtkWidget *babel_selector = babel_ui_selector_new ( mode );
-  gtk_file_chooser_set_extra_widget (GTK_FILE_CHOOSER(file_selector), babel_selector);
+  GtkWidget *label = gtk_label_new(_("File format:"));
+  GtkWidget *hbox = gtk_hbox_new(FALSE, 0);
+  gtk_box_pack_start ( GTK_BOX(hbox), label, TRUE, TRUE, 0 );
+  gtk_box_pack_start ( GTK_BOX(hbox), babel_selector, TRUE, TRUE, 0 );
+  gtk_widget_show (babel_selector);
+  gtk_widget_show (label);
+  gtk_widget_show_all (hbox);
+
+  gtk_file_chooser_set_extra_widget (GTK_FILE_CHOOSER(file_selector), hbox);
 
   // TODO gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER(file_selector), default_name);
 
