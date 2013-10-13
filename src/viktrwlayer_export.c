@@ -28,6 +28,7 @@
 #include <glib/gi18n.h>
 
 #include "babel.h"
+#include "babel_ui.h"
 #include "viking.h"
 #include "viktrwlayer_export.h"
 
@@ -105,86 +106,6 @@ void vik_trw_layer_export_external_gpx ( VikTrwLayer *vtl, const gchar* external
   }
 }
 
-void babel_ui_selector_add_entry_cb ( gpointer data, gpointer user_data )
-{
-  BabelFile *file = (BabelFile*)data;
-  GtkWidget *combo = GTK_WIDGET (user_data);
-
-  GList *formats = g_object_get_data ( G_OBJECT ( combo ), "formats");
-  formats = g_list_append(formats, file);
-  g_object_set_data ( G_OBJECT ( combo ), "formats", formats );
-
-  const gchar *label = file->label;
-  vik_combo_box_text_append (combo, label);
-}
-
-GtkWidget *babel_ui_selector_new ( BabelMode mode )
-{
-  /* Create the combo */
-  GtkWidget * combo = vik_combo_box_text_new ();
-
-  /* Prepare space for file format list */
-  g_object_set_data ( G_OBJECT ( combo ), "formats", NULL );
-
-  a_babel_foreach_file_with_mode (mode, babel_ui_selector_add_entry_cb, combo);
-
-  return combo;
-}
-
-void babel_ui_selector_destroy ( GtkWidget *selector )
-{
-  GList *formats = g_object_get_data ( G_OBJECT ( selector ), "formats");
-  g_free (formats);
-}
-
-BabelFile *babel_ui_selector_get ( GtkWidget *selector )
-{
-  gint active = gtk_combo_box_get_active (GTK_COMBO_BOX(selector));
-  if (active >= 0) {
-    GList *formats = g_object_get_data ( G_OBJECT ( selector ), "formats");
-    return (BabelFile*)g_list_nth_data(formats, active);
-  } else {
-    return NULL;
-  }
-}
-
-GtkWidget *babel_ui_modes_new ( gboolean tracks, gboolean routes, gboolean waypoints )
-{
-  GtkWidget *hbox = gtk_hbox_new(FALSE, 0);
-  GtkWidget *button = NULL;
-
-  button = gtk_check_button_new_with_label ( _("Tracks"));
-  gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON(button), tracks );
-  gtk_box_pack_start ( GTK_BOX(hbox), button, TRUE, TRUE, 0 );
-  gtk_widget_show (button);
-
-  button = gtk_check_button_new_with_label ( _("Routes"));
-  gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON(button), routes );
-  gtk_box_pack_start ( GTK_BOX(hbox), button, TRUE, TRUE, 0 );
-  gtk_widget_show (button);
-
-  button = gtk_check_button_new_with_label ( _("Waypoints"));
-  gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON(button), waypoints );
-  gtk_box_pack_start ( GTK_BOX(hbox), button, TRUE, TRUE, 0 );
-  gtk_widget_show (button);
-
-  return hbox;
-}
-
-void babel_ui_modes_get ( GtkWidget *container, gboolean *tracks, gboolean *routes, gboolean *waypoints )
-{
-  GList* children = gtk_container_get_children ( GTK_CONTAINER(container) );
-  GtkWidget *child = NULL;
-
-  child = g_list_nth_data ( children, 0 );
-  *tracks = gtk_toggle_button_get_active ( GTK_TOGGLE_BUTTON(child) );
-
-  child = g_list_nth_data ( children, 1 );
-  *routes = gtk_toggle_button_get_active ( GTK_TOGGLE_BUTTON(child) );
-
-  child = g_list_nth_data ( children, 2 );
-  *waypoints = gtk_toggle_button_get_active ( GTK_TOGGLE_BUTTON(child) );
-}
 
 void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl, const gchar *title, const gchar* default_name )
 {
@@ -213,7 +134,7 @@ void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl, const gchar *title, const
     gtk_file_chooser_set_current_folder ( GTK_FILE_CHOOSER(file_selector), cwd );
     g_free ( cwd );
   }
-  GtkWidget *babel_selector = babel_ui_selector_new ( mode );
+  GtkWidget *babel_selector = a_babel_ui_file_type_selector_new ( mode );
   GtkWidget *label = gtk_label_new(_("File format:"));
   GtkWidget *hbox = gtk_hbox_new(FALSE, 0);
   gtk_box_pack_start ( GTK_BOX(hbox), label, TRUE, TRUE, 0 );
@@ -222,7 +143,7 @@ void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl, const gchar *title, const
   gtk_widget_show (label);
   gtk_widget_show_all (hbox);
 
-  GtkWidget *babel_modes = babel_ui_modes_new(mode.tracksWrite, mode.routesWrite, mode.waypointsWrite);
+  GtkWidget *babel_modes = a_babel_ui_modes_new(mode.tracksWrite, mode.routesWrite, mode.waypointsWrite);
   gtk_widget_show (babel_modes);
 
   GtkWidget *vbox = gtk_vbox_new(FALSE, 0);
@@ -240,14 +161,14 @@ void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl, const gchar *title, const
     if ( g_file_test ( fn, G_FILE_TEST_EXISTS ) == FALSE ||
          a_dialog_yes_or_no ( GTK_WINDOW(file_selector), _("The file \"%s\" exists, do you wish to overwrite it?"), a_file_basename ( fn ) ) )
     {
-      BabelFile *active = babel_ui_selector_get(babel_selector);
+      BabelFile *active = a_babel_ui_file_type_selector_get(babel_selector);
       if (active == NULL) {
           a_dialog_error_msg ( VIK_GTK_WINDOW_FROM_LAYER(vtl), _("You did not select a valid file format.") );
       } else {
         gtk_widget_hide ( file_selector );
         vik_window_set_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)) );
         gboolean tracks, routes, waypoints;
-        babel_ui_modes_get( babel_modes, &tracks, &routes, &waypoints );
+        a_babel_ui_modes_get( babel_modes, &tracks, &routes, &waypoints );
         failed = ! a_file_export_babel ( vtl, fn, active->name, tracks, routes, waypoints );
         vik_window_clear_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)) );
         break;

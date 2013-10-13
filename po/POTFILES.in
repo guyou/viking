@@ -1,5 +1,6 @@
 src/acquire.c
 src/background.c
+src/babel_ui.c
 src/bing.c
 src/bingmapsource.c
 src/clipboard.c
