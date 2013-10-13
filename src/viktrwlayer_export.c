@@ -140,8 +140,12 @@ void babel_ui_selector_destroy ( GtkWidget *selector )
 BabelFile *babel_ui_selector_get ( GtkWidget *selector )
 {
   gint active = gtk_combo_box_get_active (GTK_COMBO_BOX(selector));
-  GList *formats = g_object_get_data ( G_OBJECT ( selector ), "formats");
-  return (BabelFile*)g_list_nth_data(formats, active);
+  if (active >= 0) {
+    GList *formats = g_object_get_data ( G_OBJECT ( selector ), "formats");
+    return (BabelFile*)g_list_nth_data(formats, active);
+  } else {
+    return NULL;
+  }
 }
 
 GtkWidget *babel_ui_modes_new ( gboolean tracks, gboolean routes, gboolean waypoints )
@@ -236,15 +240,18 @@ void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl, const gchar *title, const
     if ( g_file_test ( fn, G_FILE_TEST_EXISTS ) == FALSE ||
          a_dialog_yes_or_no ( GTK_WINDOW(file_selector), _("The file \"%s\" exists, do you wish to overwrite it?"), a_file_basename ( fn ) ) )
     {
-      gtk_widget_hide ( file_selector );
-      vik_window_set_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)) );
-      // FIXME sublayer
       BabelFile *active = babel_ui_selector_get(babel_selector);
-      gboolean tracks, routes, waypoints;
-      babel_ui_modes_get( babel_modes, &tracks, &routes, &waypoints );
-      failed = ! a_file_export_babel ( vtl, fn, active->name, tracks, routes, waypoints );
-      vik_window_clear_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)) );
-      break;
+      if (active == NULL) {
+          a_dialog_error_msg ( VIK_GTK_WINDOW_FROM_LAYER(vtl), _("You did not select a valid file format.") );
+      } else {
+        gtk_widget_hide ( file_selector );
+        vik_window_set_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)) );
+        gboolean tracks, routes, waypoints;
+        babel_ui_modes_get( babel_modes, &tracks, &routes, &waypoints );
+        failed = ! a_file_export_babel ( vtl, fn, active->name, tracks, routes, waypoints );
+        vik_window_clear_busy_cursor ( VIK_WINDOW(VIK_GTK_WINDOW_FROM_LAYER(vtl)) );
+        break;
+      }
     }
   }
   //babel_ui_selector_destroy(babel_selector);
