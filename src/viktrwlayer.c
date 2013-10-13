@@ -3047,9 +3047,8 @@ static void trw_layer_export_kml ( gpointer layer_and_vlp[2] )
 
 static void trw_layer_export_babel ( gpointer layer_and_vlp[2] )
 {
-
-  vik_trw_layer_export_gpsbabel ( VIK_TRW_LAYER (layer_and_vlp[0]) );
-
+  gchar *auto_save_name = vik_layer_get_name(VIK_LAYER(layer_and_vlp[0]));
+  vik_trw_layer_export_gpsbabel ( VIK_TRW_LAYER (layer_and_vlp[0]), _("Export Layer"), auto_save_name );
 }
 
 static void trw_layer_export_external_gpx_1 ( gpointer layer_and_vlp[2] )

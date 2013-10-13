@@ -182,7 +182,7 @@ void babel_ui_modes_get ( GtkWidget *container, gboolean *tracks, gboolean *rout
   *waypoints = gtk_toggle_button_get_active ( GTK_TOGGLE_BUTTON(child) );
 }
 
-void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl )
+void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl, const gchar *title, const gchar* default_name )
 {
   BabelMode mode = { 0, 0, 0, 0, 0, 0 };
   if ( g_hash_table_size (vik_trw_layer_get_routes(vtl)) ) {
@@ -198,7 +198,6 @@ void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl )
   GtkWidget *file_selector;
   const gchar *fn;
   gboolean failed = FALSE;
-  const gchar *title = _("Export via GPSbabel");
   file_selector = gtk_file_chooser_dialog_new (title,
                                                NULL,
                                                GTK_FILE_CHOOSER_ACTION_SAVE,
@@ -229,7 +228,7 @@ void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl )
 
   gtk_file_chooser_set_extra_widget (GTK_FILE_CHOOSER(file_selector), vbox);
 
-  // TODO gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER(file_selector), default_name);
+  gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER(file_selector), default_name);
 
   while ( gtk_dialog_run ( GTK_DIALOG(file_selector) ) == GTK_RESPONSE_ACCEPT )
   {
