@@ -1,5 +1,5 @@
 From: Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
-Subject: [PATCH] Export via GPSBabel
+Subject: [PATCH] SF Feature#49: Export via GPSBabel
 
 Allow to export data in all formats supported by gpsbabel.
 
