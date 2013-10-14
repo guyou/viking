@@ -57,6 +57,8 @@ GtkWidget *a_babel_ui_file_type_selector_new ( BabelMode mode )
 
   a_babel_foreach_file_with_mode (mode, babel_ui_selector_add_entry_cb, combo);
 
+  gtk_widget_set_tooltip_text( combo, _("Select the file format.") );
+
   return combo;
 }
 
@@ -121,6 +123,10 @@ GtkWidget *a_babel_ui_modes_new ( gboolean tracks, gboolean routes, gboolean way
   gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON(button), waypoints );
   gtk_box_pack_start ( GTK_BOX(hbox), button, TRUE, TRUE, 0 );
   gtk_widget_show (button);
+
+  gtk_widget_set_tooltip_text( hbox, _("Select the information to process.\n"
+      "Warning: the behavior of these switches is highly dependent of the file format selected.\n"
+      "Please, refer to GPSbabel if unsure.") );
 
   return hbox;
 }
