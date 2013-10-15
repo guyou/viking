@@ -143,8 +143,14 @@ void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl, const gchar *title, const
   gtk_widget_show (label);
   gtk_widget_show_all (hbox);
 
+  gtk_widget_set_tooltip_text( babel_selector, _("Select the file format.") );
+
   GtkWidget *babel_modes = a_babel_ui_modes_new(mode.tracksWrite, mode.routesWrite, mode.waypointsWrite);
   gtk_widget_show (babel_modes);
+
+  gtk_widget_set_tooltip_text( babel_modes, _("Select the information to process.\n"
+      "Warning: the behavior of these switches is highly dependent of the file format selected.\n"
+      "Please, refer to GPSbabel if unsure.") );
 
   GtkWidget *vbox = gtk_vbox_new(FALSE, 0);
   gtk_box_pack_start ( GTK_BOX(vbox), hbox, TRUE, TRUE, 0 );
