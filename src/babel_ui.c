@@ -31,12 +31,12 @@ static void babel_ui_selector_add_entry_cb ( gpointer data, gpointer user_data )
   BabelFile *file = (BabelFile*)data;
   GtkWidget *combo = GTK_WIDGET (user_data);
 
-  GList *formats = g_object_get_data ( G_OBJECT ( combo ), "formats");
+  GList *formats = g_object_get_data ( G_OBJECT ( combo ), "formats" );
   formats = g_list_append(formats, file);
   g_object_set_data ( G_OBJECT ( combo ), "formats", formats );
 
   const gchar *label = file->label;
-  vik_combo_box_text_append (combo, label);
+  vik_combo_box_text_append ( combo, label );
 }
 
 /**
@@ -45,17 +45,31 @@ static void babel_ui_selector_add_entry_cb ( gpointer data, gpointer user_data )
  *
  * Create a file type selector.
  *
+ * This widget relies on a combo box listing labels of file formats.
+ * We store in the "data" of the GtkWidget a list with the BabelFile
+ * entries, in order to retrieve the selected file format.
+ *
  * Returns: a GtkWidget
  */
 GtkWidget *a_babel_ui_file_type_selector_new ( BabelMode mode )
 {
+  GList *formats = NULL;
   /* Create the combo */
   GtkWidget * combo = vik_combo_box_text_new ();
 
-  /* Prepare space for file format list */
-  g_object_set_data ( G_OBJECT ( combo ), "formats", NULL );
+  /* Add a first label to invite user to select a file format */
+  /* We store a NULL pointer to distinguish this entry */
+  formats = g_list_append(formats, NULL);
+  vik_combo_box_text_append ( combo, _("Select a file format") );
 
-  a_babel_foreach_file_with_mode (mode, babel_ui_selector_add_entry_cb, combo);
+  /* Prepare space for file format list */
+  g_object_set_data ( G_OBJECT ( combo ), "formats", formats );
+
+  /* Add all known and compatible file formats */
+  a_babel_foreach_file_with_mode ( mode, babel_ui_selector_add_entry_cb, combo );
+
+  /* Initialize the selection with the really first entry */
+  gtk_combo_box_set_active( GTK_COMBO_BOX(combo), 0 );
 
   return combo;
 }

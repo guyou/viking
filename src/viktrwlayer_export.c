@@ -107,6 +107,22 @@ void vik_trw_layer_export_external_gpx ( VikTrwLayer *vtl, const gchar* external
 }
 
 
+static void type_selector_changed_cb ( GtkComboBox *widget, gpointer user_data )
+{
+  /* user_data is the GtkDialog */
+  GtkDialog *dialog = GTK_DIALOG(user_data);
+
+  /* Retrieve the associated file format descriptor */
+  BabelFile *file = a_babel_ui_file_type_selector_get (GTK_WIDGET(widget));
+
+  if (file)
+    /* Not NULL => valid selection */
+    gtk_dialog_set_response_sensitive(dialog, GTK_RESPONSE_ACCEPT, TRUE);
+  else
+    /* NULL => invalid selection */
+    gtk_dialog_set_response_sensitive(dialog, GTK_RESPONSE_ACCEPT, FALSE);
+}
+
 void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl, const gchar *title, const gchar* default_name )
 {
   BabelMode mode = { 0, 0, 0, 0, 0, 0 };
@@ -134,6 +150,8 @@ void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl, const gchar *title, const
     gtk_file_chooser_set_current_folder ( GTK_FILE_CHOOSER(file_selector), cwd );
     g_free ( cwd );
   }
+
+  /* Build the extra part of the widget */
   GtkWidget *babel_selector = a_babel_ui_file_type_selector_new ( mode );
   GtkWidget *label = gtk_label_new(_("File format:"));
   GtkWidget *hbox = gtk_hbox_new(FALSE, 0);
@@ -159,6 +177,12 @@ void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl, const gchar *title, const
 
   gtk_file_chooser_set_extra_widget (GTK_FILE_CHOOSER(file_selector), vbox);
 
+  /* Add some dynamic: only allow dialog's validation when format selection is done */
+  g_signal_connect (babel_selector, "changed", G_CALLBACK(type_selector_changed_cb), file_selector);
+  /* Manually call the callback to fix the state */
+  type_selector_changed_cb (babel_selector, file_selector);
+
+  /* Set possible name of the file */
   gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER(file_selector), default_name);
 
   while ( gtk_dialog_run ( GTK_DIALOG(file_selector) ) == GTK_RESPONSE_ACCEPT )
