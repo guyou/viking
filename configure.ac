@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(viking, 1.4.1, , viking, http://viking.sf.net/)
+AC_INIT(viking, 1.5, , viking, http://viking.sf.net/)
 AM_INIT_AUTOMAKE([dist-bzip2 dist-zip])
 dnl AC_CONFIG_SRCDIR([src/main.c])
 AC_CONFIG_HEADERS([src/config.h])
@@ -297,6 +297,21 @@ case $ac_cv_enable_magic in
 esac
 AM_CONDITIONAL([MAGIC], [test x$ac_cv_enable_magic = xyes])
 
+# SQL for MBTiles
+AC_ARG_ENABLE(mbtiles, AC_HELP_STRING([--enable-mbtiles],
+              [enable MBTiles support via libsqlite3 (default is enable).]),
+              [ac_cv_enable_mbtiles=$enableval],
+              [ac_cv_enable_mbtiles=yes])
+AC_CACHE_CHECK([whether to enable MBTiles Support],
+               [ac_cv_enable_mbtiles], [ac_cv_enable_mbtiles=yes])
+case $ac_cv_enable_mbtiles in
+  yes)
+    AC_CHECK_HEADERS([sqlite3.h],[],[AC_MSG_ERROR([sqlite3.h is needed but not found - you will need to install package 'libsqlite3-dev' or similar. The feature can be disabled with --disable-mbtiles])])
+    AC_CHECK_LIB(sqlite3, sqlite3_open, [], [AC_MSG_ERROR([libsqlite3 is needed but not found.])])
+    ;;
+esac
+AM_CONDITIONAL([SQLITE], [test x$ac_cv_enable_mbtiles = xyes])
+
 ###
 
 AC_ARG_WITH(search,
@@ -406,6 +421,7 @@ echo "USGS 24k DEM                     : $ac_cv_enable_dem24k"
 echo "Realtime GPS Tracking            : $ac_cv_enable_realtimegpstracking"
 echo "bzip2 Support                    : $ac_cv_enable_bzip2"
 echo "File Magic Support               : $ac_cv_enable_magic"
+echo "MBTiles Support (SQLite3)        : $ac_cv_enable_mbtiles"
 echo "Size of map cache (in memory)    : ${VIK_CONFIG_MAPCACHE_SIZE}"
 echo "Age of tiles (in seconds)        : ${VIK_CONFIG_DEFAULT_TILE_AGE}"
 echo "Documentation (+HTML)            : ${enable_gtk_doc} (HTML: ${enable_gtk_doc_html})"
