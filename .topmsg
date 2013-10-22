@@ -1,0 +1,7 @@
+From: Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
+Subject: [PATCH] Extract trw export module
+
+VikTrwLayer module is really huge.
+Export seems a good feature-candidate for externalisation.
+
+Signed-off-by: Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
