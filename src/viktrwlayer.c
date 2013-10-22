@@ -3084,20 +3084,25 @@ static void trw_layer_auto_view ( gpointer layer_and_vlp[2] )
 
 static void trw_layer_export_gpspoint ( gpointer layer_and_vlp[2] )
 {
-  vik_trw_layer_export ( VIK_TRW_LAYER (layer_and_vlp[0]), _("Export Layer"), vik_layer_get_name(VIK_LAYER(layer_and_vlp[0])), NULL, FILE_TYPE_GPSPOINT );
+  gchar *auto_save_name = append_file_ext ( vik_layer_get_name(VIK_LAYER(layer_and_vlp[0])), FILE_TYPE_GPSPOINT );
+
+  vik_trw_layer_export ( VIK_TRW_LAYER (layer_and_vlp[0]), _("Export Layer"), auto_save_name, NULL, FILE_TYPE_GPSPOINT );
+
+  g_free ( auto_save_name );
 }
 
 static void trw_layer_export_gpsmapper ( gpointer layer_and_vlp[2] )
 {
-  vik_trw_layer_export ( VIK_TRW_LAYER (layer_and_vlp[0]), _("Export Layer"), vik_layer_get_name(VIK_LAYER(layer_and_vlp[0])), NULL, FILE_TYPE_GPSMAPPER );
+  gchar *auto_save_name = append_file_ext ( vik_layer_get_name(VIK_LAYER(layer_and_vlp[0])), FILE_TYPE_GPSMAPPER );
+
+  vik_trw_layer_export ( VIK_TRW_LAYER (layer_and_vlp[0]), _("Export Layer"), auto_save_name, NULL, FILE_TYPE_GPSMAPPER );
+
+  g_free ( auto_save_name );
 }
 
 static void trw_layer_export_gpx ( gpointer layer_and_vlp[2] )
 {
-  /* Auto append '.gpx' to track name (providing it's not already there) for the default filename */
-  gchar *auto_save_name = g_strdup ( vik_layer_get_name(VIK_LAYER(layer_and_vlp[0])) );
-  if ( ! check_file_ext ( auto_save_name, ".gpx" ) )
-    auto_save_name = g_strconcat ( auto_save_name, ".gpx", NULL );
+  gchar *auto_save_name = append_file_ext ( vik_layer_get_name(VIK_LAYER(layer_and_vlp[0])), FILE_TYPE_GPX );
 
   vik_trw_layer_export ( VIK_TRW_LAYER (layer_and_vlp[0]), _("Export Layer"), auto_save_name, NULL, FILE_TYPE_GPX );
 
@@ -3106,10 +3111,7 @@ static void trw_layer_export_gpx ( gpointer layer_and_vlp[2] )
 
 static void trw_layer_export_kml ( gpointer layer_and_vlp[2] )
 {
-  /* Auto append '.kml' to the name (providing it's not already there) for the default filename */
-  gchar *auto_save_name = g_strdup ( vik_layer_get_name(VIK_LAYER(layer_and_vlp[0])) );
-  if ( ! check_file_ext ( auto_save_name, ".kml" ) )
-    auto_save_name = g_strconcat ( auto_save_name, ".kml", NULL );
+  gchar *auto_save_name = append_file_ext ( vik_layer_get_name(VIK_LAYER(layer_and_vlp[0])), FILE_TYPE_KML );
 
   vik_trw_layer_export ( VIK_TRW_LAYER (layer_and_vlp[0]), _("Export Layer"), auto_save_name, NULL, FILE_TYPE_KML );
 
@@ -3143,10 +3145,7 @@ static void trw_layer_export_gpx_track ( gpointer pass_along[6] )
   if ( !trk || !trk->name )
     return;
 
-  /* Auto append '.gpx' to track name (providing it's not already there) for the default filename */
-  gchar *auto_save_name = g_strdup ( trk->name );
-  if ( ! check_file_ext ( auto_save_name, ".gpx" ) )
-    auto_save_name = g_strconcat ( auto_save_name, ".gpx", NULL );
+  gchar *auto_save_name = append_file_ext ( trk->name, FILE_TYPE_GPX );
 
   gchar *label = NULL;
   if ( GPOINTER_TO_INT (pass_along[2]) == VIK_TRW_LAYER_SUBLAYER_ROUTE )
