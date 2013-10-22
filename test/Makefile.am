@@ -37,4 +37,4 @@ test_babel_SOURCES = test_babel.c
 test_babel_LDADD = \
   $(top_builddir)/src/libviking.a \
   $(LDADD)
-  
+
