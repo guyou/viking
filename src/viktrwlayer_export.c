@@ -48,11 +48,11 @@ void vik_trw_layer_export ( VikTrwLayer *vtl, const gchar *title, const gchar* d
     g_free ( cwd );
   }
 
-  gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER(file_selector), default_name);
+  gtk_file_chooser_set_current_name ( GTK_FILE_CHOOSER(file_selector), default_name );
 
   while ( gtk_dialog_run ( GTK_DIALOG(file_selector) ) == GTK_RESPONSE_ACCEPT )
   {
-    fn = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER(file_selector) );
+    fn = gtk_file_chooser_get_filename ( GTK_FILE_CHOOSER(file_selector) );
     if ( g_file_test ( fn, G_FILE_TEST_EXISTS ) == FALSE ||
          a_dialog_yes_or_no ( GTK_WINDOW(file_selector), _("The file \"%s\" exists, do you wish to overwrite it?"), a_file_basename ( fn ) ) )
     {
