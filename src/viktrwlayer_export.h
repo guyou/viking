@@ -1,7 +1,8 @@
+/* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*- */
 /*
  * viking -- GPS Data and Topo Analyzer, Explorer, and Manager
  *
- * Copyright (C) 2003-2005, Evan Battaglia <gtoevan@gmx.net>
+ * Copyright (C) 2013, Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,10 +22,6 @@
 
 #ifndef _VIKING_TRWLAYER_EXPORT_H
 #define _VIKING_TRWLAYER_EXPORT_H
-
-#include <glib.h>
-#include <glib-object.h>
-#include <gtk/gtk.h>
 
 #include "viktrwlayer.h"
 

@@ -3342,18 +3342,23 @@ static void trw_layer_geotagging ( gpointer lav[2] )
 
 // 'Acquires' - Same as in File Menu -> Acquire - applies into the selected TRW Layer //
 
-/*
- * Acquire into this TRW Layer straight from GPS Device
- */
-static void trw_layer_acquire_gps_cb ( gpointer lav[2] )
+static void trw_layer_acquire ( gpointer lav[2], VikDataSourceInterface *datasource )
 {
   VikTrwLayer *vtl = VIK_TRW_LAYER(lav[0]);
   VikLayersPanel *vlp = VIK_LAYERS_PANEL(lav[1]);
   VikWindow *vw = (VikWindow *)(VIK_GTK_WINDOW_FROM_LAYER(vtl));
   VikViewport *vvp =  vik_window_viewport(vw);
 
+  a_acquire ( vw, vlp, vvp, datasource, NULL, NULL );
+}
+
+/*
+ * Acquire into this TRW Layer straight from GPS Device
+ */
+static void trw_layer_acquire_gps_cb ( gpointer lav[2] )
+{
   vik_datasource_gps_interface.mode = VIK_DATASOURCE_ADDTOLAYER;
-  a_acquire ( vw, vlp, vvp, &vik_datasource_gps_interface, NULL, NULL );
+  trw_layer_acquire ( lav, &vik_datasource_gps_interface );
 }
 
 /*
@@ -3361,12 +3366,7 @@ static void trw_layer_acquire_gps_cb ( gpointer lav[2] )
  */
 static void trw_layer_acquire_routing_cb ( gpointer lav[2] )
 {
-  VikTrwLayer *vtl = VIK_TRW_LAYER(lav[0]);
-  VikLayersPanel *vlp = VIK_LAYERS_PANEL(lav[1]);
-  VikWindow *vw = (VikWindow *)(VIK_GTK_WINDOW_FROM_LAYER(vtl));
-  VikViewport *vvp =  vik_window_viewport(vw);
-
-  a_acquire ( vw, vlp, vvp, &vik_datasource_routing_interface, NULL, NULL );
+  trw_layer_acquire ( lav, &vik_datasource_routing_interface );
 }
 
 /*
@@ -3374,13 +3374,8 @@ static void trw_layer_acquire_routing_cb ( gpointer lav[2] )
  */
 static void trw_layer_acquire_url_cb ( gpointer lav[2] )
 {
-  VikTrwLayer *vtl = VIK_TRW_LAYER(lav[0]);
-  VikLayersPanel *vlp = VIK_LAYERS_PANEL(lav[1]);
-  VikWindow *vw = (VikWindow *)(VIK_GTK_WINDOW_FROM_LAYER(vtl));
-  VikViewport *vvp = vik_window_viewport(vw);
-
   vik_datasource_url_interface.mode = VIK_DATASOURCE_ADDTOLAYER;
-  a_acquire ( vw, vlp, vvp, &vik_datasource_url_interface, NULL, NULL );
+  trw_layer_acquire ( lav, &vik_datasource_url_interface );
 }
 
 #ifdef VIK_CONFIG_OPENSTREETMAP
@@ -3389,12 +3384,7 @@ static void trw_layer_acquire_url_cb ( gpointer lav[2] )
  */
 static void trw_layer_acquire_osm_cb ( gpointer lav[2] )
 {
-  VikTrwLayer *vtl = VIK_TRW_LAYER(lav[0]);
-  VikLayersPanel *vlp = VIK_LAYERS_PANEL(lav[1]);
-  VikWindow *vw = (VikWindow *)(VIK_GTK_WINDOW_FROM_LAYER(vtl));
-  VikViewport *vvp =  vik_window_viewport(vw);
-
-  a_acquire ( vw, vlp, vvp, &vik_datasource_osm_interface, NULL, NULL );
+  trw_layer_acquire ( lav, &vik_datasource_osm_interface );
 }
 
 /**
@@ -3402,12 +3392,7 @@ static void trw_layer_acquire_osm_cb ( gpointer lav[2] )
  */
 static void trw_layer_acquire_osm_my_traces_cb ( gpointer lav[2] )
 {
-  VikTrwLayer *vtl = VIK_TRW_LAYER(lav[0]);
-  VikLayersPanel *vlp = VIK_LAYERS_PANEL(lav[1]);
-  VikWindow *vw = (VikWindow *)(VIK_GTK_WINDOW_FROM_LAYER(vtl));
-  VikViewport *vvp =  vik_window_viewport(vw);
-
-  a_acquire ( vw, vlp, vvp, &vik_datasource_osm_my_traces_interface, NULL, NULL );
+  trw_layer_acquire ( lav, &vik_datasource_osm_my_traces_interface );
 }
 #endif
 
@@ -3417,12 +3402,7 @@ static void trw_layer_acquire_osm_my_traces_cb ( gpointer lav[2] )
  */
 static void trw_layer_acquire_geocache_cb ( gpointer lav[2] )
 {
-  VikTrwLayer *vtl = VIK_TRW_LAYER(lav[0]);
-  VikLayersPanel *vlp = VIK_LAYERS_PANEL(lav[1]);
-  VikWindow *vw = (VikWindow *)(VIK_GTK_WINDOW_FROM_LAYER(vtl));
-  VikViewport *vvp =  vik_window_viewport(vw);
-
-  a_acquire ( vw, vlp, vvp, &vik_datasource_gc_interface, NULL, NULL );
+  trw_layer_acquire ( lav, &vik_datasource_gc_interface );
 }
 #endif
 
@@ -3433,12 +3413,9 @@ static void trw_layer_acquire_geocache_cb ( gpointer lav[2] )
 static void trw_layer_acquire_geotagged_cb ( gpointer lav[2] )
 {
   VikTrwLayer *vtl = VIK_TRW_LAYER(lav[0]);
-  VikLayersPanel *vlp = VIK_LAYERS_PANEL(lav[1]);
-  VikWindow *vw = (VikWindow *)(VIK_GTK_WINDOW_FROM_LAYER(vtl));
-  VikViewport *vvp =  vik_window_viewport(vw);
 
   vik_datasource_geotag_interface.mode = VIK_DATASOURCE_ADDTOLAYER;
-  a_acquire ( vw, vlp, vvp, &vik_datasource_geotag_interface, NULL, NULL );
+  trw_layer_acquire ( lav, &vik_datasource_geotag_interface );
 
   // Reverify thumbnails as they may have changed
   vtl->has_verified_thumbnails = FALSE;
