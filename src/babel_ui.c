@@ -57,6 +57,7 @@ void a_babel_ui_type_selector_dialog_sensitivity_cb ( GtkComboBox *widget, gpoin
 
 /**
  * a_babel_ui_file_type_selector_new:
+ * @mode: the mode to filter the file types
  *
  * Create a file type selector.
  *
