@@ -35,6 +35,7 @@
 #include "print.h"
 #include "preferences.h"
 #include "viklayer_defaults.h"
+#include "viktrwlayer_export.h"
 #include "icons/icons.h"
 #include "vikexttools.h"
 #include "vikexttool_datasources.h"
@@ -2797,121 +2798,14 @@ static gboolean save_file ( GtkAction *a, VikWindow *vw )
   }
 }
 
-/**
- * export_to:
- *
- * Export all TRW Layers in the list to individual files in the specified directory
- *
- * Returns: %TRUE on success
- */
-static gboolean export_to ( VikWindow *vw, GList *gl, VikFileType_t vft, const gchar *dir, const gchar *extension )
-{
-  gboolean success = TRUE;
-
-  gint export_count = 0;
-
-  vik_window_set_busy_cursor ( vw );
-
-  while ( gl ) {
-
-    gchar *fn = g_strconcat ( dir, G_DIR_SEPARATOR_S, VIK_LAYER(gl->data)->name, extension, NULL );
-
-    // Some protection in attempting to write too many same named files
-    // As this will get horribly slow...
-    gboolean safe = FALSE;
-    gint ii = 2;
-    while ( ii < 5000 ) {
-      if ( g_file_test ( fn, G_FILE_TEST_EXISTS ) ) {
-        // Try rename
-        g_free ( fn );
-        fn = g_strdup_printf ( "%s%s%s#%03d%s", dir, G_DIR_SEPARATOR_S, VIK_LAYER(gl->data)->name, ii, extension );
-	  }
-	  else {
-		  safe = TRUE;
-		  break;
-	  }
-	  ii++;
-    }
-    if ( ii == 5000 )
-      success = FALSE;
-
-    // NB: We allow exporting empty layers
-    if ( safe ) {
-      gboolean this_success = a_file_export ( VIK_TRW_LAYER(gl->data), fn, vft, NULL, TRUE );
-
-      // Show some progress
-      if ( this_success ) {
-        export_count++;
-        gchar *message = g_strdup_printf ( _("Exporting to file: %s"), fn );
-        vik_statusbar_set_message ( vw->viking_vs, VIK_STATUSBAR_INFO, message );
-        while ( gtk_events_pending() )
-          gtk_main_iteration ();
-        g_free ( message );
-      }
-      
-      success = success && this_success;
-    }
-
-    g_free ( fn );
-    gl = g_list_next ( gl );
-  }
-
-  vik_window_clear_busy_cursor ( vw );
-
-  // Confirm what happened.
-  gchar *message = g_strdup_printf ( _("Exported files: %d"), export_count );
-  vik_statusbar_set_message ( vw->viking_vs, VIK_STATUSBAR_INFO, message );
-  g_free ( message );
-
-  return success;
-}
-
-static void export_to_common ( VikWindow *vw, VikFileType_t vft, const gchar *extension )
-{
-  GList *gl = vik_layers_panel_get_all_layers_of_type ( vw->viking_vlp, VIK_LAYER_TRW, TRUE );
-
-  if ( !gl ) {
-    a_dialog_info_msg ( GTK_WINDOW(vw), _("Nothing to Export!") );
-    return;
-  }
-
-  GtkWidget *dialog = gtk_file_chooser_dialog_new ( _("Export to directory"),
-                                                    GTK_WINDOW(vw),
-                                                    GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
-                                                    GTK_STOCK_CANCEL,
-                                                    GTK_RESPONSE_REJECT,
-                                                    GTK_STOCK_OK,
-                                                    GTK_RESPONSE_ACCEPT,
-                                                    NULL );
-  gtk_window_set_transient_for ( GTK_WINDOW(dialog), GTK_WINDOW(vw) );
-  gtk_window_set_destroy_with_parent ( GTK_WINDOW(dialog), TRUE );
-  gtk_window_set_modal ( GTK_WINDOW(dialog), TRUE );
-
-  gtk_widget_show_all ( dialog );
-
-  if ( gtk_dialog_run ( GTK_DIALOG(dialog) ) == GTK_RESPONSE_ACCEPT ) {
-    gchar *dir = gtk_file_chooser_get_filename ( GTK_FILE_CHOOSER(dialog) );
-    gtk_widget_destroy ( dialog );
-    if ( dir ) {
-      if ( !export_to ( vw, gl, vft, dir, extension ) )
-        a_dialog_error_msg ( GTK_WINDOW(vw),_("Could not convert all files") );
-      g_free ( dir );
-    }
-  }
-  else
-    gtk_widget_destroy ( dialog );
-
-  g_list_free ( gl );
-}
-
 static void export_to_gpx ( GtkAction *a, VikWindow *vw )
 {
-  export_to_common ( vw, FILE_TYPE_GPX, ".gpx" );
+  vik_trw_layer_export_all ( vw, FILE_TYPE_GPX, ".gpx" );
 }
 
 static void export_to_kml ( GtkAction *a, VikWindow *vw )
 {
-  export_to_common ( vw, FILE_TYPE_KML, ".kml" );
+  vik_trw_layer_export_all ( vw, FILE_TYPE_KML, ".kml" );
 }
 
 static void file_properties_cb ( GtkAction *a, VikWindow *vw )
