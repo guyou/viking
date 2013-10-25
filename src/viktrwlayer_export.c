@@ -71,6 +71,114 @@ void vik_trw_layer_export ( VikTrwLayer *vtl, const gchar *title, const gchar* d
 
 
 /**
+ * export_to:
+ *
+ * Export all TRW Layers in the list to individual files in the specified directory
+ *
+ * Returns: %TRUE on success
+ */
+static gboolean export_to ( VikWindow *vw, GList *gl, VikFileType_t vft, const gchar *dir, const gchar *extension )
+{
+  gboolean success = TRUE;
+
+  gint export_count = 0;
+
+  vik_window_set_busy_cursor ( vw );
+
+  while ( gl ) {
+
+    gchar *fn = g_strconcat ( dir, G_DIR_SEPARATOR_S, VIK_LAYER(gl->data)->name, extension, NULL );
+
+    // Some protection in attempting to write too many same named files
+    // As this will get horribly slow...
+    gboolean safe = FALSE;
+    gint ii = 2;
+    while ( ii < 5000 ) {
+      if ( g_file_test ( fn, G_FILE_TEST_EXISTS ) ) {
+        // Try rename
+        g_free ( fn );
+        fn = g_strdup_printf ( "%s%s%s#%03d%s", dir, G_DIR_SEPARATOR_S, VIK_LAYER(gl->data)->name, ii, extension );
+          }
+          else {
+                  safe = TRUE;
+                  break;
+          }
+          ii++;
+    }
+    if ( ii == 5000 )
+      success = FALSE;
+
+    // NB: We allow exporting empty layers
+    if ( safe ) {
+      gboolean this_success = a_file_export ( VIK_TRW_LAYER(gl->data), fn, vft, NULL, TRUE );
+
+      // Show some progress
+      if ( this_success ) {
+        export_count++;
+        gchar *message = g_strdup_printf ( _("Exporting to file: %s"), fn );
+        vik_statusbar_set_message ( vik_window_get_statusbar ( vw ), VIK_STATUSBAR_INFO, message );
+        while ( gtk_events_pending() )
+          gtk_main_iteration ();
+        g_free ( message );
+      }
+
+      success = success && this_success;
+    }
+
+    g_free ( fn );
+    gl = g_list_next ( gl );
+  }
+
+  vik_window_clear_busy_cursor ( vw );
+
+  // Confirm what happened.
+  gchar *message = g_strdup_printf ( _("Exported files: %d"), export_count );
+  vik_statusbar_set_message ( vik_window_get_statusbar ( vw ), VIK_STATUSBAR_INFO, message );
+  g_free ( message );
+
+  return success;
+}
+
+void vik_trw_layer_export_all ( VikWindow *vw, VikFileType_t vft, const gchar *extension )
+{
+  GList *gl = vik_layers_panel_get_all_layers_of_type ( vik_window_layers_panel ( vw ), VIK_LAYER_TRW, TRUE );
+
+  if ( !gl ) {
+    a_dialog_info_msg ( GTK_WINDOW(vw), _("Nothing to Export!") );
+    return;
+  }
+
+  GtkWidget *dialog = gtk_file_chooser_dialog_new ( _("Export to directory"),
+                                                    GTK_WINDOW(vw),
+                                                    GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
+                                                    GTK_STOCK_CANCEL,
+                                                    GTK_RESPONSE_REJECT,
+                                                    GTK_STOCK_OK,
+                                                    GTK_RESPONSE_ACCEPT,
+                                                    NULL );
+  gtk_window_set_transient_for ( GTK_WINDOW(dialog), GTK_WINDOW(vw) );
+  gtk_window_set_destroy_with_parent ( GTK_WINDOW(dialog), TRUE );
+  gtk_window_set_modal ( GTK_WINDOW(dialog), TRUE );
+
+  gtk_widget_show_all ( dialog );
+
+  if ( gtk_dialog_run ( GTK_DIALOG(dialog) ) == GTK_RESPONSE_ACCEPT ) {
+    gchar *dir = gtk_file_chooser_get_filename ( GTK_FILE_CHOOSER(dialog) );
+    gtk_widget_destroy ( dialog );
+    if ( dir ) {
+      if ( !export_to ( vw, gl, vft, dir, extension ) )
+        a_dialog_error_msg ( GTK_WINDOW(vw),_("Could not convert all files") );
+      g_free ( dir );
+    }
+  }
+  else
+    gtk_widget_destroy ( dialog );
+
+  g_list_free ( gl );
+}
+
+
+/**
  * Convert the given TRW layer into a temporary GPX file and open it with the specified program
  *
  */
@@ -106,22 +214,6 @@ void vik_trw_layer_export_external_gpx ( VikTrwLayer *vtl, const gchar* external
   }
 }
 
-
-static void type_selector_changed_cb ( GtkComboBox *widget, gpointer user_data )
-{
-  /* user_data is the GtkDialog */
-  GtkDialog *dialog = GTK_DIALOG(user_data);
-
-  /* Retrieve the associated file format descriptor */
-  BabelFile *file = a_babel_ui_file_type_selector_get (GTK_WIDGET(widget));
-
-  if (file)
-    /* Not NULL => valid selection */
-    gtk_dialog_set_response_sensitive(dialog, GTK_RESPONSE_ACCEPT, TRUE);
-  else
-    /* NULL => invalid selection */
-    gtk_dialog_set_response_sensitive(dialog, GTK_RESPONSE_ACCEPT, FALSE);
-}
 
 void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl, const gchar *title, const gchar* default_name )
 {
@@ -178,9 +270,9 @@ void vik_trw_layer_export_gpsbabel ( VikTrwLayer *vtl, const gchar *title, const
   gtk_file_chooser_set_extra_widget (GTK_FILE_CHOOSER(file_selector), vbox);
 
   /* Add some dynamic: only allow dialog's validation when format selection is done */
-  g_signal_connect (babel_selector, "changed", G_CALLBACK(type_selector_changed_cb), file_selector);
+  g_signal_connect (babel_selector, "changed", G_CALLBACK(a_babel_ui_type_selector_dialog_sensitivity_cb), file_selector);
   /* Manually call the callback to fix the state */
-  type_selector_changed_cb (babel_selector, file_selector);
+  a_babel_ui_type_selector_dialog_sensitivity_cb (babel_selector, file_selector);
 
   /* Set possible name of the file */
   gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER(file_selector), default_name);

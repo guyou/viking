@@ -31,6 +31,7 @@ G_BEGIN_DECLS
 GtkWidget *a_babel_ui_file_type_selector_new ( BabelMode mode );
 void a_babel_ui_file_type_selector_destroy ( GtkWidget *selector );
 BabelFile *a_babel_ui_file_type_selector_get ( GtkWidget *selector );
+void a_babel_ui_type_selector_dialog_sensitivity_cb ( GtkComboBox *widget, gpointer user_data );
 
 GtkWidget *a_babel_ui_modes_new ( gboolean tracks, gboolean routes, gboolean waypoints );
 void a_babel_ui_modes_get ( GtkWidget *container, gboolean *tracks, gboolean *routes, gboolean *waypoints );

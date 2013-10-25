@@ -29,14 +29,30 @@
 static void babel_ui_selector_add_entry_cb ( gpointer data, gpointer user_data )
 {
   BabelFile *file = (BabelFile*)data;
-  GtkWidget *combo = GTK_WIDGET (user_data);
+  GtkWidget *combo = GTK_WIDGET(user_data);
 
-  GList *formats = g_object_get_data ( G_OBJECT ( combo ), "formats" );
-  formats = g_list_append(formats, file);
-  g_object_set_data ( G_OBJECT ( combo ), "formats", formats );
+  GList *formats = g_object_get_data ( G_OBJECT(combo), "formats" );
+  formats = g_list_append ( formats, file );
+  g_object_set_data ( G_OBJECT(combo), "formats", formats );
 
   const gchar *label = file->label;
   vik_combo_box_text_append ( combo, label );
+}
+
+void a_babel_ui_type_selector_dialog_sensitivity_cb ( GtkComboBox *widget, gpointer user_data )
+{
+  /* user_data is the GtkDialog */
+  GtkDialog *dialog = GTK_DIALOG(user_data);
+
+  /* Retrieve the associated file format descriptor */
+  BabelFile *file = a_babel_ui_file_type_selector_get ( GTK_WIDGET(widget) );
+
+  if ( file )
+    /* Not NULL => valid selection */
+    gtk_dialog_set_response_sensitive ( dialog, GTK_RESPONSE_ACCEPT, TRUE );
+  else
+    /* NULL => invalid selection */
+    gtk_dialog_set_response_sensitive ( dialog, GTK_RESPONSE_ACCEPT, FALSE );
 }
 
 /**
@@ -59,17 +75,17 @@ GtkWidget *a_babel_ui_file_type_selector_new ( BabelMode mode )
 
   /* Add a first label to invite user to select a file format */
   /* We store a NULL pointer to distinguish this entry */
-  formats = g_list_append(formats, NULL);
+  formats = g_list_append ( formats, NULL );
   vik_combo_box_text_append ( combo, _("Select a file format") );
 
   /* Prepare space for file format list */
-  g_object_set_data ( G_OBJECT ( combo ), "formats", formats );
+  g_object_set_data ( G_OBJECT(combo), "formats", formats );
 
   /* Add all known and compatible file formats */
   a_babel_foreach_file_with_mode ( mode, babel_ui_selector_add_entry_cb, combo );
 
   /* Initialize the selection with the really first entry */
-  gtk_combo_box_set_active( GTK_COMBO_BOX(combo), 0 );
+  gtk_combo_box_set_active ( GTK_COMBO_BOX(combo), 0 );
 
   return combo;
 }
@@ -82,8 +98,8 @@ GtkWidget *a_babel_ui_file_type_selector_new ( BabelMode mode )
  */
 void a_babel_ui_file_type_selector_destroy ( GtkWidget *selector )
 {
-  GList *formats = g_object_get_data ( G_OBJECT ( selector ), "formats");
-  g_free (formats);
+  GList *formats = g_object_get_data ( G_OBJECT(selector), "formats" );
+  g_free ( formats );
 }
 
 /**
@@ -96,10 +112,10 @@ void a_babel_ui_file_type_selector_destroy ( GtkWidget *selector )
  */
 BabelFile *a_babel_ui_file_type_selector_get ( GtkWidget *selector )
 {
-  gint active = gtk_combo_box_get_active (GTK_COMBO_BOX(selector));
+  gint active = gtk_combo_box_get_active ( GTK_COMBO_BOX(selector) );
   if (active >= 0) {
-    GList *formats = g_object_get_data ( G_OBJECT ( selector ), "formats");
-    return (BabelFile*)g_list_nth_data(formats, active);
+    GList *formats = g_object_get_data ( G_OBJECT(selector), "formats" );
+    return (BabelFile*)g_list_nth_data ( formats, active );
   } else {
     return NULL;
   }
@@ -118,23 +134,23 @@ BabelFile *a_babel_ui_file_type_selector_get ( GtkWidget *selector )
  */
 GtkWidget *a_babel_ui_modes_new ( gboolean tracks, gboolean routes, gboolean waypoints )
 {
-  GtkWidget *hbox = gtk_hbox_new(FALSE, 0);
+  GtkWidget *hbox = gtk_hbox_new( FALSE, 0 );
   GtkWidget *button = NULL;
 
-  button = gtk_check_button_new_with_label ( _("Tracks"));
+  button = gtk_check_button_new_with_label ( _("Tracks") );
   gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON(button), tracks );
   gtk_box_pack_start ( GTK_BOX(hbox), button, TRUE, TRUE, 0 );
-  gtk_widget_show (button);
+  gtk_widget_show ( button );
 
-  button = gtk_check_button_new_with_label ( _("Routes"));
-  gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON(button), routes );
+  button = gtk_check_button_new_with_label ( _("Routes") );
+  gtk_toggle_button_set_active ( GTK_TOGGLE_BUTTON(button), routes );
   gtk_box_pack_start ( GTK_BOX(hbox), button, TRUE, TRUE, 0 );
-  gtk_widget_show (button);
+  gtk_widget_show ( button );
 
-  button = gtk_check_button_new_with_label ( _("Waypoints"));
-  gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON(button), waypoints );
+  button = gtk_check_button_new_with_label ( _("Waypoints") );
+  gtk_toggle_button_set_active ( GTK_TOGGLE_BUTTON(button), waypoints );
   gtk_box_pack_start ( GTK_BOX(hbox), button, TRUE, TRUE, 0 );
-  gtk_widget_show (button);
+  gtk_widget_show ( button );
 
   return hbox;
 }
