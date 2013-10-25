@@ -115,7 +115,7 @@ static gboolean export_to ( VikWindow *vw, GList *gl, VikFileType_t vft, const g
       if ( this_success ) {
         export_count++;
         gchar *message = g_strdup_printf ( _("Exporting to file: %s"), fn );
-        vik_statusbar_set_message ( vw->viking_vs, VIK_STATUSBAR_INFO, message );
+        vik_statusbar_set_message ( vik_window_get_statusbar ( vw ), VIK_STATUSBAR_INFO, message );
         while ( gtk_events_pending() )
           gtk_main_iteration ();
         g_free ( message );
@@ -132,7 +132,7 @@ static gboolean export_to ( VikWindow *vw, GList *gl, VikFileType_t vft, const g
 
   // Confirm what happened.
   gchar *message = g_strdup_printf ( _("Exported files: %d"), export_count );
-  vik_statusbar_set_message ( vw->viking_vs, VIK_STATUSBAR_INFO, message );
+  vik_statusbar_set_message ( vik_window_get_statusbar ( vw ), VIK_STATUSBAR_INFO, message );
   g_free ( message );
 
   return success;
@@ -140,7 +140,7 @@ static gboolean export_to ( VikWindow *vw, GList *gl, VikFileType_t vft, const g
 
 void vik_trw_layer_export_all ( VikWindow *vw, VikFileType_t vft, const gchar *extension )
 {
-  GList *gl = vik_layers_panel_get_all_layers_of_type ( vw->viking_vlp, VIK_LAYER_TRW, TRUE );
+  GList *gl = vik_layers_panel_get_all_layers_of_type ( vik_window_layers_panel ( vw ), VIK_LAYER_TRW, TRUE );
 
   if ( !gl ) {
     a_dialog_info_msg ( GTK_WINDOW(vw), _("Nothing to Export!") );
