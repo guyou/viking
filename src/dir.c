@@ -64,7 +64,15 @@ gchar *a_get_viking_dir_no_create()
 
 static gchar *viking_dir = NULL;
 
-const gchar *a_get_viking_dir()
+/**
+ * a_get_viking_dir:
+ *
+ * Retrieves the viking's base directory.
+ *  
+ * Retuns: the directory
+ */
+const gchar *
+a_get_viking_dir()
 {
   if (!viking_dir) {
     viking_dir = a_get_viking_dir_no_create ();
