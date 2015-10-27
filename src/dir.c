@@ -2,7 +2,7 @@
  * viking -- GPS Data and Topo Analyzer, Explorer, and Manager
  *
  * Copyright (C) 2003-2005, Evan Battaglia <gtoevan@gmx.net>
- * Copyright (C) 2012, Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
+ * Copyright (C) 2012-2015, Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -133,4 +133,25 @@ a_get_viking_data_path()
   }
 #endif
   return data_path;
+}
+
+/**
+ * a_get_viking_plugins_dir:
+ * 
+ * Retrieve the directory for plugins.
+ * 
+ * Returns: directeory, can't be null, but directory can not exist.
+ */
+gchar *
+a_get_viking_plugins_dir()
+{
+  const gchar *config_dir;
+  gchar *plugins_dir;
+
+  config_dir = a_get_viking_dir ();
+
+  plugins_dir = g_build_filename (config_dir,
+                                  "plugins",
+                                  NULL);
+  return plugins_dir;
 }

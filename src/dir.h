@@ -2,7 +2,7 @@
  * viking -- GPS Data and Topo Analyzer, Explorer, and Manager
  *
  * Copyright (C) 2003-2005, Evan Battaglia <gtoevan@gmx.net>
- * Copyright (C) 2012, Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
+ * Copyright (C) 2012-2015, Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ const gchar *a_get_viking_dir();
 gchar *a_get_viking_dir_no_create();
 gchar ** a_get_viking_data_path();
 gchar *a_get_viking_data_home();
+gchar *a_get_viking_plugins_dir();
 
 G_END_DECLS
 
