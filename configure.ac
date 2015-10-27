@@ -7,6 +7,8 @@ AM_INIT_AUTOMAKE([dist-bzip2 dist-zip subdir-objects])
 dnl AC_CONFIG_SRCDIR([src/main.c])
 AC_CONFIG_HEADERS([src/config.h])
 
+AC_CONFIG_MACRO_DIR([m4])
+
 LT_INIT
 
 # check for gtk-doc
@@ -20,7 +22,6 @@ AC_PROG_CC
 AC_PROG_CC_STDC
 # Checks for programs.
 AC_PROG_MAKE_SET
-AC_PROG_RANLIB
 AC_PATH_PROG(GLIB_MKENUMS, glib-mkenums)
 
 # I18N
