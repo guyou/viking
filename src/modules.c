@@ -353,7 +353,19 @@ void modules_post_init ()
   vik_mapnik_layer_post_init();
 #endif
 
+  /* Run post initialisation for plugins */
   g_list_foreach (modules_plugins, module_post_init_plugin, NULL);
+}
+
+static void
+module_uninit_plugin (gpointer data,
+                      gpointer user_data)
+{
+  GModule *module = (GModule*) data;
+  const gchar *filename = g_module_name (module);
+  
+  if (!g_module_close (module))
+    g_warning ("%s: %s", filename, g_module_error ());
 }
 
 /**
@@ -367,4 +379,9 @@ void modules_uninit()
 #ifdef HAVE_LIBMAPNIK
   vik_mapnik_layer_uninit();
 #endif
+
+  /* Unload plugins */
+  g_list_foreach (modules_plugins, module_uninit_plugin, NULL);
+  g_list_free (modules_plugins);
+  modules_plugins = NULL;
 }
