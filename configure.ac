@@ -204,11 +204,6 @@ AC_ARG_ENABLE(bluemarble, AC_HELP_STRING([--enable-bluemarble],
               [ac_cv_enable_bluemarble=yes])
 AC_CACHE_CHECK([whether to enable BlueMarble stuff],
                [ac_cv_enable_bluemarble], [ac_cv_enable_bluemarble=yes])
-case $ac_cv_enable_bluemarble in
-  yes)
-    AC_DEFINE(VIK_CONFIG_BLUEMARBLE, [], [BLUEMARBLE STUFF])
-    ;;
-esac
 AM_CONDITIONAL([BLUEMARBLE], [test x$ac_cv_enable_bluemarble = xyes])
 
 # GeoNames http://www.geonames.org/
