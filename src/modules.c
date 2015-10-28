@@ -330,24 +330,15 @@ module_post_init_plugin (gpointer data,
 {
   GModule *module = (GModule*) data;
   const gchar * (*fct) (GModule *);
-  const gchar *filename = g_module_name (module);
   
-  if (!g_module_symbol (module, "g_module_post_init", (gpointer *)&fct))
+  if (g_module_symbol (module, "g_module_post_init", (gpointer *)&fct))
+  {
+    if (fct)
     {
-      g_error ("%s: %s", filename, g_module_error ());
-      if (!g_module_close (module))
-        g_warning ("%s: %s", filename, g_module_error ());
+      // call our function in the module
+      fct (module);
     }
-
-  if (fct == NULL)
-    {
-      g_error ("symbol g_module_post_init is NULL");
-      if (!g_module_close (module))
-        g_warning ("%s: %s", filename, g_module_error ());
-    }
-
-  // call our function in the module
-  fct (module);
+  }
 }
 
 /**
