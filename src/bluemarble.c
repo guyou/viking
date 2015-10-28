@@ -2,7 +2,7 @@
  * viking -- GPS Data and Topo Analyzer, Explorer, and Manager
  *
  * Copyright (C) 2003-2005, Evan Battaglia <gtoevan@gmx.net>
- * Copyright (C) 2008, Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
+ * Copyright (C) 2008-2015, Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,14 +20,16 @@
  *
  */
 
-#include "bluemarble.h"
 #include "vikmapslayer.h"
 #include "vikslippymapsource.h"
 #include "map_ids.h"
 
 /* initialisation */
-void bluemarble_init ()
+const gchar *
+g_module_check_init (GModule *module)
 {
+  g_debug("module loading: %s", g_module_name(module));
+
   VikMapSource *bluemarble_type = VIK_MAP_SOURCE(g_object_new(VIK_TYPE_SLIPPY_MAP_SOURCE,
 							      "id", MAP_ID_BLUE_MARBLE,
 							      "name", "BlueMarble",
@@ -44,5 +46,8 @@ void bluemarble_init ()
   /* BlueMarble image hosting is courtesy of the Modest Maps project: http://modestmaps.com/ */
 
   maps_layer_register_map_source (bluemarble_type);
+  
+  /* Successful loading */
+  return NULL;
 }
 

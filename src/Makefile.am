@@ -194,8 +194,10 @@ libviking_a_SOURCES += \
 endif
 
 if BLUEMARBLE
-libviking_a_SOURCES += \
-	bluemarble.c bluemarble.h
+plugin_LTLIBRARIES += bluemarble.la
+bluemarble_la_SOURCES = \
+	bluemarble.c
+bluemarble_la_LDFLAGS = -module
 endif
 
 if GEONAMES
