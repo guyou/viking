@@ -233,6 +233,8 @@ static void
 modules_load_plugin(const gchar *filename)
 {
   GModule      *module;
+  
+  g_debug("Loading plugin %s", filename);
   module = g_module_open (filename, G_MODULE_BIND_LAZY);
   if (!module)
   {
@@ -322,14 +324,19 @@ module_post_init_plugin (gpointer data,
 {
   GModule *module = (GModule*) data;
   const gchar * (*fct) (GModule *);
+  const gchar *filename = g_module_name (module);
   
-  if (g_module_symbol (module, "g_module_post_init", (gpointer *)&fct))
+  g_debug("Post init plugin %s", filename);
+
+  if (g_module_symbol (module, "g_module_post_init", (gpointer *)&fct)
+     && fct)
   {
-    if (fct)
-    {
-      // call our function in the module
-      fct (module);
-    }
+    // call our function in the module
+    fct (module);
+  }
+  else
+  {
+    g_debug("No post init function for plugin %s", filename);
   }
 }
 
@@ -356,6 +363,7 @@ module_uninit_plugin (gpointer data,
   GModule *module = (GModule*) data;
   const gchar *filename = g_module_name (module);
   
+  g_debug("Unloading plugin %s", filename);
   if (!g_module_close (module))
     g_warning ("%s: %s", filename, g_module_error ());
 }
