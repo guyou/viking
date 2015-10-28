@@ -278,6 +278,7 @@ modules_load_plugins()
 
   if (!g_module_supported()) return;
   /* XDG_RUNTIME_DIR */
+  modules_load_plugins_dir (VIKING_PLUGINS_SYSDIR);
   modules_load_plugins_dir (a_get_viking_plugins_dir());
 }
 

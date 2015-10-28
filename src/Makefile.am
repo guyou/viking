@@ -237,7 +237,8 @@ AM_CFLAGS		= -Wall -g -D_GNU_SOURCE \
 AM_CPPFLAGS		= \
 	$(PACKAGE_CFLAGS) \
 	-DVIKING_DATADIR=\""$(pkgdatadir)"\" \
-	-DVIKING_SYSCONFDIR=\""$(sysconfdir)/$(PACKAGE)"\"
+	-DVIKING_SYSCONFDIR=\""$(sysconfdir)/$(PACKAGE)"\" \
+	-DVIKING_PLUGINS_SYSDIR=\""$(plugindir)"\"
 
 @INTLTOOL_DESKTOP_RULE@
 
