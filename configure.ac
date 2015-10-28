@@ -163,11 +163,6 @@ AC_ARG_ENABLE(terraserver, AC_HELP_STRING([--enable-terraserver],
               [ac_cv_enable_terraserver=no])
 AC_CACHE_CHECK([whether to enable Terraserver stuff],
                [ac_cv_enable_terraserver], [ac_cv_enable_terraserver=yes])
-case $ac_cv_enable_terraserver in
-  yes)
-    AC_DEFINE(VIK_CONFIG_TERRASERVER, [], [TERRASERVER STUFF])
-    ;;
-esac
 AM_CONDITIONAL([TERRASERVER], [test x$ac_cv_enable_terraserver = xyes])
 
 AC_ARG_ENABLE(expedia, AC_HELP_STRING([--enable-expedia],
