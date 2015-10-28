@@ -2,6 +2,7 @@
  * viking -- GPS Data and Topo Analyzer, Explorer, and Manager
  *
  * Copyright (C) 2003-2005, Evan Battaglia <gtoevan@gmx.net>
+ * Copyright (C) 2015, Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,12 +23,15 @@
 #include "config.h"
 #endif
 
-#include "terraserver.h"
 #include "terraservermapsource.h"
 #include "vikmapslayer.h"
 #include "map_ids.h"
 
-void terraserver_init () {
+const gchar *
+g_module_check_init (GModule *module)
+{
+  g_debug("module loading: %s", g_module_name(module));
+
   VikMapSource *map_type_1 = VIK_MAP_SOURCE(terraserver_map_source_new_with_id( MAP_ID_TERRASERVER_TOPO, "Terraserver Topos", MAP_ID_TERRASERVER_TOPO ));
   VikMapSource *map_type_2 = VIK_MAP_SOURCE(terraserver_map_source_new_with_id( MAP_ID_TERRASERVER_AERIAL, "Terraserver Aerials", MAP_ID_TERRASERVER_AERIAL ));
   VikMapSource *map_type_3 = VIK_MAP_SOURCE(terraserver_map_source_new_with_id( MAP_ID_TERRASERVER_URBAN, "Terraserver Urban Areas", MAP_ID_TERRASERVER_URBAN ));
@@ -35,4 +39,7 @@ void terraserver_init () {
   maps_layer_register_map_source (map_type_1);
   maps_layer_register_map_source (map_type_2);
   maps_layer_register_map_source (map_type_3);
+  
+  /* Successful loading */
+  return NULL;
 }

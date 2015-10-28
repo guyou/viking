@@ -34,7 +34,6 @@
 #include "modules.h"
 
 #include "bing.h"
-#include "terraserver.h"
 #include "expedia.h"
 #include "osm.h"
 #include "osm-traces.h"
@@ -294,9 +293,6 @@ void modules_init()
 #endif
 #ifdef VIK_CONFIG_EXPEDIA
   expedia_init();
-#endif
-#ifdef VIK_CONFIG_TERRASERVER
-  terraserver_init();
 #endif
 #ifdef VIK_CONFIG_OPENSTREETMAP
   osm_init();

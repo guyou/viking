@@ -173,9 +173,11 @@ google_la_LDFLAGS = -module
 endif
 
 if TERRASERVER
-libviking_a_SOURCES += \
+plugin_LTLIBRARIES += terraserver.la
+terraserver_la_SOURCES = \
 	terraservermapsource.c terraservermapsource.h \
-	terraserver.c terraserver.h
+	terraserver.c
+terraserver_la_LDFLAGS = -module
 endif
 
 if EXPEDIA
