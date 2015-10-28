@@ -135,7 +135,6 @@ libviking_a_SOURCES = \
 	datasource_wikipedia.c \
 	datasource_url.c \
 	datasources.h \
-	googlesearch.c googlesearch.h \
 	dem.c dem.h \
 	vikdemlayer.h vikdemlayer.c \
 	vikdatetime_edit_dialog.c vikdatetime_edit_dialog.h \
@@ -169,6 +168,7 @@ if GOOGLE
 plugin_LTLIBRARIES += google_plugin.la
 google_plugin_la_SOURCES = \
 	google_plugin.c \
+	googlesearch.c googlesearch.h \
 	google.c google.h
 google_plugin_la_LDFLAGS = -module
 endif
