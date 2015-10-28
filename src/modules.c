@@ -34,7 +34,6 @@
 #include "modules.h"
 
 #include "bing.h"
-#include "google.h"
 #include "terraserver.h"
 #include "expedia.h"
 #include "osm.h"
@@ -292,9 +291,6 @@ void modules_init()
 #ifdef VIK_CONFIG_BING
   bing_init();
 #endif
-#ifdef VIK_CONFIG_GOOGLE 
-  google_init();
-#endif
 #ifdef VIK_CONFIG_EXPEDIA
   expedia_init();
 #endif
@@ -361,9 +357,6 @@ module_post_init_plugin (gpointer data,
  */
 void modules_post_init ()
 {
-#ifdef VIK_CONFIG_GOOGLE
-  google_post_init();
-#endif
 #ifdef HAVE_LIBMAPNIK
   vik_mapnik_layer_post_init();
 #endif

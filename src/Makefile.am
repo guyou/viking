@@ -7,6 +7,10 @@ bin_PROGRAMS = viking
 
 noinst_LIBRARIES = libviking.a
 
+plugindir = $(libdir)/$(PACKAGE)/plugins
+
+plugin_LTLIBRARIES =
+
 authors.h: $(top_srcdir)/AUTHORS
 	rm -f $@
 	echo "/* Generated file. */" >> $@
@@ -162,8 +166,11 @@ libviking_a_SOURCES += \
 endif
 
 if GOOGLE
-libviking_a_SOURCES += \
+plugin_LTLIBRARIES += google_plugin.la
+google_plugin_la_SOURCES = \
+	google_plugin.c \
 	google.c google.h
+google_plugin_la_LDFLAGS = -module
 endif
 
 if TERRASERVER
