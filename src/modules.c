@@ -28,6 +28,8 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#include <glob.h>
+#include <string.h>
 
 #include "modules.h"
 
@@ -68,6 +70,8 @@
 #define VIKING_DATASOURCES_FILE "datasources.xml"
 #define VIKING_GOTOTOOLS_FILE "goto_tools.xml"
 #define VIKING_ROUTING_FILE "routing.xml"
+
+static GList *modules_plugins = NULL;
 
 static void
 modules_register_map_source(VikGobjectBuilder *self, GObject *object)
@@ -228,6 +232,56 @@ register_loadable_types(void)
   g_debug("%d types loaded", (int)sizeof(types)/(int)sizeof(GType));
 }
 
+static void
+modules_load_plugin(const gchar *filename)
+{
+  GModule      *module;
+  module = g_module_open (filename, G_MODULE_BIND_LAZY);
+  if (!module)
+  {
+    g_error ("Failed to load module: %s", g_module_error ());
+  }
+  else
+  {
+    modules_plugins = g_list_append (modules_plugins, module);
+  }
+}
+
+static void
+modules_load_plugins_dir(const gchar *dir)
+{
+  size_t cnt;
+  glob_t glob_results;
+  gchar **p;
+  gchar *pattern;
+
+  g_debug("Loading plugins from directory %s", dir);
+  
+  pattern = g_strdup_printf("%s/*.so", dir);
+
+  glob(pattern, 0, 0, &glob_results);
+  
+  g_free(pattern);
+
+  /* How much space do we need?  */
+  for (p = glob_results.gl_pathv, cnt = glob_results.gl_pathc;
+       cnt; p++, cnt--)
+    modules_load_plugin (*p);
+
+
+  globfree(&glob_results);
+}
+
+static void
+modules_load_plugins()
+{
+  g_debug("Loading plugins");
+
+  if (!g_module_supported()) return;
+  /* XDG_RUNTIME_DIR */
+  modules_load_plugins_dir (a_get_viking_plugins_dir());
+}
+
 /**
  * First stage initialization
  * Can not use a_get_preferences() yet...
@@ -267,8 +321,36 @@ void modules_init()
 
   register_loadable_types ();
 
+  modules_load_plugins ();
+
   /* As modules are loaded, we can load configuration files */
   modules_load_config ();
+}
+
+static void
+module_post_init_plugin (gpointer data,
+                         gpointer user_data)
+{
+  GModule *module = (GModule*) data;
+  const gchar * (*fct) (GModule *);
+  const gchar *filename = g_module_name (module);
+  
+  if (!g_module_symbol (module, "g_module_post_init", (gpointer *)&fct))
+    {
+      g_error ("%s: %s", filename, g_module_error ());
+      if (!g_module_close (module))
+        g_warning ("%s: %s", filename, g_module_error ());
+    }
+
+  if (fct == NULL)
+    {
+      g_error ("symbol g_module_post_init is NULL");
+      if (!g_module_close (module))
+        g_warning ("%s: %s", filename, g_module_error ());
+    }
+
+  // call our function in the module
+  fct (module);
 }
 
 /**
@@ -285,6 +367,8 @@ void modules_post_init ()
 #ifdef HAVE_LIBMAPNIK
   vik_mapnik_layer_post_init();
 #endif
+
+  g_list_foreach (modules_plugins, module_post_init_plugin, NULL);
 }
 
 /**

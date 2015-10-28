@@ -7,6 +7,8 @@ AM_INIT_AUTOMAKE([dist-bzip2 dist-zip subdir-objects])
 dnl AC_CONFIG_SRCDIR([src/main.c])
 AC_CONFIG_HEADERS([src/config.h])
 
+LT_INIT
+
 # check for gtk-doc
 m4_ifdef([GTK_DOC_CHECK], [
 GTK_DOC_CHECK([1.0],[--flavour no-tmpl])
@@ -92,6 +94,7 @@ PKG_CHECK_MODULES(PACKAGE, [
         gthread-2.0       >= 2.2
         gtk+-2.0          >= 2.16
         gio-2.0           >= 2.12
+        gmodule-2.0       >= 2.0
 ])
 
 AC_SUBST(PACKAGE_CFLAGS)
