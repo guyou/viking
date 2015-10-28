@@ -33,7 +33,7 @@ g_module_check_init (GModule *module)
 const gchar *
 g_module_post_init (GModule *module)
 {
-  g_debug("module loading: %s", g_module_name(module));
+  g_debug("module post init: %s", g_module_name(module));
   google_post_init();
   return NULL;
 }
