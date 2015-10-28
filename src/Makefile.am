@@ -165,12 +165,11 @@ libviking_a_SOURCES += \
 endif
 
 if GOOGLE
-plugin_LTLIBRARIES += google_plugin.la
-google_plugin_la_SOURCES = \
-	google_plugin.c \
+plugin_LTLIBRARIES += google.la
+google_la_SOURCES = \
 	googlesearch.c googlesearch.h \
-	google.c google.h
-google_plugin_la_LDFLAGS = -module
+	google.c
+google_la_LDFLAGS = -module
 endif
 
 if TERRASERVER

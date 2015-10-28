@@ -2,6 +2,7 @@
  * viking -- GPS Data and Topo Analyzer, Explorer, and Manager
  *
  * Copyright (C) 2003-2005, Evan Battaglia <gtoevan@gmx.net>
+ * Copyright (C) 2015, Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,9 +24,9 @@
 #endif
 
 #include <glib/gi18n.h>
+#include <gmodule.h>
 
 #include "globals.h"
-#include "google.h"
 #include "vikexttools.h"
 #include "vikwebtoolcenter.h"
 #include "vikgoto.h"
@@ -34,7 +35,11 @@
 #include "vikroutingwebengine.h"
 #include "babel.h"
 
-void google_init () {
+const gchar *
+g_module_check_init (GModule *module)
+{
+  g_debug("module loading: %s", g_module_name(module));
+
   // Webtools
   VikWebtoolCenter *webtool = vik_webtool_center_new_with_members ( _("Google"), "http://maps.google.com/maps?f=q&geocode=&ie=UTF8&ll=%s,%s&z=%d&iwloc=addr" );
   vik_ext_tools_register ( VIK_EXT_TOOL ( webtool ) );
@@ -48,13 +53,19 @@ void google_init () {
   vik_goto_register ( VIK_GOTO_TOOL ( gototool ) );
   g_object_unref ( gototool );
   */
+  
+  /* Successful loading */
+  return NULL;
 }
 
 /**
  * Delayed initialization part as the check for gpsbabel availability needs to have been performed
  */
-void google_post_init ()
+const gchar *
+g_module_post_init (GModule *module)
 {
+  g_debug("module post init: %s", g_module_name(module));
+  
   // Routing
   /* Google Directions service as routing engine.
    * 
@@ -82,4 +93,7 @@ void google_post_init ()
     g_object_unref ( routing );
   }
   */
+
+  /* Successful loading */
+  return NULL;
 }
