@@ -333,8 +333,8 @@ void a_background_post_init()
 
 #ifdef HAVE_LIBMAPNIK
   // implicit use of 'MAPNIK_PREFS_NAMESPACE' to avoid dependency issues
-  guint mapnik_threads = a_preferences_get("mapnik.background_max_threads_local_mapnik")->u;
-  thread_pool_local_mapnik = g_thread_pool_new ( (GFunc) thread_helper, NULL, mapnik_threads, FALSE, NULL );
+  max_threads = a_preferences_get("mapnik.background_max_threads_local_mapnik")->u;
+  thread_pool_local_mapnik = g_thread_pool_new ( (GFunc) thread_helper, NULL, max_threads, FALSE, NULL );
 #endif
 
   bgstore = gtk_list_store_new ( N_COLUMNS, G_TYPE_STRING, G_TYPE_DOUBLE, G_TYPE_POINTER );
