@@ -1787,8 +1787,8 @@ static void start_download_thread ( VikMapsLayer *vml, VikViewport *vvp, const V
       {
         tmp_str = ngettext("Downloading %d %s map...", "Downloading %d %s maps...", mdi->mapstoget);
       }
-      tmp = g_strdup_printf ( tmp_str, mdi->mapstoget, MAPS_LAYER_NTH_LABEL(vml->maptype));
- 
+      tmp = g_strdup_printf ( tmp_str, mdi->mapstoget, map);
+
       g_object_weak_ref(G_OBJECT(mdi->vml), weak_ref_cb, mdi);
       /* launch the thread */
       a_background_thread ( BACKGROUND_POOL_REMOTE,
