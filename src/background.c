@@ -222,14 +222,16 @@ void a_background_thread ( Background_Pool_Type bp, GtkWindow *parent, const gch
 		       -1 );
 
   /* run the thread in the background */
+  GThreadPool *thread_pool = NULL;
   if ( bp == BACKGROUND_POOL_REMOTE )
-    g_thread_pool_push( thread_pool_remote, args, NULL );
+    thread_pool = thread_pool_remote;
 #ifdef HAVE_LIBMAPNIK
   else if ( bp == BACKGROUND_POOL_LOCAL_MAPNIK )
-    g_thread_pool_push( thread_pool_local_mapnik, args, NULL );
+    thread_pool = thread_pool_local_mapnik;
 #endif
   else
-    g_thread_pool_push( thread_pool_local, args, NULL );
+    thread_pool = thread_pool_local;
+  g_thread_pool_push( thread_pool, args, NULL );
 }
 
 // In main thread
