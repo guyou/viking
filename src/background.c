@@ -211,6 +211,7 @@ void a_background_thread ( Background_Pool_Type bp, GtkWindow *parent, const gch
   args[5] = piter;
   args[6] = GINT_TO_POINTER(number_items);
 
+// not threadsafe
   bgitemcount += number_items;
 
   gtk_list_store_append ( bgstore, piter );
