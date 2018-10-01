@@ -31,11 +31,12 @@
 #include "globals.h"
 #include "preferences.h"
 
-static GThreadPool *thread_pool_remote = NULL;
-static GThreadPool *thread_pool_local = NULL;
-#ifdef HAVE_LIBMAPNIK
-static GThreadPool *thread_pool_local_mapnik = NULL;
-#endif
+#define BACKGROUND_NB_THREADPOOL_MAX 10
+static GThreadPool *thread_pools[BACKGROUND_NB_THREADPOOL_MAX];
+typedef guint (*GThreadPool_max)(void);
+static GThreadPool_max thread_pools_fct[BACKGROUND_NB_THREADPOOL_MAX];
+// Number of effective pool, initialized with fixed pool
+static background_pool_nb = BACKGROUND_POOL_NB;
 static gboolean stop_all_threads = FALSE;
 
 // A single store of background items for all Windows
@@ -183,6 +184,13 @@ static void thread_helper ( gpointer args[VIK_BG_NUM_ARGS], gpointer user_data )
   thread_die ( args );
 }
 
+guint a_background_thread_register ( guint (*fct)(void))
+{
+  guint index = background_pool_nb++;
+  thread_pools_fct[index] = fct;
+  return index;
+}
+
 /**
  * a_background_thread:
  * @bp:      Which pool this thread should run in
@@ -196,7 +204,7 @@ static void thread_helper ( gpointer args[VIK_BG_NUM_ARGS], gpointer user_data )
  *
  * Function to enlist new background function.
  */
-void a_background_thread ( Background_Pool_Type bp, GtkWindow *parent, const gchar *message, vik_thr_func func, gpointer userdata, vik_thr_free_func userdata_free_func, vik_thr_free_func userdata_cancel_cleanup_func, gint number_items )
+void a_background_thread ( guint bp, GtkWindow *parent, const gchar *message, vik_thr_func func, gpointer userdata, vik_thr_free_func userdata_free_func, vik_thr_free_func userdata_cancel_cleanup_func, gint number_items )
 {
   GtkTreeIter *piter = g_malloc ( sizeof ( GtkTreeIter ) );
   gpointer *args = g_malloc ( sizeof(gpointer) * VIK_BG_NUM_ARGS );
@@ -222,15 +230,8 @@ void a_background_thread ( Background_Pool_Type bp, GtkWindow *parent, const gch
 		       -1 );
 
   /* run the thread in the background */
-  GThreadPool *thread_pool = NULL;
-  if ( bp == BACKGROUND_POOL_REMOTE )
-    thread_pool = thread_pool_remote;
-#ifdef HAVE_LIBMAPNIK
-  else if ( bp == BACKGROUND_POOL_LOCAL_MAPNIK )
-    thread_pool = thread_pool_local_mapnik;
-#endif
-  else
-    thread_pool = thread_pool_local;
+  // FIXME check bp against background_pool_nb
+  GThreadPool *thread_pool = thread_pools[bp];
   g_thread_pool_push( thread_pool, args, NULL );
 }
 
@@ -320,7 +321,7 @@ void a_background_post_init()
   if ( a_settings_get_integer ( VIK_SETTINGS_BACKGROUND_MAX_THREADS, &maxt ) )
     max_threads = maxt;
 
-  thread_pool_remote = g_thread_pool_new ( (GFunc) thread_helper, NULL, max_threads, FALSE, NULL );
+  thread_pools[BACKGROUND_POOL_REMOTE] = g_thread_pool_new ( (GFunc) thread_helper, NULL, max_threads, FALSE, NULL );
 
   if ( a_settings_get_integer ( VIK_SETTINGS_BACKGROUND_MAX_THREADS_LOCAL, &maxt ) )
     max_threads = maxt;
@@ -329,13 +330,14 @@ void a_background_post_init()
     max_threads = cpus > 1 ? cpus-1 : 1; // Don't use all available CPUs!
   }
 
-  thread_pool_local = g_thread_pool_new ( (GFunc) thread_helper, NULL, max_threads, FALSE, NULL );
+  thread_pools[BACKGROUND_POOL_LOCAL] = g_thread_pool_new ( (GFunc) thread_helper, NULL, max_threads, FALSE, NULL );
 
-#ifdef HAVE_LIBMAPNIK
-  // implicit use of 'MAPNIK_PREFS_NAMESPACE' to avoid dependency issues
-  max_threads = a_preferences_get("mapnik.background_max_threads_local_mapnik")->u;
-  thread_pool_local_mapnik = g_thread_pool_new ( (GFunc) thread_helper, NULL, max_threads, FALSE, NULL );
-#endif
+  for (int i = BACKGROUND_POOL_NB ; i < background_pool_nb ; i++)
+  {
+    max_threads = thread_pools_fct[i]();
+    thread_pools[i+background_pool_nb] = 
+      g_thread_pool_new ( (GFunc) thread_helper, NULL, max_threads, FALSE, NULL );
+  }
 
   bgstore = gtk_list_store_new ( N_COLUMNS, G_TYPE_STRING, G_TYPE_DOUBLE, G_TYPE_POINTER );
 }
@@ -400,11 +402,8 @@ void a_background_uninit()
 {
   stop_all_threads = TRUE;
   // Don't wait for these threads to complete - i.e. end now.
-  g_thread_pool_free ( thread_pool_remote, TRUE, FALSE );
-  g_thread_pool_free ( thread_pool_local, TRUE, FALSE );
-#ifdef HAVE_LIBMAPNIK
-  g_thread_pool_free ( thread_pool_local_mapnik, TRUE, FALSE );
-#endif
+  for (int i = 0 ; i < background_pool_nb ; i++)     
+    g_thread_pool_free ( thread_pools[i], TRUE, FALSE );
   gtk_list_store_clear ( bgstore );
   g_object_unref ( bgstore );
   bgstore = NULL;
