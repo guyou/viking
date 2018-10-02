@@ -267,6 +267,13 @@ static time_t planet_import_time;
 static GMutex *tp_mutex;
 static GHashTable *requests = NULL;
 
+static guint a_background_pool_local = -1;
+static guint vik_mapnik_background_max(void)
+{
+	guint mapnik_threads = a_preferences_get("mapnik.background_max_threads_local_mapnik")->u;
+	return mapnik_threads;
+}
+
 /**
  * vik_mapnik_layer_init:
  *
@@ -291,6 +298,9 @@ void vik_mapnik_layer_init (void)
 
 	tmp.s = "carto";
 	a_preferences_register(&prefs[i++], tmp, MAPNIK_PREFS_GROUP_KEY);
+
+	/* Background */
+	a_background_pool_local = a_background_thread_register( vik_mapnik_background_max );
 }
 
 /**
@@ -747,7 +757,7 @@ static void thread_add (VikMapnikLayer *vml, MapCoord *mul, VikCoord *ul, VikCoo
 	gchar *basename = g_path_get_basename (name);
 	gchar *description = g_strdup_printf ( _("Mapnik Render %d:%d:%d %s"), zoom, x, y, basename );
 	g_free ( basename );
-	a_background_thread ( BACKGROUND_POOL_LOCAL_MAPNIK,
+	a_background_thread ( a_background_pool_local,
 	                      VIK_GTK_WINDOW_FROM_LAYER(vml),
 	                      description,
 	                      (vik_thr_func) background,
