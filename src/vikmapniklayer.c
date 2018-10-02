@@ -72,6 +72,7 @@ static VikLayerParamScale scales[] = {
 	{ 0, 255, 5, 0 }, // Alpha
 	{ 64, 1024, 8, 0 }, // Tile size
 	{ 0, 1024, 12, 0 }, // Rerender timeout hours
+	{1, 64, 1, 0}, // 64 threads should be enough for anyone...
 };
 
 VikLayerParam mapnik_layer_params[] = {
@@ -85,6 +86,7 @@ VikLayerParam mapnik_layer_params[] = {
     NULL, vik_lpd_true_default, NULL, NULL },
   { VIK_LAYER_MAPNIK, "file-cache-dir", VIK_LAYER_PARAM_STRING, VIK_LAYER_GROUP_NONE, N_("File Cache Directory:"), VIK_LAYER_WIDGET_FOLDERENTRY, NULL, NULL,
     NULL, cache_dir_default, NULL, NULL },
+
 };
 
 enum {
@@ -260,6 +262,7 @@ static VikLayerParam prefs[] = {
 	{ VIK_LAYER_NUM_TYPES, MAPNIK_PREFS_NAMESPACE"rerender_after", VIK_LAYER_PARAM_UINT, VIK_LAYER_GROUP_NONE, N_("Rerender Timeout (hours):"), VIK_LAYER_WIDGET_SPINBUTTON, &scales[2], NULL, N_("You need to restart Viking for a change to this value to be used"), NULL, NULL, NULL },
 	// Changeable any time
 	{ VIK_LAYER_NUM_TYPES, MAPNIK_PREFS_NAMESPACE"carto", VIK_LAYER_PARAM_STRING, VIK_LAYER_GROUP_NONE, N_("CartoCSS:"), VIK_LAYER_WIDGET_FILEENTRY, NULL, NULL,  N_("The program to convert CartoCSS files into Mapnik XML"), NULL, NULL, NULL },
+	{ VIK_LAYER_NUM_TYPES, MAPNIK_PREFS_NAMESPACE"background_max_threads_local_mapnik", VIK_LAYER_PARAM_UINT, VIK_LAYER_GROUP_NONE, N_("Threads:"), VIK_LAYER_WIDGET_SPINBUTTON, &scales[3], NULL, N_("Number of threads to use for Mapnik tasks. You need to restart Viking for a change to this value to be used"), NULL, NULL, NULL },
 };
 
 static time_t planet_import_time;
@@ -270,7 +273,7 @@ static GHashTable *requests = NULL;
 static guint a_background_pool_local = -1;
 static guint vik_mapnik_background_max(void)
 {
-	guint mapnik_threads = a_preferences_get("mapnik.background_max_threads_local_mapnik")->u;
+	guint mapnik_threads = a_preferences_get(MAPNIK_PREFS_NAMESPACE"background_max_threads_local_mapnik")->u;
 	return mapnik_threads;
 }
 
@@ -297,6 +300,9 @@ void vik_mapnik_layer_init (void)
 	a_preferences_register(&prefs[i++], tmp, MAPNIK_PREFS_GROUP_KEY);
 
 	tmp.s = "carto";
+	a_preferences_register(&prefs[i++], tmp, MAPNIK_PREFS_GROUP_KEY);
+
+	tmp.u = 1; // Default to 1 thread due to potential crashing issues
 	a_preferences_register(&prefs[i++], tmp, MAPNIK_PREFS_GROUP_KEY);
 
 	/* Background */
