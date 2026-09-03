@@ -711,8 +711,7 @@ gint a_uibuilder_properties_factory ( const gchar *dialog_name,
     g_free ( widgets );
     g_free ( labels );
     g_free ( change_values );
-    if ( tables )
-      g_free ( tables );
+    g_free ( tables );
     gtk_widget_destroy ( dialog );
     dialog = NULL;
 

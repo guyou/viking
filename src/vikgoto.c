@@ -170,15 +170,13 @@ static gboolean goto_search_list_select ( GtkTreeSelection *sel, GtkTreeModel *m
     gtk_tree_model_get ( model, &iter, VIK_GOTO_SEARCH_LAT_COL, &lat, -1 );
     gtk_tree_model_get ( model, &iter, VIK_GOTO_SEARCH_LON_COL, &lon, -1 );
 
-    if ( last_coord )
-      g_free ( last_coord );
+    g_free ( last_coord );
     last_coord = g_malloc( sizeof(VikCoord) );
 
     struct LatLon ll = { lat, lon };
     vik_coord_load_from_latlon ( last_coord, VIK_COORD_LATLON, &ll );
 
-    if ( last_successful_goto_str )
-      g_free ( last_successful_goto_str );
+    g_free ( last_successful_goto_str );
     gtk_tree_model_get ( model, &iter, VIK_GOTO_SEARCH_DESC_COL, &last_successful_goto_str, -1 );
 
     vik_viewport_set_center_coord ( vik_layers_panel_get_viewport(vlp), last_coord, !path_currently_selected );
@@ -253,8 +251,7 @@ static void goto_search_response ( struct VikGotoSearchWinData *data, gint respo
     gchar *goto_str = g_strdup ( gtk_entry_get_text ( GTK_ENTRY(data->goto_entry) ) );
 
     if (goto_str[0] != '\0') {
-      if ( last_goto_str )
-        g_free ( last_goto_str );
+      g_free ( last_goto_str );
       last_goto_str = g_strdup ( goto_str );
     }
 

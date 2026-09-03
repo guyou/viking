@@ -355,9 +355,7 @@ static GList *get_entries_from_file(gchar *file_name)
       geoname->ll.lat = g_ascii_strtod(lat_buf, NULL);
     }
     if (!more) {
-      if (geoname) {
-        g_free(geoname);
-      }
+      g_free(geoname);
     }
     else {
       if (wikipedia_url) {
@@ -370,14 +368,10 @@ static GList *get_entries_from_file(gchar *file_name)
           geoname -> desc = g_strdup_printf("<a href=\"http://%s\" target=\"_blank\">%s</a>", wikipedia_url, geoname->name);
         }
       }
-      if (wikipedia_url) {
-        g_free(wikipedia_url);
-        wikipedia_url = NULL;
-      }
-      if (thumbnail_url) {
-        g_free(thumbnail_url);
-        thumbnail_url = NULL;
-      }
+      g_free(wikipedia_url);
+      wikipedia_url = NULL;
+      g_free(thumbnail_url);
+      thumbnail_url = NULL;
       found_places = g_list_prepend(found_places, geoname);
     }
     entry_runner++;

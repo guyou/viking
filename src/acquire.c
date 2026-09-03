@@ -386,8 +386,7 @@ static void acquire ( VikWindow *vw,
           a_babel_convert_from (NULL, &off_po, NULL, NULL, NULL);
           g_free ( args_off );
         }
-        if ( fd_off )
-          g_free ( fd_off );
+        g_free ( fd_off );
 
         // Thread finished by normal completion - free memory
         g_free ( w );

@@ -298,8 +298,7 @@ void a_settings_set_integer_list_containing ( const gchar *name, gint val )
 	}
 
 	// Free old array
-	if ( vals )
-		g_free (vals);
+	g_free (vals);
 }
 
 /*

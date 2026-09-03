@@ -1370,9 +1370,7 @@ static gboolean trw_layer_paste_item ( VikTrwLayer *vtl, gint subtype, guint8 *i
 
 static void trw_layer_free_copied_item ( gint subtype, gpointer item )
 {
-  if (item) {
-    g_free(item);
-  }
+  g_free(item);
 }
 
 static guint8 trw_layer_default_tab ( void )

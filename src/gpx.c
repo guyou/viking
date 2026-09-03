@@ -806,8 +806,7 @@ static void gpx_start(UserDataT *ud, const char *el, const char **attr)
 
      case tt_waypoint_name:
        if ( ( tmp = get_attr(attr, "id") ) ) {
-         if ( c_wp_name )
-           g_free ( c_wp_name );
+         g_free ( c_wp_name );
          c_wp_name = g_strdup ( tmp );
        }
        g_string_erase ( c_cdata, 0, -1 ); /* clear the cdata buffer for description */
@@ -965,15 +964,13 @@ static void gpx_end(UserDataT *ud, const char *el)
        break;
 
      case tt_wpt_name:
-       if ( c_wp_name )
-         g_free ( c_wp_name );
+       g_free ( c_wp_name );
        c_wp_name = g_strdup ( c_cdata->str );
        g_string_erase ( c_cdata, 0, -1 );
        break;
 
      case tt_trk_name:
-       if ( c_tr_name )
-         g_free ( c_tr_name );
+       g_free ( c_tr_name );
        c_tr_name = g_strdup ( c_cdata->str );
        g_string_erase ( c_cdata, 0, -1 );
        break;

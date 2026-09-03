@@ -426,7 +426,7 @@ static gboolean read_fields ( FILE *ff, int num_fields, int id, int time_offset,
 
 		//if ( field.type == FIT_BASE_TYPE_STRING )
 		//	g_debug ( "%s: String=%s", __FUNCTION__, str );
-		if ( str ) g_free ( str );
+		g_free ( str );
 	}
 
 	// PARSE DATA from the collected field info

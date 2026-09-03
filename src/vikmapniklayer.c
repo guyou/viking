@@ -381,8 +381,7 @@ static const gchar* mapnik_layer_tooltip ( VikMapnikLayer *vml )
 
 static void mapnik_layer_set_file_xml ( VikMapnikLayer *vml, const gchar *name )
 {
-	if ( vml->filename_xml )
-		g_free (vml->filename_xml);
+	g_free (vml->filename_xml);
 	// Mapnik doesn't seem to cope with relative filenames
 	if ( g_strcmp0 (name, "" ) )
 		vml->filename_xml = vu_get_canonical_filename ( VIK_LAYER(vml), name);

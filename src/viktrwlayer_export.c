@@ -548,8 +548,7 @@ void vik_trw_layer_export_gpsbabel ( VikLayer *vl, const gchar *title, const gch
         // Save selections for usage next time
         last_mode_index = gtk_combo_box_get_active ( GTK_COMBO_BOX(babel_selector) );
 	last_mode = mode;
-        if ( last_suboptions )
-          g_free ( last_suboptions );
+        g_free ( last_suboptions );
         last_suboptions = g_strdup ( gtk_entry_get_text(GTK_ENTRY(entry)) );
         break;
       }

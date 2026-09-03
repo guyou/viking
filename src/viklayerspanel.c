@@ -800,8 +800,7 @@ static void vik_layers_panel_init ( VikLayersPanel *vlp )
       default: break;
       }
     }
-    if ( vals )
-      g_free (vals);
+    g_free (vals);
   }
 
   gtk_paned_pack1 ( GTK_PANED(vlp->vpaned), scrolledwindow, TRUE, TRUE );

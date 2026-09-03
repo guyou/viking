@@ -299,8 +299,7 @@ static void tcx_end ( UserDataT *ud, const char *el )
 			break;
 
 		case tt_wpt_name:
-			if ( c_wp_name )
-				g_free ( c_wp_name );
+			g_free ( c_wp_name );
 			c_wp_name = g_strdup ( c_cdata->str );
 			g_string_erase ( c_cdata, 0, -1 );
 			break;

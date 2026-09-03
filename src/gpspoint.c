@@ -378,27 +378,17 @@ gboolean a_gpspoint_read_file(VikTrwLayer *trw, FILE *f, const gchar *dirpath ) 
       current_track->trackpoints = g_list_prepend ( current_track->trackpoints, tp );
     }
 
-    if (line_name)
-      g_free ( line_name );
+    g_free ( line_name );
     line_name = NULL;
-    if (line_comment)
-      g_free ( line_comment );
-    if (line_description)
-      g_free ( line_description );
-    if (line_source)
-      g_free ( line_source );
-    if (line_xtype)
-      g_free ( line_xtype );
-    if (line_color)
-      g_free ( line_color );
-    if (line_image)
-      g_free ( line_image );
-    if (line_symbol)
-      g_free ( line_symbol );
-    if (line_url)
-      g_free ( line_url );
-    if (line_url_name)
-      g_free ( line_url_name );
+    g_free ( line_comment );
+    g_free ( line_description );
+    g_free ( line_source );
+    g_free ( line_xtype );
+    g_free ( line_color );
+    g_free ( line_image );
+    g_free ( line_symbol );
+    g_free ( line_url );
+    g_free ( line_url_name );
     line_comment = NULL;
     line_description = NULL;
     line_source = NULL;

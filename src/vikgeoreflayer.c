@@ -685,8 +685,7 @@ static void georef_layer_load_image ( VikGeorefLayer *vgl, VikViewport *vp, gboo
 
 static void georef_layer_set_image ( VikGeorefLayer *vgl, const gchar *image )
 {
-  if ( vgl->image )
-    g_free ( vgl->image );
+  g_free ( vgl->image );
   if ( vgl->scaled )
   {
     g_object_unref ( vgl->scaled );

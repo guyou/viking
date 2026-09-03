@@ -1208,8 +1208,7 @@ static void viewport_utm_zone_check ( VikViewport *vvp )
 static void free_center ( VikViewport *vvp, guint index )
 {
   VikCoord *coord = g_list_nth_data ( vvp->centers, index );
-  if ( coord )
-    g_free ( coord );
+  g_free ( coord );
   GList *gl = g_list_nth ( vvp->centers, index );
   if ( gl )
     vvp->centers = g_list_delete_link ( vvp->centers, gl );
