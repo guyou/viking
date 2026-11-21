@@ -888,36 +888,31 @@ static void gpx_end(UserDataT *ud, const char *el)
        break;
 
      case tt_gpx_author:
-       if ( c_md->author )
-         g_free ( c_md->author );
+       g_free ( c_md->author );
        c_md->author = g_strdup ( c_cdata->str );
        g_string_erase ( c_cdata, 0, -1 );
        break;
 
      case tt_gpx_desc:
-       if ( c_md->description )
-         g_free ( c_md->description );
+       g_free ( c_md->description );
        c_md->description = g_strdup ( c_cdata->str );
        g_string_erase ( c_cdata, 0, -1 );
        break;
 
      case tt_gpx_keywords:
-       if ( c_md->keywords )
-         g_free ( c_md->keywords );
+       g_free ( c_md->keywords );
        c_md->keywords = g_strdup ( c_cdata->str );
        g_string_erase ( c_cdata, 0, -1 );
        break;
 
      case tt_gpx_time:
-       if ( c_md->timestamp )
-         g_free ( c_md->timestamp );
+       g_free ( c_md->timestamp );
        c_md->timestamp = g_strdup ( c_cdata->str );
        g_string_erase ( c_cdata, 0, -1 );
        break;
 
      case tt_gpx_url:
-       if ( c_md->url )
-         g_free ( c_md->url );
+       g_free ( c_md->url );
        if ( c_link ) {
          c_md->url = g_strdup ( c_link );
          c_link = NULL;
@@ -928,8 +923,7 @@ static void gpx_end(UserDataT *ud, const char *el)
        break;
 
      case tt_gpx_url_name:
-       if ( c_md->url_name )
-         g_free ( c_md->url_name );
+       g_free ( c_md->url_name );
        c_md->url_name = g_strdup ( c_cdata->str );
        g_string_erase ( c_cdata, 0, -1 );
        break;

@@ -552,8 +552,7 @@ static ExifEntry* my_exif_create_value (ExifData *ed, ExifTag tag, ExifIfd ifd)
 			e->format = EXIF_FORMAT_BYTE;
 			e->components = 4;
 			e->size = sizeof (char) * e->components;
-			if ( e->data )
-				g_free (e->data);
+			g_free (e->data);
 			e->data = g_malloc (e->size);
 		}
 		if ( tag == EXIF_TAG_GPS_MAP_DATUM ||
@@ -566,23 +565,20 @@ static ExifEntry* my_exif_create_value (ExifData *ed, ExifTag tag, ExifIfd ifd)
 			e->format = EXIF_FORMAT_RATIONAL;
 			e->components = 3;
 			e->size = sizeof (ExifRational) * e->components;
-			if ( e->data )
-				g_free (e->data);
+			g_free (e->data);
 			e->data = g_malloc (e->size);
 		}
 		if ( tag == EXIF_TAG_GPS_ALTITUDE ) {
 			e->format = EXIF_FORMAT_RATIONAL;
 			e->components = 1;
 			e->size = sizeof (ExifRational) * e->components;
-			if ( e->data )
-				g_free (e->data);
+			g_free (e->data);
 			e->data = g_malloc (e->size);
 		}
 		if ( tag == EXIF_TAG_GPS_ALTITUDE_REF ) {
 			e->components = 1;
 			e->size = sizeof (char) * e->components;
-			if ( e->data )
-				g_free (e->data);
+			g_free (e->data);
 			e->data = g_malloc (e->size);
 		}
 	    /* The entry has been added to the IFD, so we can unref it */
@@ -608,7 +604,7 @@ static void convert_to_entry (const char *set_value, gdouble gdvalue, ExifEntry 
 	 */
 	if (e->format == EXIF_FORMAT_ASCII ||
 	    e->tag == EXIF_TAG_USER_COMMENT) {
-		if (e->data) g_free (e->data);
+		g_free (e->data);
 		e->components = strlen (set_value) + 1;
 		if (e->tag == EXIF_TAG_USER_COMMENT)
 			e->components += 8 - 1;

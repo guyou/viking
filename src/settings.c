@@ -407,6 +407,5 @@ void a_settings_set_string_list_containing ( const gchar *name, const gchar *val
 	}
 
 	// Free old array
-	if ( vals )
-		g_strfreev ( vals );
+	g_strfreev ( vals );
 }

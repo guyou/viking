@@ -66,24 +66,21 @@ void vik_track_set_defaults(VikTrack *tr)
 
 void vik_track_set_comment_no_copy(VikTrack *tr, gchar *comment)
 {
-  if ( tr->comment )
-    g_free ( tr->comment );
+  g_free ( tr->comment );
   tr->comment = comment;
 }
 
 
 void vik_track_set_name(VikTrack *tr, const gchar *name)
 {
-  if ( tr->name )
-    g_free ( tr->name );
+  g_free ( tr->name );
 
   tr->name = g_strdup(name);
 }
 
 void vik_track_set_comment(VikTrack *tr, const gchar *comment)
 {
-  if ( tr->comment )
-    g_free ( tr->comment );
+  g_free ( tr->comment );
 
   if ( comment && comment[0] != '\0' )
     tr->comment = g_strdup(comment);
@@ -93,8 +90,7 @@ void vik_track_set_comment(VikTrack *tr, const gchar *comment)
 
 void vik_track_set_description(VikTrack *tr, const gchar *description)
 {
-  if ( tr->description )
-    g_free ( tr->description );
+  g_free ( tr->description );
 
   if ( description && description[0] != '\0' )
     tr->description = g_strdup(description);
@@ -104,8 +100,7 @@ void vik_track_set_description(VikTrack *tr, const gchar *description)
 
 void vik_track_set_source(VikTrack *tr, const gchar *source)
 {
-  if ( tr->source )
-    g_free ( tr->source );
+  g_free ( tr->source );
 
   if ( source && source[0] != '\0' )
     tr->source = g_strdup(source);
@@ -115,8 +110,7 @@ void vik_track_set_source(VikTrack *tr, const gchar *source)
 
 void vik_track_set_url(VikTrack *tr, const gchar *url)
 {
-  if ( tr->url )
-    g_free ( tr->url );
+  g_free ( tr->url );
 
   if ( url && url[0] != '\0' )
     tr->url = g_strdup(url);
@@ -126,8 +120,7 @@ void vik_track_set_url(VikTrack *tr, const gchar *url)
 
 void vik_track_set_url_name(VikTrack *tr, const gchar *url_name)
 {
-  if ( tr->url_name )
-    g_free ( tr->url_name );
+  g_free ( tr->url_name );
 
   if ( url_name && url_name[0] != '\0' )
     tr->url_name = g_strdup(url_name);
@@ -137,8 +130,7 @@ void vik_track_set_url_name(VikTrack *tr, const gchar *url_name)
 
 void vik_track_set_type(VikTrack *tr, const gchar *type)
 {
-  if ( tr->type )
-    g_free ( tr->type );
+  g_free ( tr->type );
 
   if ( type && type[0] != '\0' )
     tr->type = g_strdup(type);
@@ -148,8 +140,7 @@ void vik_track_set_type(VikTrack *tr, const gchar *type)
 
 void vik_track_set_extensions ( VikTrack *tr, const gchar *value )
 {
-  if ( tr->extensions )
-    g_free ( tr->extensions );
+  g_free ( tr->extensions );
 
   if ( value && value[0] != '\0' )
     tr->extensions = g_strdup ( value );
@@ -178,22 +169,14 @@ void vik_track_free(VikTrack *tr)
   if ( tr->ref_count-- > 1 )
     return;
 
-  if ( tr->name )
-    g_free ( tr->name );
-  if ( tr->comment )
-    g_free ( tr->comment );
-  if ( tr->description )
-    g_free ( tr->description );
-  if ( tr->source )
-    g_free ( tr->source );
-  if ( tr->url )
-    g_free ( tr->url );
-  if ( tr->url_name )
-    g_free ( tr->url_name );
-  if ( tr->type )
-    g_free ( tr->type );
-  if ( tr->extensions )
-    g_free ( tr->extensions );
+  g_free ( tr->name );
+  g_free ( tr->comment );
+  g_free ( tr->description );
+  g_free ( tr->source );
+  g_free ( tr->url );
+  g_free ( tr->url_name );
+  g_free ( tr->type );
+  g_free ( tr->extensions );
   g_list_foreach ( tr->trackpoints, (GFunc) vik_trackpoint_free, NULL );
   g_list_free( tr->trackpoints );
   if (tr->property_dialog)
@@ -272,8 +255,7 @@ void vik_trackpoint_free(VikTrackpoint *tp)
 
 void vik_trackpoint_set_name(VikTrackpoint *tp, const gchar *name)
 {
-  if ( tp->name )
-    g_free ( tp->name );
+  g_free ( tp->name );
 
   // If the name is blank then completely remove it
   if ( name && name[0] == '\0' )
@@ -286,8 +268,7 @@ void vik_trackpoint_set_name(VikTrackpoint *tp, const gchar *name)
 
 void vik_trackpoint_set_extensions(VikTrackpoint *tp, const gchar *value)
 {
-  if ( tp->extensions )
-    g_free ( tp->extensions );
+  g_free ( tp->extensions );
   if ( value && value[0] == '\0' )
     tp->extensions = NULL;
   else if ( value )

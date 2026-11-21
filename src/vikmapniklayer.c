@@ -540,8 +540,7 @@ gboolean carto_load ( VikMapnikLayer *vml, VikViewport *vvp )
 				GRegex *regex = g_regex_new ( "\\.mml$|\\.mss|\\.css$", G_REGEX_CASELESS, 0, &error );
 				if ( error )
 					g_critical ("%s: %s", __FUNCTION__, error->message );
-				if ( vml->filename_xml )
-					g_free (vml->filename_xml);
+				g_free (vml->filename_xml);
 				vml->filename_xml = g_regex_replace_literal ( regex, vml->filename_css, -1, 0, ".xml", 0, &error );
 				if ( error )
 					g_warning ("%s: %s", __FUNCTION__, error->message );
@@ -927,10 +926,8 @@ static void mapnik_layer_draw ( VikMapnikLayer *vml, VikViewport *vvp )
 static void mapnik_layer_free ( VikMapnikLayer *vml )
 {
 	mapnik_interface_free ( vml->mi );
-	if ( vml->filename_css )
-		g_free ( vml->filename_css );
-	if ( vml->filename_xml )
-		g_free ( vml->filename_xml );
+	g_free ( vml->filename_css );
+	g_free ( vml->filename_xml );
 }
 
 static VikMapnikLayer *mapnik_layer_create ( VikViewport *vp )

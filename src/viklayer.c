@@ -509,8 +509,7 @@ static void vik_layer_finalize ( VikLayer *vl )
   g_assert ( vl != NULL );
   if ( vik_layer_interfaces[vl->type]->free )
     vik_layer_interfaces[vl->type]->free ( vl );
-  if ( vl->name )
-    g_free ( vl->name );
+  g_free ( vl->name );
   G_OBJECT_CLASS(parent_class)->finalize(G_OBJECT(vl));
 }
 

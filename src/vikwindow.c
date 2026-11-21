@@ -4725,8 +4725,7 @@ static void window_refresh_title ( VikWindow *vw )
 
 static void window_set_filename ( VikWindow *vw, const gchar *filename )
 {
-  if ( vw->filename )
-    g_free ( vw->filename );
+  g_free ( vw->filename );
   if ( filename == NULL )
   {
     vw->filename = NULL;

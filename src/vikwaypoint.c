@@ -54,23 +54,20 @@ VikWaypoint *vik_waypoint_new()
 // Hmmm tempted to put in new constructor
 void vik_waypoint_set_name(VikWaypoint *wp, const gchar *name)
 {
-  if ( wp->name )
-    g_free ( wp->name );
+  g_free ( wp->name );
 
   wp->name = g_strdup(name);
 }
 
 void vik_waypoint_set_comment_no_copy(VikWaypoint *wp, gchar *comment)
 {
-  if ( wp->comment )
-    g_free ( wp->comment );
+  g_free ( wp->comment );
   wp->comment = comment;
 }
 
 void vik_waypoint_set_comment(VikWaypoint *wp, const gchar *comment)
 {
-  if ( wp->comment )
-    g_free ( wp->comment );
+  g_free ( wp->comment );
 
   if ( comment && comment[0] != '\0' )
     wp->comment = g_strdup(comment);
@@ -80,8 +77,7 @@ void vik_waypoint_set_comment(VikWaypoint *wp, const gchar *comment)
 
 void vik_waypoint_set_description(VikWaypoint *wp, const gchar *description)
 {
-  if ( wp->description )
-    g_free ( wp->description );
+  g_free ( wp->description );
 
   if ( description && description[0] != '\0' )
     wp->description = g_strdup(description);
@@ -91,8 +87,7 @@ void vik_waypoint_set_description(VikWaypoint *wp, const gchar *description)
 
 void vik_waypoint_set_source(VikWaypoint *wp, const gchar *source)
 {
-  if ( wp->source )
-    g_free ( wp->source );
+  g_free ( wp->source );
 
   if ( source && source[0] != '\0' )
     wp->source = g_strdup(source);
@@ -102,8 +97,7 @@ void vik_waypoint_set_source(VikWaypoint *wp, const gchar *source)
 
 void vik_waypoint_set_type(VikWaypoint *wp, const gchar *type)
 {
-  if ( wp->type )
-    g_free ( wp->type );
+  g_free ( wp->type );
 
   if ( type && type[0] != '\0' )
     wp->type = g_strdup(type);
@@ -113,8 +107,7 @@ void vik_waypoint_set_type(VikWaypoint *wp, const gchar *type)
 
 void vik_waypoint_set_url(VikWaypoint *wp, const gchar *url)
 {
-  if ( wp->url )
-    g_free ( wp->url );
+  g_free ( wp->url );
 
   if ( url && url[0] != '\0' )
     wp->url = g_strdup(url);
@@ -124,8 +117,7 @@ void vik_waypoint_set_url(VikWaypoint *wp, const gchar *url)
 
 void vik_waypoint_set_url_name(VikWaypoint *wp, const gchar *url_name)
 {
-  if ( wp->url_name )
-    g_free ( wp->url_name );
+  g_free ( wp->url_name );
 
   if ( url_name && url_name[0] != '\0' )
     wp->url_name = g_strdup(url_name);
@@ -135,8 +127,7 @@ void vik_waypoint_set_url_name(VikWaypoint *wp, const gchar *url_name)
 
 void vik_waypoint_set_image(VikWaypoint *wp, const gchar *image)
 {
-  if ( wp->image )
-    g_free ( wp->image );
+  g_free ( wp->image );
 
   if ( image && image[0] != '\0' )
     wp->image = g_strdup(image);
@@ -158,8 +149,7 @@ void vik_waypoint_set_symbol(VikWaypoint *wp, const gchar *symname)
 {
   const gchar *hashed_symname;
 
-  if ( wp->symbol )
-    g_free ( wp->symbol );
+  g_free ( wp->symbol );
 
   // NB symbol_pixbuf is just a reference, so no need to free it
 
@@ -416,8 +406,7 @@ GString *vik_waypoint_get_extensions(VikWaypoint *wp)
  */
 void vik_waypoint_set_extensions(VikWaypoint *wp, const gchar *value)
 {
-  if ( wp->extensions )
-    g_free ( wp->extensions );
+  g_free ( wp->extensions );
 
   if ( !value || strlen(value) == 0 ) {
     wp->extensions = NULL;
@@ -463,26 +452,16 @@ void vik_waypoint_set_proximity(VikWaypoint *wp, gdouble value)
 
 void vik_waypoint_free(VikWaypoint *wp)
 {
-  if ( wp->name )
-    g_free ( wp->name );
-  if ( wp->comment )
-    g_free ( wp->comment );
-  if ( wp->description )
-    g_free ( wp->description );
-  if ( wp->source )
-    g_free ( wp->source );
-  if ( wp->url )
-    g_free ( wp->url );
-  if ( wp->url_name )
-    g_free ( wp->url_name );
-  if ( wp->type )
-    g_free ( wp->type );
-  if ( wp->image )
-    g_free ( wp->image );
-  if ( wp->symbol )
-    g_free ( wp->symbol );
-  if ( wp->extensions )
-    g_free ( wp->extensions );
+  g_free ( wp->name );
+  g_free ( wp->comment );
+  g_free ( wp->description );
+  g_free ( wp->source );
+  g_free ( wp->url );
+  g_free ( wp->url_name );
+  g_free ( wp->type );
+  g_free ( wp->image );
+  g_free ( wp->symbol );
+  g_free ( wp->extensions );
   if ( wp->gpxx )
     g_hash_table_destroy ( wp->gpxx );
   if ( wp->wptx1 )

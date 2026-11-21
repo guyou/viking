@@ -620,8 +620,7 @@ static void georef_layer_draw ( VikGeorefLayer *vgl, VikViewport *vp )
 
 static void georef_layer_free ( VikGeorefLayer *vgl )
 {
-  if ( vgl->image )
-    g_free ( vgl->image );
+  g_free ( vgl->image );
   if ( vgl->scaled )
     g_object_unref ( vgl->scaled );
   if ( vgl->rotated )

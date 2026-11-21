@@ -1046,8 +1046,7 @@ static gboolean draw_popup ( VikViewport *vvp )
  */
 void vik_viewport_draw_popup ( VikViewport *vvp, gchar *msg, gint x, gint y )
 {
-  if ( vvp->popup_msg )
-    g_free ( vvp->popup_msg );
+  g_free ( vvp->popup_msg );
   vvp->popup_msg = g_strdup ( msg );
   // Optionally retain previous values
   if ( x != G_MININT )

@@ -315,8 +315,7 @@ gboolean a_babel_convert_from_filter( VikTrwLayer *vt, const char *babelargs, co
       ret = babel_general_convert_from ( vt, cb, args, name_dst, user_data );
 
       g_strfreev(sub_args);
-      if (sub_filters)
-          g_strfreev(sub_filters);
+      g_strfreev(sub_filters);
     } else
       g_critical("gpsbabel not found in PATH");
     (void)g_remove(name_dst);
