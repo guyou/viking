@@ -103,18 +103,15 @@ vik_routing_web_engine_set_property (GObject      *object,
   switch (property_id)
     {
     case PROP_URL_BASE:
-      g_free (priv->url_base);
-      priv->url_base = g_strdup(g_value_get_string (value));
+      g_set_str (&priv->url_base, g_value_get_string (value));
       break;
 
     case PROP_URL_START_LL:
-      g_free (priv->url_start_ll_fmt);
-      priv->url_start_ll_fmt = g_strdup(g_value_get_string (value));
+      g_set_str (&priv->url_start_ll_fmt, g_value_get_string (value));
       break;
 
     case PROP_URL_STOP_LL:
-      g_free (priv->url_stop_ll_fmt);
-      priv->url_stop_ll_fmt = g_strdup(g_value_get_string (value));
+      g_set_str (&priv->url_stop_ll_fmt, g_value_get_string (value));
       break;
 
     case PROP_URL_LL_LAT_FIRST:
@@ -122,18 +119,15 @@ vik_routing_web_engine_set_property (GObject      *object,
       break;
 
     case PROP_URL_VIA_LL:
-      g_free (priv->url_via_ll_fmt);
-      priv->url_via_ll_fmt = g_strdup(g_value_get_string (value));
+      g_set_str (&priv->url_via_ll_fmt, g_value_get_string (value));
       break;
 
     case PROP_URL_START_DIR:
-      g_free (priv->url_start_dir_fmt);
-      priv->url_start_dir_fmt = g_strdup(g_value_get_string (value));
+      g_set_str (&priv->url_start_dir_fmt, g_value_get_string (value));
       break;
 
     case PROP_URL_STOP_DIR:
-      g_free (priv->url_stop_dir_fmt);
-      priv->url_stop_dir_fmt = g_strdup(g_value_get_string (value));
+      g_set_str (&priv->url_stop_dir_fmt, g_value_get_string (value));
       break;
 
     case PROP_REFERER:

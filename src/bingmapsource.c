@@ -152,8 +152,7 @@ _set_property (GObject      *object,
 		break;
 
 	case PROP_API_KEY:
-		g_free (priv->api_key);
-		priv->api_key = g_strdup (g_value_get_string (value));
+		g_set_str (&priv->api_key, g_value_get_string (value));
 		break;
 
 	default:
@@ -362,8 +361,7 @@ btext (GMarkupParseContext *context,
 
 	const gchar *parent = len > 1 ? g_slist_nth_data ((GSList *)stack, 1) : NULL;
 	if (strcmp (element, "Attribution") == 0) {
-		g_free (priv->attribution);
-		priv->attribution = g_strdup (textl);
+		g_set_str (&priv->attribution, textl);
 	}
 	else {
 		if ( attribution ) {

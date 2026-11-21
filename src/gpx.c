@@ -806,8 +806,7 @@ static void gpx_start(UserDataT *ud, const char *el, const char **attr)
 
      case tt_waypoint_name:
        if ( ( tmp = get_attr(attr, "id") ) ) {
-         g_free ( c_wp_name );
-         c_wp_name = g_strdup ( tmp );
+         g_set_str (&c_wp_name, tmp);
        }
        g_string_erase ( c_cdata, 0, -1 ); /* clear the cdata buffer for description */
        break;
@@ -888,26 +887,22 @@ static void gpx_end(UserDataT *ud, const char *el)
        break;
 
      case tt_gpx_author:
-       g_free ( c_md->author );
-       c_md->author = g_strdup ( c_cdata->str );
+       g_set_str (&c_md->author, c_cdata->str);
        g_string_erase ( c_cdata, 0, -1 );
        break;
 
      case tt_gpx_desc:
-       g_free ( c_md->description );
-       c_md->description = g_strdup ( c_cdata->str );
+       g_set_str (&c_md->description, c_cdata->str);
        g_string_erase ( c_cdata, 0, -1 );
        break;
 
      case tt_gpx_keywords:
-       g_free ( c_md->keywords );
-       c_md->keywords = g_strdup ( c_cdata->str );
+       g_set_str (&c_md->keywords, c_cdata->str);
        g_string_erase ( c_cdata, 0, -1 );
        break;
 
      case tt_gpx_time:
-       g_free ( c_md->timestamp );
-       c_md->timestamp = g_strdup ( c_cdata->str );
+       g_set_str (&c_md->timestamp, c_cdata->str);
        g_string_erase ( c_cdata, 0, -1 );
        break;
 
@@ -923,8 +918,7 @@ static void gpx_end(UserDataT *ud, const char *el)
        break;
 
      case tt_gpx_url_name:
-       g_free ( c_md->url_name );
-       c_md->url_name = g_strdup ( c_cdata->str );
+       g_set_str (&c_md->url_name, c_cdata->str);
        g_string_erase ( c_cdata, 0, -1 );
        break;
 
@@ -958,14 +952,12 @@ static void gpx_end(UserDataT *ud, const char *el)
        break;
 
      case tt_wpt_name:
-       g_free ( c_wp_name );
-       c_wp_name = g_strdup ( c_cdata->str );
+       g_set_str (&c_wp_name, c_cdata->str);
        g_string_erase ( c_cdata, 0, -1 );
        break;
 
      case tt_trk_name:
-       g_free ( c_tr_name );
-       c_tr_name = g_strdup ( c_cdata->str );
+       g_set_str (&c_tr_name, c_cdata->str);
        g_string_erase ( c_cdata, 0, -1 );
        break;
 

@@ -234,8 +234,7 @@ void vik_layer_rename ( VikLayer *l, const gchar *new_name )
 {
   g_assert ( l != NULL );
   g_assert ( new_name != NULL );
-  g_free ( l->name );
-  l->name = g_strdup ( new_name );
+  g_set_str (&l->name, new_name);
 }
 
 void vik_layer_rename_no_copy ( VikLayer *l, gchar *new_name )
@@ -836,8 +835,7 @@ gboolean vik_layer_param_change_double ( VikLayerParamData val, gdouble *current
 gboolean vik_layer_param_change_string ( VikLayerParamData val, gchar **current )
 {
   gchar* old = g_strdup ( *current );
-  g_free ( *current );
-  *current = g_strdup ( val.s );
+  g_set_str (current, val.s);
   gboolean changed = g_strcmp0 ( old, val.s );
   g_free ( old );
   return changed;

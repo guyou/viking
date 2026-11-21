@@ -251,8 +251,7 @@ static void goto_search_response ( struct VikGotoSearchWinData *data, gint respo
     gchar *goto_str = g_strdup ( gtk_entry_get_text ( GTK_ENTRY(data->goto_entry) ) );
 
     if (goto_str[0] != '\0') {
-      g_free ( last_goto_str );
-      last_goto_str = g_strdup ( goto_str );
+      g_set_str (&last_goto_str, goto_str);
     }
 
     VikGotoTool *tool = g_list_nth_data ( goto_tools_list, last_goto_tool );

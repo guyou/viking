@@ -54,9 +54,7 @@ VikWaypoint *vik_waypoint_new()
 // Hmmm tempted to put in new constructor
 void vik_waypoint_set_name(VikWaypoint *wp, const gchar *name)
 {
-  g_free ( wp->name );
-
-  wp->name = g_strdup(name);
+  g_set_str (&wp->name, name);
 }
 
 void vik_waypoint_set_comment_no_copy(VikWaypoint *wp, gchar *comment)

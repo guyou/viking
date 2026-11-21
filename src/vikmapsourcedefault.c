@@ -145,8 +145,7 @@ vik_map_source_default_set_property (GObject      *object,
     case PROP_NAME:
       // Sanitize the name here for file usage
       // A simple check just to prevent containing slashes ATM
-      g_free (priv->name);
-      priv->name = g_strdup(g_value_get_string (value));
+      g_set_str (&priv->name, g_value_get_string (value));
       if ( priv->name )
         g_strdelimit (priv->name, "\\/", '_' );
       break;
@@ -156,8 +155,7 @@ vik_map_source_default_set_property (GObject      *object,
       break;
 
     case PROP_LABEL:
-      g_free (priv->label);
-      priv->label = g_strdup(g_value_get_string (value));
+      g_set_str (&priv->label, g_value_get_string (value));
       break;
 
     case PROP_TILESIZE_X:
@@ -177,13 +175,11 @@ vik_map_source_default_set_property (GObject      *object,
       break;
 
     case PROP_COPYRIGHT:
-      g_free (priv->copyright);
-      priv->copyright = g_strdup(g_value_get_string (value));
+      g_set_str (&priv->copyright, g_value_get_string (value));
       break;
 
     case PROP_LICENSE:
-      g_free (priv->license);
-      priv->license = g_strdup(g_value_get_string (value));
+      g_set_str (&priv->license, g_value_get_string (value));
       break;
 
     case PROP_LICENSE_URL:
@@ -192,8 +188,7 @@ vik_map_source_default_set_property (GObject      *object,
       break;
 
     case PROP_FILE_EXTENSION:
-      g_free (priv->file_extension);
-      priv->file_extension = g_strdup(g_value_get_string(value));
+      g_set_str (&priv->file_extension, g_value_get_string(value));
       break;
 
     case PROP_OFFSET_X:

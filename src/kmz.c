@@ -273,13 +273,11 @@ static void kml_end ( xml_data *xd, const char *el )
 		ground_overlay_load ( xd );
 		break;
 	case tt_kml_go_name:
-		g_free ( xd->name );
-		xd->name = g_strdup ( xd->c_cdata->str );
+		g_set_str (&xd->name, xd->c_cdata->str);
 		g_string_erase ( xd->c_cdata, 0, -1 );
 		break;
 	case tt_kml_go_image:
-		g_free ( xd->image );
-		xd->image = g_strdup ( xd->c_cdata->str );
+		g_set_str (&xd->image, xd->c_cdata->str);
 		g_string_erase ( xd->c_cdata, 0, -1 );
 		break;
 	case tt_kml_go_latlonbox_n:

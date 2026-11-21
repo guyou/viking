@@ -1046,8 +1046,7 @@ gchar *vik_trw_layer_get_gpx_header ( VikTrwLayer *vtl )
 
 void vik_trw_layer_set_gpx_header ( VikTrwLayer *vtl, gchar* value )
 {
-  g_free ( vtl->gpx_header );
-  vtl->gpx_header = g_strdup ( value );
+  g_set_str (&vtl->gpx_header, value);
 }
 
 gchar *vik_trw_layer_get_gpx_extensions ( VikTrwLayer *vtl )
@@ -1057,8 +1056,7 @@ gchar *vik_trw_layer_get_gpx_extensions ( VikTrwLayer *vtl )
 
 void vik_trw_layer_set_gpx_extensions ( VikTrwLayer *vtl, gchar *value)
 {
-  g_free ( vtl->gpx_extensions );
-  vtl->gpx_extensions = g_strdup ( value );
+  g_set_str (&vtl->gpx_extensions, value);
 }
 
 GQueue *vik_trw_layer_get_laps ( VikTrwLayer *vtl )
@@ -1625,8 +1623,7 @@ static gboolean trw_layer_set_param ( VikTrwLayer *vtl, VikLayerSetParam *vlsp )
     case PARAM_EXTF:
       if ( vlsp->data.s ) {
         changed = vik_layer_param_change_string ( vlsp->data, &vtl->external_file );
-        g_free (vtl->external_file);
-        vtl->external_file = g_strdup (vlsp->data.s);
+        g_set_str (&vtl->external_file, vlsp->data.s);
 
         // TODO force here?
         if ( vtl->external_layer != VIK_TRW_LAYER_INTERNAL && strlen(vtl->external_file) == 0 )
@@ -13432,8 +13429,7 @@ static gboolean trw_read_file_external ( VikTrwLayer *trw, FILE *f, const gchar 
 {
   g_assert ( trw != NULL && trw->external_file != NULL && f != NULL );
 
-  g_free ( trw->external_dirpath );
-  trw->external_dirpath = g_strdup ( dirpath );
+  g_set_str (&trw->external_dirpath, dirpath);
 
   if ( auto_load )
     trw_load_external_layer ( trw );
@@ -13525,8 +13521,7 @@ void trw_layer_replace_external ( VikTrwLayer *trw, const gchar *external_file )
 {
   trw->external_layer = VIK_TRW_LAYER_EXTERNAL_NO_WRITE;
   trw_update_layer_icon ( trw );
-  g_free ( trw->external_file );
-  trw->external_file = g_strdup ( external_file );
+  g_set_str (&trw->external_file, external_file);
   trw->external_loaded = TRUE;
 }
 

@@ -797,8 +797,7 @@ static void top_start ( xml_data *xd, const char *el, const char **attr )
 
 static void color_end ( xml_data *xd, const char *el )
 {
-	g_free ( xd->color );
-	xd->color = g_strdup ( xd->c_cdata->str );
+	g_set_str (&xd->color, xd->c_cdata->str);
 	end_leaf_tag ( xd );
 }
 
@@ -858,8 +857,7 @@ static void doc_description_end ( xml_data *xd, const char *el )
 		// Similar to the above name field;
 		// Only do the first encountered description
 		if ( !xd->layer_has_description ) {
-			g_free (meta->description);
-			meta->description = g_strdup ( xd->c_cdata->str );
+			g_set_str (&meta->description, xd->c_cdata->str);
 			xd->layer_has_description = TRUE;
 		}
 	}
@@ -881,8 +879,7 @@ static void document_start ( xml_data *xd, const char *el, const char **attr )
 	if ( g_strcmp0 ( el, "Style" ) == 0 ) {
 		const gchar *name = get_attr ( attr, "id" );
 		if ( name ) {
-			g_free ( xd->styleName );
-			xd->styleName = g_strdup ( name );
+			g_set_str (&xd->styleName, name);
 		}
 		// Styles are within <Document>
 		// ATM even if there are mulitple documents - styles are combined across all of them

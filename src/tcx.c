@@ -254,16 +254,14 @@ static void tcx_end ( UserDataT *ud, const char *el )
 
 		case tt_tcx_creator:
 			if ( c_md ) {
-				g_free ( c_md->author );
-				c_md->author = g_strdup ( c_cdata->str );
+				g_set_str (&c_md->author, c_cdata->str);
 			}
 			g_string_erase ( c_cdata, 0, -1 );
 			break;
 
 		case tt_tcx_cmt:
 			if ( c_md ) {
-				g_free ( c_md->description );
-				c_md->description = g_strdup ( c_cdata->str );
+				g_set_str (&c_md->description, c_cdata->str);
 			}
 			g_string_erase ( c_cdata, 0, -1 );
 			break;
@@ -297,8 +295,7 @@ static void tcx_end ( UserDataT *ud, const char *el )
 			break;
 
 		case tt_wpt_name:
-			g_free ( c_wp_name );
-			c_wp_name = g_strdup ( c_cdata->str );
+			g_set_str (&c_wp_name, c_cdata->str);
 			g_string_erase ( c_cdata, 0, -1 );
 			break;
 

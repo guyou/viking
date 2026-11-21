@@ -73,9 +73,7 @@ void vik_track_set_comment_no_copy(VikTrack *tr, gchar *comment)
 
 void vik_track_set_name(VikTrack *tr, const gchar *name)
 {
-  g_free ( tr->name );
-
-  tr->name = g_strdup(name);
+  g_set_str (&tr->name, name);
 }
 
 void vik_track_set_comment(VikTrack *tr, const gchar *comment)

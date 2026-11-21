@@ -118,8 +118,7 @@ _start_element (GMarkupParseContext *context,
 		{
 			if (strcmp (attribute_names[i], "name") == 0)
 			{
-				g_free (property_name);
-				property_name = g_strdup (attribute_values[i]);
+				g_set_str (&property_name, attribute_values[i]);
 			}
 			i++;
 		}

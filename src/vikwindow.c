@@ -1847,8 +1847,7 @@ static void draw_status_tool ( VikWindow *vw )
   // Attempt to only update if actually changed to prevent the circular redrawing
   if ( g_strcmp0(old_tool, tool_str) ) {
     vik_statusbar_set_message ( vw->viking_vs, VIK_STATUSBAR_TOOL, tool_str );
-    g_free ( old_tool );
-    old_tool = g_strdup ( tool_str );
+    g_set_str (&old_tool, tool_str);
   }
 }
 
@@ -1876,8 +1875,7 @@ static void draw_status ( VikWindow *vw )
   if ( g_strcmp0(old_zoom_str, zoom_level) ) {
     vik_statusbar_set_drawmode ( vw->viking_vs, vik_viewport_get_drawmode(vw->viking_vvp) );
     vik_statusbar_set_message ( vw->viking_vs, VIK_STATUSBAR_ZOOM, zoom_level );
-    g_free ( old_zoom_str );
-    old_zoom_str = g_strdup ( zoom_level );
+    g_set_str (&old_zoom_str, zoom_level);
   }
 
   draw_status_tool ( vw );
@@ -5003,8 +5001,7 @@ void vik_window_open_file ( VikWindow *vw, const gchar *filename, gboolean chang
 
   // Enable the *new* filename to be accessible by the Layers codez
   gchar *original_filename = g_strdup ( vw->filename );
-  g_free ( vw->filename );
-  vw->filename = g_strdup ( filename );
+  g_set_str (&vw->filename, filename);
   gboolean success = FALSE;
   gboolean restore_original_filename = FALSE;
 

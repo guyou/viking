@@ -73,18 +73,15 @@ vik_routing_engine_set_property (GObject      *object,
   switch (property_id)
     {
     case PROP_ID:
-      g_free (priv->id);
-      priv->id = g_strdup(g_value_get_string (value));
+      g_set_str (&priv->id, g_value_get_string (value));
       break;
 
     case PROP_LABEL:
-      g_free (priv->label);
-      priv->label = g_strdup(g_value_get_string (value));
+      g_set_str (&priv->label, g_value_get_string (value));
       break;
 
     case PROP_FORMAT:
-      g_free (priv->format);
-      priv->format = g_strdup(g_value_get_string (value));
+      g_set_str (&priv->format, g_value_get_string (value));
       break;
 
     default:
